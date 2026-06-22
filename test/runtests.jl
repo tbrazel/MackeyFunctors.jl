@@ -296,52 +296,69 @@ end
 
     cover_pairs = Set(ctx.covers)
     expected_double_coset_keys = Set{Tuple{Int,Int,Int}}()
-    for (h, k) in ctx.covers, (j, upper) in ctx.covers
-        k == upper || continue
-        push!(expected_double_coset_keys, (h, k, j))
+    for (j, h) in ctx.covers, (k, upper) in ctx.covers
+        h == upper || continue
+        push!(expected_double_coset_keys, (j, h, k))
     end
 
     @test Set(keys(ctx.doubleCosetRepresentatives)) == expected_double_coset_keys
 
-    for ((h, k, j), words) in ctx.doubleCosetRepresentatives
-        @test (h, k) in cover_pairs
-        @test (j, k) in cover_pairs
-        @test all(words) do word
+    for ((j, h, k), representatives) in ctx.doubleCosetRepresentatives
+        @test (j, h) in cover_pairs
+        @test (k, h) in cover_pairs
+        @test all(representatives) do (word, intersection_index)
+            x = evaluate_word(word)
+            expected_intersection =
+                GAP.Globals.Intersection(ctx.subgroups[j]^x, ctx.subgroups[k])
+
+            1 <= intersection_index <= length(ctx.subgroups) &&
+                ctx.subgroups[intersection_index] == expected_intersection &&
+                Bool(GAP.Globals.IN(x, ctx.subgroups[h])) &&
+                all(word) do (generator_index, exponent)
+                    1 <= generator_index <= length(ctx.generators) && exponent isa Int
+                end
+        end
+        @test all(first.(representatives)) do word
             all(word) do (generator_index, exponent)
                 1 <= generator_index <= length(ctx.generators) && exponent isa Int
             end
         end
-        @test all(word -> Bool(GAP.Globals.IN(evaluate_word(word), ctx.subgroups[k])), words)
     end
 
     trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, ctx.subgroups)
     whole = findfirst(H -> Int(GAP.Globals.Size(H)) == Int(GAP.Globals.Size(G)), ctx.subgroups)
 
     @test !haskey(ctx.doubleCosetRepresentatives, (trivial, whole, trivial))
+    @test_throws ArgumentError double_coset_representative_data(ctx, trivial, whole, trivial)
     @test_throws ArgumentError double_coset_representative_words(ctx, trivial, whole, trivial)
 
-    h, k = first(ctx.covers)
-    @test haskey(ctx.doubleCosetRepresentatives, (h, k, h))
+    j, h = first(ctx.covers)
+    @test haskey(ctx.doubleCosetRepresentatives, (j, h, j))
 
-    words = double_coset_representative_words(ctx, h, k, h)
-    @test double_coset_representative_words(
+    representative_data = double_coset_representative_data(ctx, j, h, j)
+    @test double_coset_representative_data(
         ctx,
+        ctx.subgroups[j],
         ctx.subgroups[h],
-        ctx.subgroups[k],
-        ctx.subgroups[h],
-    ) == words
+        ctx.subgroups[j],
+    ) == representative_data
+
+    words = double_coset_representative_words(ctx, j, h, j)
+    @test words == first.(representative_data)
 
     gap_representatives = [
         entry[1]
         for entry in GAP.Globals.DoubleCosetRepsAndSizes(
-            ctx.subgroups[k],
             ctx.subgroups[h],
-            ctx.subgroups[h],
+            ctx.subgroups[j],
+            ctx.subgroups[j],
         )
     ]
     @test length(words) == length(gap_representatives)
-    @test all(zip(words, gap_representatives)) do (word, representative)
-        evaluate_word(word) == representative
+    @test all(zip(representative_data, gap_representatives)) do ((word, intersection_index), representative)
+        evaluate_word(word) == representative &&
+            ctx.subgroups[intersection_index] ==
+                GAP.Globals.Intersection(ctx.subgroups[j]^representative, ctx.subgroups[j])
     end
 end
 

@@ -3,6 +3,7 @@
 ```@docs
 MackeyFunctor
 MackeyContext
+double_coset_representative_data
 double_coset_representative_words
 defines_fg_abelian_map
 are_equal_abelian_group_homomorphisms

@@ -3,21 +3,23 @@ const GeneratorIndex = Int
 const Group = GapObj
 const GroupElement = GapObj
 const GeneratorWord = Vector{Tuple{GeneratorIndex,Int}}
+const DoubleCosetFormulaTerm = Tuple{GeneratorWord,SubgroupIndex}
 
 """
     MackeyContext(G)
 
 Precompute subgroup-lattice and double-coset data for a finite GAP group `G`.
 
-The field `doubleCosetRepresentatives[(h, k, j)]` is defined for triples where
-both `subgroups[h] < subgroups[k]` and `subgroups[j] < subgroups[k]` are cover
+The field `doubleCosetRepresentatives[(j, h, k)]` is defined for triples where
+both `subgroups[j] < subgroups[h]` and `subgroups[k] < subgroups[h]` are cover
 relations. Its value is a vector of representatives for
-`subgroups[h] \\ subgroups[k] / subgroups[j]`, where each representative is
-stored as a word in `generators`.
+`subgroups[j] \\ subgroups[h] / subgroups[k]`.
 
-A word is a vector of `(generator_index, exponent)` pairs. For example,
-`[(1, 3), (2, -4)]` represents `generators[1]^3 * generators[2]^-4`, and the
-empty vector represents the identity element.
+Each representative is stored as `(word, intersection_index)`. A word is a
+vector of `(generator_index, exponent)` pairs. For example, `[(1, 3), (2, -4)]`
+represents `generators[1]^3 * generators[2]^-4`, and the empty vector represents
+the identity element. For representative `x`, `intersection_index` is the index
+of `subgroups[j]^x` intersected with `subgroups[k]` in `subgroups`.
 """
 struct MackeyContext
     G::Group
@@ -29,7 +31,7 @@ struct MackeyContext
     generatorRightConjugationMatrix::Matrix{SubgroupIndex}
     doubleCosetRepresentatives::Dict{
         Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
-        Vector{GeneratorWord},
+        Vector{DoubleCosetFormulaTerm},
     }
 
     # Build a MackeyContext from a group G
@@ -103,21 +105,31 @@ struct MackeyContext
 
         ########## double coset stuff below here
         doubleCosetRepresentatives =
-            Dict{Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},Vector{GeneratorWord}}()
+            Dict{
+                Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
+                Vector{DoubleCosetFormulaTerm},
+            }()
 
-        for k in eachindex(subgroups)
+        for h in eachindex(subgroups)
             covered_subgroups =
-                SubgroupIndex[h for (h, upper) in covers if upper == k]
+                SubgroupIndex[j for (j, upper) in covers if upper == h]
             isempty(covered_subgroups) && continue
 
-            K = subgroups[k]
-            for h in covered_subgroups, j in covered_subgroups
-                H = subgroups[h]
+            H = subgroups[h]
+            for j in covered_subgroups, k in covered_subgroups
                 J = subgroups[j]
+                K = subgroups[k]
 
-                doubleCosetRepresentatives[(h, k, j)] = [
-                    generator_word(epi_from_free_group, entry[1])
-                    for entry in GAP.Globals.DoubleCosetRepsAndSizes(K, H, J)
+                doubleCosetRepresentatives[(j, h, k)] = [
+                    begin
+                        x = entry[1]
+                        intersection = GAP.Globals.Intersection(J^x, K)
+                        (
+                            generator_word(epi_from_free_group, x),
+                            subgroup_index(subgroups, intersection, "J^x intersect K"),
+                        )
+                    end
+                    for entry in GAP.Globals.DoubleCosetRepsAndSizes(H, J, K)
                 ]
             end
         end
@@ -136,46 +148,57 @@ struct MackeyContext
 end
 
 """
-    double_coset_representative_words(ctx, h, k, j)
-    double_coset_representative_words(ctx, H, K, J)
+    double_coset_representative_data(ctx, j, h, k)
+    double_coset_representative_data(ctx, J, H, K)
 
-Return representatives for `H \\ K / J`, where `H < K` and `J < K` are cover
+Return representatives for `J \\ H / K`, where `J < H` and `K < H` are cover
 relations in `ctx`.
 
-Each representative is a word in `ctx.generators`, stored as a vector of
-`(generator_index, exponent)` pairs.
+Each representative is returned as `(word, intersection_index)`, where
+`intersection_index` points to `J^x` intersected with `K` in `ctx.subgroups`
+for the represented group element `x`.
 """
-function double_coset_representative_words(
+function double_coset_representative_data(
     ctx::MackeyContext,
+    j::SubgroupIndex,
     h::SubgroupIndex,
     k::SubgroupIndex,
-    j::SubgroupIndex,
 )
+    j in eachindex(ctx.subgroups) || throw(ArgumentError("j is not a subgroup index"))
     h in eachindex(ctx.subgroups) || throw(ArgumentError("h is not a subgroup index"))
     k in eachindex(ctx.subgroups) || throw(ArgumentError("k is not a subgroup index"))
-    j in eachindex(ctx.subgroups) || throw(ArgumentError("j is not a subgroup index"))
 
-    key = (h, k, j)
+    key = (j, h, k)
     haskey(ctx.doubleCosetRepresentatives, key) ||
         throw(ArgumentError(
-            "double-coset representatives are stored only when (h, k) and (j, k) are cover relations",
+            "double-coset representatives are stored only when (j, h) and (k, h) are cover relations",
         ))
 
     return ctx.doubleCosetRepresentatives[key]
 end
 
-function double_coset_representative_words(
+function double_coset_representative_data(
     ctx::MackeyContext,
+    J::Group,
     H::Group,
     K::Group,
-    J::Group,
 )
-    return double_coset_representative_words(
+    return double_coset_representative_data(
         ctx,
+        subgroup_index(ctx, J, "J"),
         subgroup_index(ctx, H, "H"),
         subgroup_index(ctx, K, "K"),
-        subgroup_index(ctx, J, "J"),
     )
+end
+
+"""
+    double_coset_representative_words(ctx, j, h, k)
+    double_coset_representative_words(ctx, J, H, K)
+
+Return only the generator words from `double_coset_representative_data`.
+"""
+function double_coset_representative_words(ctx::MackeyContext, args...)
+    return first.(double_coset_representative_data(ctx, args...))
 end
 
 function generator_word(free_group_map, element::GroupElement)
@@ -199,11 +222,15 @@ function generator_word(free_group_map, element::GroupElement)
     return result
 end
 
-function subgroup_index(ctx::MackeyContext, H::Group, name::AbstractString)
-    matches = findall(K -> K == H, ctx.subgroups)
+function subgroup_index(subgroups::Vector{Group}, H::Group, name::AbstractString)
+    matches = findall(K -> K == H, subgroups)
 
     length(matches) == 1 ||
         throw(ArgumentError("$name is not uniquely represented in the subgroup list"))
 
     return SubgroupIndex(only(matches))
+end
+
+function subgroup_index(ctx::MackeyContext, H::Group, name::AbstractString)
+    return subgroup_index(ctx.subgroups, H, name)
 end
