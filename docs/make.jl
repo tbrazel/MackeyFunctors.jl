@@ -10,8 +10,13 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Examples" => "examples.md",
-        "API" => "api.md",
+        "Installation" => "installation.md",
+        "Contributing" => "contributing.md",
+        "Manual" => [
+            "Basic data types" => "manual/data_types.md",
+            "Constructors" => "manual/constructors.md",
+            "Examples" => "examples.md"
+        ]
     ],
     checkdocs=:exports,
 )
