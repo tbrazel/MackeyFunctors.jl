@@ -9,7 +9,7 @@ export defines_fg_abelian_map,are_equal_abelian_group_homomorphisms # don't need
 
 include("group_theory/HelperFunctions.jl")
 
-include("group_theory/MackeyContext.jl")
+include("types/MackeyContext.jl")
 export MackeyContext, double_coset_representative_data, double_coset_representative_words
 
 include("group_theory/SubgroupLattice.jl")
