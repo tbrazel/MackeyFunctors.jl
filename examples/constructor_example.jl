@@ -1,6 +1,6 @@
 using GAP
 using AbstractAlgebra
-using ExampleMackeyFunctors
+using MackeyFunctors
 
 C2 = GAP.Globals.CyclicGroup(2)
 subs = Vector{GapObj}(GAP.Globals.AllSubgroups(C2))
