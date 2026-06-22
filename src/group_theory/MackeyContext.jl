@@ -8,18 +8,15 @@ const DoubleCosetFormulaTerm = Tuple{GeneratorWord,SubgroupIndex}
 """
     MackeyContext(G)
 
-Precompute subgroup-lattice and double-coset data for a finite GAP group `G`.
+Precompute subgroup-lattice and double-coset data for a finite GAP group `G`. This front-loads the computational effort of aspects of the group and its subgroup lattice which will be used throughout verifying the axioms for any ``G``-Mackey functor.
 
-The field `doubleCosetRepresentatives[(j, h, k)]` is defined for triples where
-both `subgroups[j] < subgroups[h]` and `subgroups[k] < subgroups[h]` are cover
-relations. Its value is a vector of representatives for
-`subgroups[j] \\ subgroups[h] / subgroups[k]`.
+This method inputs a group ``G``, and precomputes its list of subgroups, the list of *covers* (meaning proper subgroups ``H\\le K`` where there are no intermediate subgroups), a list of generators for the group, and matrices for how these generators act via conjugation on the list of all subgroups.
 
-Each representative is stored as `(word, intersection_index)`. A word is a
-vector of `(generator_index, exponent)` pairs. For example, `[(1, 3), (2, -4)]`
-represents `generators[1]^3 * generators[2]^-4`, and the empty vector represents
-the identity element. For representative `x`, `intersection_index` is the index
-of `subgroups[j]^x` intersected with `subgroups[k]` in `subgroups`.
+Importantly, the `MackeyContext` type also stores all the data needed to verify the double coset formula for an inputted Mackey functor. An important lemma is that the double coset formula can be checked along subgroups ``J\\le H \\ge K`` where each inclusion is a cover. Given a triple of subgroups as above, we have
+```math
+H = \\coprod_x JxK
+```
+and we store this in a dictionary as a vector of entries ``(J^x\\cap K, x)``.
 """
 struct MackeyContext
     G::Group
