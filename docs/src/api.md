@@ -2,6 +2,8 @@
 
 ```@docs
 MackeyFunctor
+MackeyContext
+double_coset_representative_words
 defines_fg_abelian_map
 are_equal_abelian_group_homomorphisms
 all_supergroups_from_lattice

@@ -259,6 +259,92 @@ end
     )
 end
 
+@testset "MackeyContext" begin
+    G = GAP.Globals.SymmetricGroup(3)
+    ctx = MackeyContext(G)
+
+    function evaluate_word(word)
+        result = GAP.Globals.One(G)
+        for (generator_index, exponent) in word
+            result *= ctx.generators[generator_index]^exponent
+        end
+        return result
+    end
+
+    @test ctx.G == G
+    @test length(ctx.subgroups) == length(GAP.Globals.AllSubgroups(G))
+    @test length(ctx.generators) == length(GAP.Globals.GeneratorsOfGroup(G))
+    @test size(ctx.generatorLeftConjugationMatrix) ==
+          (length(ctx.subgroups), length(ctx.generators))
+    @test size(ctx.generatorRightConjugationMatrix) ==
+          (length(ctx.subgroups), length(ctx.generators))
+
+    for (i, j) in ctx.covers
+        H = ctx.subgroups[i]
+        K = ctx.subgroups[j]
+
+        @test i != j
+        @test Bool(GAP.Globals.IsSubgroup(K, H))
+        @test !any(eachindex(ctx.subgroups)) do l
+            L = ctx.subgroups[l]
+            l != i &&
+                l != j &&
+                Bool(GAP.Globals.IsSubgroup(L, H)) &&
+                Bool(GAP.Globals.IsSubgroup(K, L))
+        end
+    end
+
+    cover_pairs = Set(ctx.covers)
+    expected_double_coset_keys = Set{Tuple{Int,Int,Int}}()
+    for (h, k) in ctx.covers, (j, upper) in ctx.covers
+        k == upper || continue
+        push!(expected_double_coset_keys, (h, k, j))
+    end
+
+    @test Set(keys(ctx.doubleCosetRepresentatives)) == expected_double_coset_keys
+
+    for ((h, k, j), words) in ctx.doubleCosetRepresentatives
+        @test (h, k) in cover_pairs
+        @test (j, k) in cover_pairs
+        @test all(words) do word
+            all(word) do (generator_index, exponent)
+                1 <= generator_index <= length(ctx.generators) && exponent isa Int
+            end
+        end
+        @test all(word -> Bool(GAP.Globals.IN(evaluate_word(word), ctx.subgroups[k])), words)
+    end
+
+    trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, ctx.subgroups)
+    whole = findfirst(H -> Int(GAP.Globals.Size(H)) == Int(GAP.Globals.Size(G)), ctx.subgroups)
+
+    @test !haskey(ctx.doubleCosetRepresentatives, (trivial, whole, trivial))
+    @test_throws ArgumentError double_coset_representative_words(ctx, trivial, whole, trivial)
+
+    h, k = first(ctx.covers)
+    @test haskey(ctx.doubleCosetRepresentatives, (h, k, h))
+
+    words = double_coset_representative_words(ctx, h, k, h)
+    @test double_coset_representative_words(
+        ctx,
+        ctx.subgroups[h],
+        ctx.subgroups[k],
+        ctx.subgroups[h],
+    ) == words
+
+    gap_representatives = [
+        entry[1]
+        for entry in GAP.Globals.DoubleCosetRepsAndSizes(
+            ctx.subgroups[k],
+            ctx.subgroups[h],
+            ctx.subgroups[h],
+        )
+    ]
+    @test length(words) == length(gap_representatives)
+    @test all(zip(words, gap_representatives)) do (word, representative)
+        evaluate_word(word) == representative
+    end
+end
+
 @testset "Visualizer data" begin
     C2, _, _, values, restrictions, transfers, conjugations = c2_burnside_data()
     M = MackeyFunctor(C2, values, restrictions, transfers, conjugations)
