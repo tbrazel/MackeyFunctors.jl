@@ -394,10 +394,21 @@ function validate_mackey_formula(subgroups, values, restrictions, transfers, con
     end
 end
 
-# The main lattice-backed Mackey functor object.
-# After construction, all subgroup-indexed fields use canonical subgroup-lattice
-# objects, and the restriction/transfer/conjugation dictionaries have been
-# completed by composition and checked against the Mackey formula.
+"""
+    MackeyFunctor(G, values, restrictions, transfers, conjugations; coefficient_ring=ZZ)
+    MackeyFunctor(coefficient_ring, G, values, restrictions, transfers, conjugations)
+
+A lattice-backed Mackey functor for a finite GAP group `G`.
+
+The `values` dictionary assigns each subgroup a finitely generated abelian
+group, represented by invariant factors. The `restrictions` and `transfers`
+dictionaries provide matrices for subgroup-lattice cover relations `(H, K)`
+with `H < K`; the constructor closes these maps under composition. The
+`conjugations` dictionary provides conjugation maps indexed by `(H, g)`.
+
+All subgroup keys are canonicalized to the subgroup objects stored in GAP's
+subgroup lattice, and construction validates the Mackey double-coset formula.
+"""
 struct MackeyFunctor
     G::GapObj
     coefficient_ring::Ring

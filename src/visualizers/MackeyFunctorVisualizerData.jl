@@ -80,6 +80,12 @@ function matrix_data_entry(M::MackeyFunctor, H::GapObj, K::GapObj, matrix)
     )
 end
 
+"""
+    visualizer_data(M)
+
+Return a dictionary of subgroup, map, and lattice data for rendering a
+`MackeyFunctor` in an external visualizer.
+"""
 function visualizer_data(M::MackeyFunctor)
     labels = unique_subgroup_labels(M.subgroups)
 
@@ -168,6 +174,12 @@ function json_escape(s::AbstractString)
     return String(take!(result))
 end
 
+"""
+    visualizer_json(x)
+
+Serialize visualizer data to the small JSON subset used by the bundled
+Mackey functor visualizer.
+"""
 function visualizer_json(x)
     if x isa AbstractString
         return "\"$(json_escape(x))\""

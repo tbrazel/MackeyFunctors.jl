@@ -5,12 +5,10 @@ authors = ["Thomas Brazelton"]
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GAP = "c863536a-3901-11e9-33e7-d5cd0df7b904"
 
 [compat]
 AbstractAlgebra = "0.48.6"
-Documenter = "1.17.0"
 GAP = "0.16.7"
 Test = "1.10"
 julia = "1.10"

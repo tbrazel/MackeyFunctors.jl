@@ -1,4 +1,13 @@
-# Check if a matrix defines a finitely generated abelian group homomorphism
+"""
+    defines_fg_abelian_map(source_group, target_group, M)
+
+Return `true` when the integer matrix `M` defines a homomorphism from the
+finitely generated abelian group represented by `source_group` to the one
+represented by `target_group`.
+
+Groups are represented by invariant factors: `0` denotes a free `Z` summand,
+and a positive integer `n` denotes a `Z/n` summand.
+"""
 function defines_fg_abelian_map(source_group::Vector{Int}, target_group::Vector{Int}, M::AbstractMatrix{<:Integer})
     # Number of rows and columns of the matrix M
     num_rows_of_M = size(M,1)
@@ -41,7 +50,13 @@ function defines_fg_abelian_map(source_group::Vector{Int}, target_group::Vector{
     return true
 end
 
-# Check if two integral matrices define identical maps between fg abelian groups
+"""
+    are_equal_abelian_group_homomorphisms(source_group, target_group, M, N)
+
+Return `true` when the integer matrices `M` and `N` define the same homomorphism
+between the finitely generated abelian groups represented by `source_group` and
+`target_group`.
+"""
 function are_equal_abelian_group_homomorphisms(source_group::Vector{Int}, target_group::Vector{Int}, M::AbstractMatrix{<:Integer},N::AbstractMatrix{<:Integer})
     # First check the two inputted maps are each well-defined
     defines_fg_abelian_map(source_group,target_group,M) || throw(DimensionMismatch("First inputted matrix is not a well-defined map between the two groups"))
