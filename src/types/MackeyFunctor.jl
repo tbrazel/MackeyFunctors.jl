@@ -243,7 +243,7 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, word::GeneratorWor
             end
 
         else
-            for j in 1::abs(n)
+            for j in 1:abs(n)
                 target_of_result = mf.context.generatorRightConjugationMatrix[g, target_of_result]
 
                 result = inv(mf.generator_conjugations[g, target_of_result]) * result

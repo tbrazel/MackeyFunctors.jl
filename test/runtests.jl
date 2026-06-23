@@ -19,7 +19,7 @@ using MackeyFunctors
     id_iso = ModuleIsomorphism(M, M, identity_matrix(ZZ, 1))
     conjugations = [id_iso for i in context.generators, j in context.subgroups]
 
-    MackeyFunctor(context, values, restrictions, transfers, conjugations, false)
+    MackeyFunctor(context, values, restrictions, transfers, conjugations)
 end
 
 @testset "MackeyContext" begin
