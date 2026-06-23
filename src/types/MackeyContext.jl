@@ -31,7 +31,7 @@ struct MackeyContext
     }
 
     # Build a MackeyContext from a group G
-    function MackeyContext(G::Group)
+    function MackeyContext(G::Group)::MackeyContext
         GAP.Globals.IsGroup(G) || throw(ArgumentError("Input G must be a GAP group"))
 
         # get subgroups
@@ -40,24 +40,18 @@ struct MackeyContext
         # Build list of covers
         covers = Tuple{SubgroupIndex,SubgroupIndex}[]
 
-        for i in eachindex(subgroups), j in eachindex(subgroups)
-            H = subgroups[i]
-            K = subgroups[j]
-
+        for (H, i) in enumerate(subgroups), (K, j) in enumerate(subgroups)
             # GAP.Globals.IsSubgroup(K, H) means H <= K
-            H_properly_contained_in_K =
-                i != j && Bool(GAP.Globals.IsSubgroup(K, H))
+            if i == j || !GAP.Globals.IsSubgroup(K, H)
+                continue
+            end
 
-            H_properly_contained_in_K || continue
-
-            has_intermediate = any(eachindex(subgroups)) do l
-                L = subgroups[l]
-
+            has_intermediate = any(enumerate(subgroups)) do (L, l)
                 H_properly_contained_in_L =
-                    l != i && Bool(GAP.Globals.IsSubgroup(L, H))
+                    l != i && GAP.Globals.IsSubgroup(L, H)
 
                 L_properly_contained_in_K =
-                    l != j && Bool(GAP.Globals.IsSubgroup(K, L))
+                    l != j && GAP.Globals.IsSubgroup(K, L)
 
                 H_properly_contained_in_L && L_properly_contained_in_K
             end
@@ -134,7 +128,6 @@ struct MackeyContext
             G,
             subgroups,
             covers,
-            # epi_from_free_group,
             generators,
             left_conj_matx,
             right_conj_matx,
@@ -213,7 +206,7 @@ function generator_word(group::Group, element::GroupElement)::GeneratorWord
 end
 
 function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
-    return findfirst(K -> K == H, subgroups)
+    findfirst(K -> K == H, subgroups)
     # matches = findall(K -> K == H, subgroups)
 
     # length(matches) == 1 ||
@@ -223,5 +216,5 @@ function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
 end
 
 function subgroup_index(ctx::MackeyContext, H::Group)
-    return subgroup_index(ctx.subgroups, H)
+    subgroup_index(ctx.subgroups, H)
 end
