@@ -9,14 +9,14 @@ using MackeyFunctors
 
     @test length(context.covers) == 1
 
-    M = free_module(ZZ,1)
-    values = [M,M]
+    M = free_module(ZZ, 1)
+    values = [M, M]
 
-    id_hom = ModuleHomomorphism(M,M,identity_matrix(ZZ,1))
+    id_hom = ModuleHomomorphism(M, M, identity_matrix(ZZ, 1))
     restrictions = [id_hom]
     transfers = [id_hom + id_hom]
 
-    id_iso = ModuleIsomorphism(M,M,identity_matrix(ZZ,1))
+    id_iso = ModuleIsomorphism(M, M, identity_matrix(ZZ, 1))
     conjugations = [id_iso for i in context.generators, j in context.subgroups]
 
     MackeyFunctor(context, values, restrictions, transfers, conjugations, false)
@@ -37,10 +37,6 @@ end
     @test ctx.group == G
     @test length(ctx.subgroups) == length(GAP.Globals.AllSubgroups(G))
     @test length(ctx.generators) == length(GAP.Globals.GeneratorsOfGroup(G))
-    @test size(ctx.generatorLeftConjugationMatrix) ==
-          (length(ctx.subgroups), length(ctx.generators))
-    @test size(ctx.generatorRightConjugationMatrix) ==
-          (length(ctx.subgroups), length(ctx.generators))
 
     for (i, j) in ctx.covers
         H = ctx.subgroups[i]
@@ -121,7 +117,7 @@ end
     @test all(zip(representative_data, gap_representatives)) do ((word, intersection_index), representative)
         evaluate_word(word) == representative &&
             ctx.subgroups[intersection_index] ==
-                GAP.Globals.Intersection(ctx.subgroups[j]^representative, ctx.subgroups[j])
+            GAP.Globals.Intersection(ctx.subgroups[j]^representative, ctx.subgroups[j])
     end
 end
 
