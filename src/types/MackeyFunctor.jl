@@ -89,11 +89,11 @@ struct MackeyFunctor
                 h == l || continue
 
                 # We have J<H and K<H both covers
-                J = subgroups[j]
-                H = subgroups[h]
-                K = subgroups[k]
-
-                dc_reps = doubleCosetRepresentatives[(j, h, k)]
+                # J = subgroups[j]
+                # H = subgroups[h]
+                # K = subgroups[k]
+                
+                dc_reps = doubleCosetRepresentatives[(j,h,k)]
 
                 dc_lhs = cover_restrictions[n1]*cover_transfers[n2]
 
@@ -117,6 +117,55 @@ struct MackeyFunctor
 
         # 5. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
 
+        # Dictionary has keys (i,j) corresponding to H[i]<H[j], and values (t,r) for t: M(H[i]) -> M(H[j]) a transfer, and r: M(H[j]) -> M(H[i]) a restriction
+        dictionary_of_paths = Dict{Tuple{SubgroupIndex,SubgroupIndex},Tuple{Generic.ModuleHomomorphism,Generic.ModuleHomomorphism}}()
+
+
+        # Initialize the dictionaries with restriction and transfer along covers
+        for (n,cov) in enumerate(result.covers)
+            dictionary_of_paths[cov] = (cover_transfers[n],cover_restrictions[n])
+        end
+
+        # Iterate and see 
+        changed = true
+        while changed
+            changed = false
+
+            for (n,(i,j)) in enumerate(result.covers)
+                for ((H_index,K_index),(tr,res)) in dictionary_of_paths
+                    K_index == i || continue
+
+                    # So path goes H<K = H[i] < H[j]
+                    # tr goes M(H) -> M(K)
+                    # res goes M(K) -> M(H)
+
+                    new_key = (H_index,j)
+
+                    candidate_tr = cover_transfers[n]*tr
+                    candidate_res = res*cover_restrictions[n]
+                    candidate_value = (
+                        candidate_tr,candidate_res
+                    )
+
+                    if haskey(dictionary_of_paths,new_key)
+                        (existing_tr,existing_res) = dictionary_of_paths[new_key]
+                        is_equal_module_homomorphism(
+                            existing_tr,candidate_tr
+                        ) || throw(ArgumentError("Transfers do not agree along all possible subgroup paths."))
+
+                        is_equal_module_homomorphism(
+                            existing_res,candidate_res
+                        ) || throw(ArgumentError("Restrictions do not agree along all possible subgroup paths."))
+                    
+                    else
+                       push!(dictionary_of_paths,new_key=>candidate_value) 
+                       changed = true
+                    end
+                
+                end
+            end
+
+        end
 
         return result
     end

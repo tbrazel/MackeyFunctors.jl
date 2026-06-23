@@ -7,7 +7,8 @@ include("MiscFuncs.jl")
 include("module_methods/Modules.jl")
 
 include("group_theory/AbelianGroupHom.jl")
-export defines_fg_abelian_map, are_equal_abelian_group_homomorphisms # don't need to export these long term
+export defines_fg_abelian_map,
+    are_equal_abelian_group_homomorphisms # don't need to export these long term
 
 include("group_theory/Words.jl")
 export generator_relations
@@ -15,7 +16,11 @@ export generator_relations
 include("group_theory/HelperFunctions.jl")
 
 include("types/MackeyContext.jl")
-export MackeyContext, double_coset_representative_data, double_coset_representative_words
+export MackeyContext, 
+    double_coset_representative_data,
+    double_coset_representative_words,
+    restriction,
+    transfer
 
 include("types/MackeyFunctor.jl")
 export MackeyFunctor
