@@ -76,14 +76,14 @@ struct MackeyFunctor
 
                 # Check res commutes
                 same_module_map(
-                    generator_conjugations[n, i]*cover_restrictions[cover_index],
-                    cover_restrictions[index_of_conjugated_cover]*generator_conjugations[n, j]
+                    cover_restrictions[cover_index] * generator_conjugations[n, i],
+                    generator_conjugations[n, j] * cover_restrictions[index_of_conjugated_cover]
                 ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
 
                 # Check tr commutes
                 same_module_map(
-                    generator_conjugations[n, j]*cover_transfers[cover_index],
-                    cover_transfers[index_of_conjugated_cover]*generator_conjugations[n, i]
+                    cover_transfers[cover_index] * generator_conjugations[n, j],
+                    generator_conjugations[n, i] * cover_transfers[index_of_conjugated_cover]
                 ) || throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
             end
         end
@@ -101,7 +101,7 @@ struct MackeyFunctor
 
                 dc_reps = doubleCosetRepresentatives[(j, h, k)]
 
-                dc_lhs = cover_restrictions[n1]*cover_transfers[n2]
+                dc_lhs = cover_transfers[n2] * cover_restrictions[n1]
 
                 dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
 
@@ -112,7 +112,7 @@ struct MackeyFunctor
                     dc_transfer = transfer(result, JcapxK_index, j)
                     dc_conjugation = toHomomorphism(conjugation(result, JxcapK_index, w))
 
-                    dc_rhs += dc_transfer*dc_conjugation*dc_restriction
+                    dc_rhs += dc_restriction * dc_conjugation * dc_transfer
                 end
                 same_module_map(
                     dc_lhs,
@@ -147,8 +147,8 @@ struct MackeyFunctor
 
                     new_key = (H_index, j)
 
-                    candidate_tr = cover_transfers[n]*tr
-                    candidate_res = res*cover_restrictions[n]
+                    candidate_tr = tr * cover_transfers[n]
+                    candidate_res = cover_restrictions[n] * res
                     candidate_value = (
                         candidate_tr, candidate_res
                     )
@@ -195,7 +195,7 @@ function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::Subgrou
 
     # 
     for idx in path_indices
-        result = result * mf.cover_restrictions[idx]
+        result = mf.cover_restrictions[idx] * result
     end
 
     return result
@@ -212,7 +212,7 @@ function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIn
     result = identity_isomorphism(value(mf, H_index))
 
     for idx in path_indices
-        result = mf.cover_transfers[idx] * result
+        result = result * mf.cover_transfers[idx]
     end
 
     return result
@@ -229,7 +229,7 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::
     for (g, n) in reverse(word)
         if n>0
             for j in 1:n
-                result = mf.generator_conjugations[g, target_of_result] * result
+                result = result * mf.generator_conjugations[g, target_of_result]
 
                 target_of_result = mf.context.generatorLeftConjugationMatrix[g, target_of_result]
             end
@@ -238,7 +238,7 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::
             for j in 1:abs(n)
                 target_of_result = mf.context.generatorRightConjugationMatrix[g, target_of_result]
 
-                result = inv(mf.generator_conjugations[g, target_of_result]) * result
+                result = result * inv(mf.generator_conjugations[g, target_of_result])
             end
         end
     end
@@ -252,7 +252,7 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, word::GeneratorWor
     for (g, n) in reverse(word)
         if n>0
             for j in 1:n
-                result = mf.generator_conjugations[g, target_of_result] * result
+                result = result * mf.generator_conjugations[g, target_of_result]
 
                 target_of_result = mf.context.generatorLeftConjugationMatrix[g, target_of_result]
             end
@@ -261,7 +261,7 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, word::GeneratorWor
             for j in 1:abs(n)
                 target_of_result = mf.context.generatorRightConjugationMatrix[g, target_of_result]
 
-                result = inv(mf.generator_conjugations[g, target_of_result]) * result
+                result = result * inv(mf.generator_conjugations[g, target_of_result])
             end
         end
     end
