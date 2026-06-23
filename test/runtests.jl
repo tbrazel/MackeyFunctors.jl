@@ -13,8 +13,8 @@ using MackeyFunctors
     values = [M, M]
 
     id_hom = ModuleHomomorphism(M, M, identity_matrix(ZZ, 1))
-    restrictions = [id_hom]
-    transfers = [id_hom + id_hom]
+    restrictions = [id_hom + id_hom]
+    transfers = [id_hom]
 
     id_iso = ModuleIsomorphism(M, M, identity_matrix(ZZ, 1))
     conjugations = [id_iso for i in context.generators, j in context.subgroups]

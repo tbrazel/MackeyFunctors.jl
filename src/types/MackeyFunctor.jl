@@ -195,7 +195,7 @@ function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIn
 
     result = identity_isomorphism(value(mf, H_index))
 
-    for idx in path.indices
+    for idx in path_indices
         result = mf.cover_transfers[idx] * result
     end
 
