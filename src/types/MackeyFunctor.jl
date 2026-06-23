@@ -1,11 +1,11 @@
-using AbstractAlgebra
+# using AbstractAlgebra
 
 struct MackeyFunctor
     context::MackeyContext
     values::Vector{AbstractAlgebra.FPModule}
     cover_restrictions::Vector{Generic.ModuleHomomorphism}
     cover_transfers::Vector{Generic.ModuleHomomorphism}
-    # generator_conjugations[i,j] is the conjugation map c_{g_i} : M(H_j) ->  M(g_i H_j g_i^{-1})
+    # generator_conjugations[i ,j] is the conjugation map c_{g_i} : M(H_j) ->  M(g_i H_j g_i^{-1})
     generator_conjugations::Matrix{Generic.ModuleIsomorphism}
 
     function MackeyFunctor(
@@ -57,54 +57,54 @@ struct MackeyFunctor
         end
 
         # 3. Check Webb Axiom 4 and 5 for covers (compatibililty of transfers/conjugation and restriction/conjugation)
-        for (cover_index,(i,j)) in enumerate(covers)
-            for (n,g) in enumerate(generators)
+        for (cover_index, (i, j)) in enumerate(covers)
+            for (n, g) in enumerate(generators)
                 H = subgroups[i]
                 K = subgroups[j]
 
-                gHginvs_index = generatorLeftConjugationMatrix[n,i]
+                gHginvs_index = generatorLeftConjugationMatrix[n, i]
 
-                gKginvs_index = generatorLeftConjugationMatrix[n,j]
-                
-                index_of_conjugated_cover = first(context.paths[(gHginvs_index,gKginvs_index)])
-                
+                gKginvs_index = generatorLeftConjugationMatrix[n, j]
+
+                index_of_conjugated_cover = first(context.paths[(gHginvs_index, gKginvs_index)])
+
                 # Check res commutes
                 same_module_map(
-                    generator_conjugations[n,i]*cover_restrictions[cover_index],
-                    cover_restrictions[index_of_conjugated_cover]*generator_conjugations[n,j]
-                    ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
+                    generator_conjugations[n, i]*cover_restrictions[cover_index],
+                    cover_restrictions[index_of_conjugated_cover]*generator_conjugations[n, j]
+                ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
 
                 # Check tr commutes
                 same_module_map(
-                    generator_conjugations[n,j]*cover_transfers[cover_index],
-                    cover_transfers[index_of_conjugated_cover]*generator_conjugations[n,i]
+                    generator_conjugations[n, j]*cover_transfers[cover_index],
+                    cover_transfers[index_of_conjugated_cover]*generator_conjugations[n, i]
                 ) || throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
             end
         end
 
         # Next, we need to check the restrictions and transfers. This entails:
         # 4. Check double coset formula for covers
-        for (n1,(j,h)) in enumerate(covers)
-            for (n2,(k,l)) in enumerate(covers)
+        for (n1, (j, h)) in enumerate(covers)
+            for (n2, (k, l)) in enumerate(covers)
                 h == l || continue
 
                 # We have J<H and K<H both covers
                 J = subgroups[j]
                 H = subgroups[h]
                 K = subgroups[k]
-                
-                dc_reps = doubleCosetRepresentatives[(j,h,k)]
+
+                dc_reps = doubleCosetRepresentatives[(j, h, k)]
 
                 dc_lhs = cover_restrictions[n1]*cover_transfers[n2]
 
                 dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
 
-                for (w,JxcapK_index) in dc_reps
-                    JcapxK_index = conjugate_subgroup_by_word(context,JxcapK_index,w)
+                for (w, JxcapK_index) in dc_reps
+                    JcapxK_index = conjugate_subgroup_by_word(context, JxcapK_index, w)
 
-                    dc_restriction = restriction(result,JxcapK_index,k)
-                    dc_transfer = transfer(result,JcapxK_index, j)
-                    dc_conjugation = conjugation(result,JxcapK_index,w)
+                    dc_restriction = restriction(result, JxcapK_index, k)
+                    dc_transfer = transfer(result, JcapxK_index, j)
+                    dc_conjugation = conjugation(result, JxcapK_index, w)
 
                     dc_rhs += dc_transfer*dc_conjugation*dc_restriction
                 end
@@ -116,7 +116,7 @@ struct MackeyFunctor
         end
 
         # 5. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
-        
+
 
         return result
     end
@@ -128,23 +128,23 @@ function value(mf::MackeyFunctor, H_idx::SubgroupIndex)
 end
 
 # Get the value of restriction M(K) -> M(H) for an arbitrary subgroup inclusion H<K
-function restriction(mf::MackeyFunctor,H_index::SubgroupIndex, K_index::SubgroupIndex)
-    path_indices = mf.context.paths[(H_index,K_index)]
+function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
+    path_indices = mf.context.paths[(H_index, K_index)]
     # Start with identity on M(H)
-    result = identity_isomorphism(value(mf,H_index))
+    result = identity_isomorphism(value(mf, H_index))
 
     # 
     for idx in path_indices
-        result = result * mf.cover_restrictions[idx] 
+        result = result * mf.cover_restrictions[idx]
     end
 
     return result
 end
 
 function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
-    path_indices = mf.context.paths[(H_index,K_index)]
+    path_indices = mf.context.paths[(H_index, K_index)]
 
-    result = identity_isomorphism(value(mf,H_index))
+    result = identity_isomorphism(value(mf, H_index))
 
     for idx in path.indices
         result = mf.cover_transfers[idx] * result
