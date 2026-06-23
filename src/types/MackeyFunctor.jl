@@ -1,5 +1,11 @@
 # using AbstractAlgebra
 
+
+"""
+    MackeyFunctor(G)
+
+todo
+"""
 struct MackeyFunctor
     context::MackeyContext
     values::Vector{AbstractAlgebra.FPModule}
@@ -104,7 +110,7 @@ struct MackeyFunctor
 
                     dc_restriction = restriction(result, JxcapK_index, k)
                     dc_transfer = transfer(result, JcapxK_index, j)
-                    dc_conjugation = conjugation(result, JxcapK_index, w)
+                    dc_conjugation = toHomomorphism(conjugation(result, JxcapK_index, w))
 
                     dc_rhs += dc_transfer*dc_conjugation*dc_restriction
                 end
@@ -122,7 +128,7 @@ struct MackeyFunctor
 
 
         # Initialize the dictionaries with restriction and transfer along covers
-        for (n,cov) in enumerate(result.covers)
+        for (n,cov) in enumerate(context.covers)
             dictionary_of_paths[cov] = (cover_transfers[n],cover_restrictions[n])
         end
 
@@ -131,7 +137,7 @@ struct MackeyFunctor
         while changed
             changed = false
 
-            for (n,(i,j)) in enumerate(result.covers)
+            for (n,(i,j)) in enumerate(context.covers)
                 for ((H_index,K_index),(tr,res)) in dictionary_of_paths
                     K_index == i || continue
 
@@ -176,7 +182,12 @@ function value(mf::MackeyFunctor, H_idx::SubgroupIndex)
     return mf.values[H_idx]
 end
 
-# Get the value of restriction M(K) -> M(H) for an arbitrary subgroup inclusion H<K
+
+"""
+    restriction(M,H,K)
+
+todo
+"""
 function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
     path_indices = mf.context.paths[(H_index, K_index)]
     # Start with identity on M(H)
@@ -190,6 +201,11 @@ function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::Subgrou
     return result
 end
 
+"""
+    transfer(M,H,K)
+
+todo
+"""
 function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
     path_indices = mf.context.paths[(H_index, K_index)]
 

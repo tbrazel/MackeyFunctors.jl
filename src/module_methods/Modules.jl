@@ -26,3 +26,7 @@ function same_module_map(f, g)
     codomain(f) === codomain(g) || return false
     return all(x -> f(x) == g(x), gens(domain(f)))
 end
+
+function toHomomorphism(f::Generic.ModuleIsomorphism)
+    return ModuleHomomorphism(domain(f),codomain(f),matrix(f))
+end
