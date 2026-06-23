@@ -34,7 +34,7 @@ end
         return result
     end
 
-    @test ctx.G == G
+    @test ctx.group == G
     @test length(ctx.subgroups) == length(GAP.Globals.AllSubgroups(G))
     @test length(ctx.generators) == length(GAP.Globals.GeneratorsOfGroup(G))
     @test size(ctx.generatorLeftConjugationMatrix) ==
