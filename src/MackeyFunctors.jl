@@ -10,7 +10,8 @@ export defines_fg_abelian_map,are_equal_abelian_group_homomorphisms # don't need
 include("group_theory/HelperFunctions.jl")
 
 include("types/MackeyContext.jl")
-export MackeyContext, double_coset_representative_data, double_coset_representative_words
+export MackeyContext, double_coset_representative_data, double_coset_representative_words,
+    generator_relations
 
 include("group_theory/SubgroupLattice.jl")
 export all_supergroups_from_lattice

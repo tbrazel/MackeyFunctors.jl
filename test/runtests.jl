@@ -271,6 +271,8 @@ end
         return result
     end
 
+    relations = generator_relations(G, ctx.generators)
+
     @test ctx.G == G
     @test length(ctx.subgroups) == length(GAP.Globals.AllSubgroups(G))
     @test length(ctx.generators) == length(GAP.Globals.GeneratorsOfGroup(G))
@@ -278,6 +280,15 @@ end
           (length(ctx.subgroups), length(ctx.generators))
     @test size(ctx.generatorRightConjugationMatrix) ==
           (length(ctx.subgroups), length(ctx.generators))
+    @test generator_relations(G) == relations
+    @test !isempty(relations)
+    @test all(relations) do relation
+        relation isa Vector{Tuple{Int,Int}} &&
+            evaluate_word(relation) == GAP.Globals.One(G) &&
+            all(relation) do (generator_index, exponent)
+                1 <= generator_index <= length(ctx.generators) && exponent isa Int
+            end
+    end
 
     for (i, j) in ctx.covers
         H = ctx.subgroups[i]

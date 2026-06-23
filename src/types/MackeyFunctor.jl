@@ -49,6 +49,14 @@ struct MackeyFunctor
             end
         end
         # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
+        for i in eachindex(subgroups)
+            for relation_word in generator_relations(G,generators)
+                conj_by_relation_word = conjugation(result,i,relation_word)
+
+                is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
+            end
+        end
+
         # 3. Check Webb Axiom 4 and 5 for covers (compatibililty of transfers/conjugation and restriction/conjugation)
 
         # Next, we need to check the restrictions and transfers. This entails:
@@ -77,6 +85,19 @@ function identity_isomorphism(M::AbstractAlgebra.FPModule)::Generic.ModuleIsomor
     ModuleIsomorphism(M, M, identity_matrix(base_ring(M), ngens(M)))
 end
 
+function is_zero_module_homomorphism(phi::Generic.ModuleHomomorphism)
+    return all(x -> phi(x) == 0, gens(domain(phi)))
+end
+
+function is_equal_module_homomorphism(phi::Generic.ModuleHomomorphism, psi::Generic.ModuleHomomorphism)
+    return domain(phi) === domain(psi) && codomain(phi) === codomain(psi) && is_zero_module_homomorphism(phi - psi)
+end
+
+function is_identity_module_homomorphism(phi::Generic.ModuleIsomorphism)
+    return domain(phi) === codomain(phi) && all(phi(x) == identity_isomorphism(domain(phi))(x) for x in gens(domain(phi)))
+end
+
+# Checks if two module maps are identical (mathematically)
 function same_module_map(f, g)
     domain(f) === domain(g) || return false
     codomain(f) === codomain(g) || return false
