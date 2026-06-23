@@ -9,7 +9,7 @@ function zero_homomorphism(M::AbstractAlgebra.FPModule,N::AbstractAlgebra.FPModu
 end
 
 function is_zero_module_homomorphism(phi::Generic.ModuleHomomorphism)
-    return all(x -> phi(x) == 0, gens(domain(phi)))
+    return all(x -> phi(x) == zero(codomain(phi)), gens(domain(phi)))
 end
 
 function is_equal_module_homomorphism(phi::Generic.ModuleHomomorphism, psi::Generic.ModuleHomomorphism)
