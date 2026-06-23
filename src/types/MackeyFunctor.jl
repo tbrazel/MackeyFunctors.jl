@@ -141,7 +141,7 @@ function restriction(mf::MackeyFunctor,H_index::SubgroupIndex, K_index::Subgroup
     return result
 end
 
-function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupInde)
+function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
     path_indices = mf.context.paths[(H_index,K_index)]
 
     result = identity_isomorphism(value(mf,H_index))
@@ -170,7 +170,7 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::
             end
 
         else
-            for j in 1::abs(n)
+            for j in 1:abs(n)
                 target_of_result = mf.context.generatorRightConjugationMatrix[g, target_of_result]
 
                 result = inv(mf.generator_conjugations[g, target_of_result]) * result
