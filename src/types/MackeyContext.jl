@@ -15,7 +15,7 @@ H = \\coprod_x JxK
 and we store this in a dictionary as a vector of entries ``(J^x\\cap K, x)``.
 """
 struct MackeyContext
-    G::Group
+    group::Group
     subgroups::Vector{Group}
     covers::Vector{Tuple{SubgroupIndex,SubgroupIndex}}
     paths::Dict{Tuple{SubgroupIndex,SubgroupIndex},Vector{Int}}

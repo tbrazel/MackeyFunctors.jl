@@ -43,7 +43,7 @@ struct MackeyFunctor
         # 1. For H <= G and h \in H, conjugation by h at level G/H should be identity
         for (i, H) in enumerate(subgroups)
             for h in GAP.Globals.GeneratorsOfGroup(H)
-                conj_h_H = conjugation(result, h, i)
+                conj_h_H = conjugation(result, i, h)
                 is_identity_module_homomorphism(conj_h_H) || throw(ArgumentError("Conjugation by $h at level $H is not the identity"))
             end
         end
