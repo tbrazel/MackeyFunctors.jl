@@ -12,6 +12,10 @@ makedocs(;
         "Home" => "index.md",
         "Installation" => "installation.md",
         "Contributing" => "contributing.md",
+        "Design" => [
+            "Mackey Contexts" => "design/MackeyContexts.md",
+            "Mackey Functors" => "design/MackeyFunctors.md"
+        ],
         "Manual" => [
             "Basic data types" => "manual/data_types.md",
             "Constructors" => "manual/constructors.md",
