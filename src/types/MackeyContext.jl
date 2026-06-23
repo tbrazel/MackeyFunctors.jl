@@ -1,8 +1,4 @@
 const SubgroupIndex::DataType = Int
-const GeneratorIndex::DataType = Int
-const Group = GapObj
-const GroupElement = GapObj
-const GeneratorWord = Vector{Tuple{GeneratorIndex,Int}}
 const DoubleCosetFormulaTerm = Tuple{GeneratorWord,SubgroupIndex}
 
 """

@@ -57,18 +57,36 @@ struct MackeyFunctor
         end
 
         # 3. Check Webb Axiom 4 and 5 for covers (compatibililty of transfers/conjugation and restriction/conjugation)
+        for (cover_index,(i,j)) in enumerate(covers)
+            for (n,g) in enumerate(generators)
+                H = subgroups[i]
+                K = subgroups[j]
+
+                gHginvs_index = generatorLeftConjugationMatrix[n,i]
+
+                gKginvs_index = generatorLeftConjugationMatrix[n,j]
+                
+                index_of_conjugated_cover = first(context.paths[(gHginvs_index,gKginvs_index)])
+                
+                # Check res commutes
+                same_module_map(
+                    generator_conjugations[n,i]*cover_restrictions[cover_index],
+                    cover_restrictions[index_of_conjugated_cover]*generator_conjugations[n,j]
+                    ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
+
+                # Check tr commutes
+                same_module_map(
+                    generator_conjugations[n,j]*cover_transfers[cover_index],
+                    cover_transfers[index_of_conjugated_cover]*generator_conjugations[n,i]
+                ) || throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
+            end
+        end
 
         # Next, we need to check the restrictions and transfers. This entails:
         # 4. Check double coset formula for covers
 
         # 5. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
 
-
-
-
-
-
-        # do stuff here
 
         return result
     end

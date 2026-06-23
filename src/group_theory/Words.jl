@@ -1,3 +1,7 @@
+const Group = GapObj
+const GroupElement = GapObj
+const GeneratorIndex::DataType = Int
+const GeneratorWord = Vector{Tuple{GeneratorIndex,Int}}
 
 function _generator_word_from_extrep(extrep)::GeneratorWord
     word = Vector{Int}(extrep)
