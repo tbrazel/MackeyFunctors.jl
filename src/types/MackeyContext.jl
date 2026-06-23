@@ -22,6 +22,7 @@ struct MackeyContext
     G::Group
     subgroups::Vector{Group}
     covers::Vector{Tuple{SubgroupIndex,SubgroupIndex}}
+    paths::Dict{Tuple{SubgroupIndex,SubgroupIndex},Vector{Int}}
     generators::Vector{GroupElement}
     generatorLeftConjugationMatrix::Matrix{SubgroupIndex}
     generatorRightConjugationMatrix::Matrix{SubgroupIndex}
@@ -29,6 +30,7 @@ struct MackeyContext
         Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
         Vector{DoubleCosetFormulaTerm},
     }
+
 
     # Build a MackeyContext from a group G
     function MackeyContext(G::Group)::MackeyContext
@@ -40,23 +42,47 @@ struct MackeyContext
         # Build list of covers
         covers = Tuple{SubgroupIndex,SubgroupIndex}[]
 
-        for (H, i) in enumerate(subgroups), (K, j) in enumerate(subgroups)
+        for (i, H) in enumerate(subgroups), (j, K) in enumerate(subgroups)
             # GAP.Globals.IsSubgroup(K, H) means H <= K
-            if i == j || !GAP.Globals.IsSubgroup(K, H)
+            if i == j || !Bool(GAP.Globals.IsSubgroup(K, H))
                 continue
             end
 
-            has_intermediate = any(enumerate(subgroups)) do (L, l)
+            has_intermediate = any(enumerate(subgroups)) do (l, L)
                 H_properly_contained_in_L =
-                    l != i && GAP.Globals.IsSubgroup(L, H)
+                    l != i && Bool(GAP.Globals.IsSubgroup(L, H))
 
                 L_properly_contained_in_K =
-                    l != j && GAP.Globals.IsSubgroup(K, L)
+                    l != j && Bool(GAP.Globals.IsSubgroup(K, L))
 
                 H_properly_contained_in_L && L_properly_contained_in_K
             end
 
             has_intermediate || push!(covers, (i, j))
+        end
+
+        paths = Dict{Tuple{SubgroupIndex,SubgroupIndex},Vector{Int}}()
+
+        for i in eachindex(subgroups)
+            push!(paths,
+                (i, i) => Int[]
+            )
+        end
+
+        changed = true
+        while changed
+            changed = false
+            for (cover_index, (i, j)) in enumerate(covers)
+                for ((source, target), path) in paths
+                    if target == i
+                        new_path = vcat(path, cover_index)
+                        if !haskey(paths, (source, j)) || length(new_path) < length(paths[(source, j)])
+                            paths[(source, j)] = new_path
+                            changed = true
+                        end
+                    end
+                end
+            end
         end
 
         # Get list of generators
@@ -100,12 +126,11 @@ struct MackeyContext
                 Vector{DoubleCosetFormulaTerm},
             }()
 
-        for h in eachindex(subgroups)
+        for (h, H) in enumerate(subgroups)
             covered_subgroups =
                 SubgroupIndex[j for (j, upper) in covers if upper == h]
             isempty(covered_subgroups) && continue
 
-            H = subgroups[h]
             for j in covered_subgroups, k in covered_subgroups
                 J = subgroups[j]
                 K = subgroups[k]
@@ -128,6 +153,7 @@ struct MackeyContext
             G,
             subgroups,
             covers,
+            paths,
             generators,
             left_conj_matx,
             right_conj_matx,
@@ -206,13 +232,11 @@ function generator_word(group::Group, element::GroupElement)::GeneratorWord
 end
 
 function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
-    findfirst(K -> K == H, subgroups)
-    # matches = findall(K -> K == H, subgroups)
+    index = findfirst(K -> K == H, subgroups)
+    index === nothing &&
+        throw(ArgumentError("Subgroup is not represented in the subgroup list"))
 
-    # length(matches) == 1 ||
-    #     throw(ArgumentError("Subgroup is not uniquely represented in the subgroup list"))
-
-    # return only(matches)
+    return index
 end
 
 function subgroup_index(ctx::MackeyContext, H::Group)
