@@ -184,11 +184,14 @@ end
 
 
 """
-    restriction(M,H,K)
+    restriction(M,i,j)
 
-todo
+If ``H`` is the `i`th subgroup and ``K`` is the `j`th subgroup, this returns the restriction map ``M(K) \\to M(H)``.
 """
 function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
+    # Make sure H<K first
+    is_subgroup(mf.context,H_index,K_index) || throw(ArgumentError("There must exist a path from subgroup 1 to subgroup 2 in order to restrict."))
+
     path_indices = mf.context.paths[(H_index, K_index)]
     # Start with identity on M(H)
     result = identity_isomorphism(value(mf, H_index))
@@ -207,6 +210,7 @@ end
 todo
 """
 function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
+    is_subgroup(mf.context,H_index,K_index) || throw(ArgumentError("There must exist a path from subgroup 1 to subgroup 2 in order to transfer."))
     path_indices = mf.context.paths[(H_index, K_index)]
 
     result = identity_isomorphism(value(mf, H_index))
@@ -218,7 +222,11 @@ function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIn
     return result
 end
 
-# IN PROGRESS
+"""
+    conjugation(M,n,g)
+
+If ``H`` denotes the ``n``th subgroup for `G = M.group`, and ``g\\in G`` is a group element, this method returns the conjugation map ``M(H) \\to M(gHg^{-1})`` in the Mackey functor.
+"""
 function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::Generic.ModuleIsomorphism
     G = mf.context.group
     result = identity_isomorphism(value(mf, H_idx))
