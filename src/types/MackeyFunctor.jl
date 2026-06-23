@@ -80,6 +80,40 @@ function identity_isomorphism(M::AbstractAlgebra.FPModule)
 end
 
 function is_identity_module_homomorphism(phi::Generic.ModuleIsomorphism)
-    return domain(phi) === codomain(phi) && phi == identity_isomorphism(codomain(phi))
+    return domain(phi) === codomain(phi) && all(phi(x) == identity_isomorphism(domain(phi))(x) for x in gens(domain(phi)))
 end
 
+function same_module_map(f, g)
+    domain(f) === domain(g) || return false
+    codomain(f) === codomain(g) || return false
+    return all(x -> f(x) == g(x), gens(domain(f)))
+end
+
+# IN PROGRESS
+function conjugation(mf::MackeyFunctor, H_idx :: SubgroupIndex, g :: GroupElement)::Generic.ModuleIsomorphism
+    G = mf.context.group
+    H = mf.context.subgroups[H_idx]
+    result = identity_isomorphism(value(mf, H_idx))
+    target_of_result = H_idx
+    word = generator_word(G, g)
+
+
+    for (g,n) in reverse(word)
+        if n>0
+            for j in 1:n
+                result = mf.generator_conjugations[g,target_of_result] * result
+
+                target_of_result = mf.context.generatorLeftConjugationMatrix[g,target_of_result]
+            end
+
+        else
+            for j in 1::abs(n)
+                target_of_result = mf.context.generatorRightConjugationMatrix[g,target_of_result]
+                                
+                result = inv(mf.generator_conjugations[g,target_of_result]) * result
+            end
+
+        end
+        result
+    end
+end
