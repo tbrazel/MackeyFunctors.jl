@@ -18,6 +18,7 @@ function _generator_word_from_extrep(extrep)::GeneratorWord
     ]
 end
 
+
 function generator_word(group::Group, element::GroupElement)::GeneratorWord
     return _generator_word_from_extrep(
         GAP.Globals.ExtRepOfObj(GAP.Globals.Factorization(group, element)),
@@ -31,7 +32,7 @@ end
 Return GAP's relators for a finite presentation of `group` on `generators`.
 
 Each relator is returned as a `GeneratorWord`, with the same `(generator_index,
-exponent)` convention used by [`generator_word`](@ref).
+exponent)` convention.
 """
 function generator_relations(group::Group, generators::AbstractVector{<:GroupElement})::Vector{GeneratorWord}
     GAP.Globals.IsGroup(group) ||
