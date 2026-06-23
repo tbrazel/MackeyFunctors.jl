@@ -1,9 +1,8 @@
-using MackeyContext
 using AbstractAlgebra
 
 struct MackeyFunctor
     context::MackeyContext
-    values::Vector{FPModule}
+    values::Vector{AbstractAlgebra.FPModule}
     cover_restrictions::Vector{Generic.ModuleHomomorphism}
     cover_transfers::Vector{Generic.ModuleHomomorphism}
     # generator_conjugations[i,j] is the conjugation map c_{g_i} : M(H_j) ->  M(g_i H_j g_i^{-1})
@@ -11,7 +10,7 @@ struct MackeyFunctor
 
     function MackeyFunctor(
         context::MackeyContext,
-        values::Vector{FpModule},
+        values::Vector{AbstractAlgebra.FPModule},
         cover_restrictions::Vector{Generic.ModuleHomomorphism},
         cover_transfers::Vector{Generic.ModuleHomomorphism},
         generator_conjugations::Matrix{Generic.ModuleIsomorphism},
@@ -50,8 +49,8 @@ struct MackeyFunctor
         end
         # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
         for i in eachindex(subgroups)
-            for relation_word in generator_relations(G,generators)
-                conj_by_relation_word = conjugation(result,i,relation_word)
+            for relation_word in generator_relations(G, generators)
+                conj_by_relation_word = conjugation(result, i, relation_word)
 
                 is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
             end
