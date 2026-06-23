@@ -225,3 +225,19 @@ end
 function subgroup_index(ctx::MackeyContext, H::Group)
     subgroup_index(ctx.subgroups, H)
 end
+
+function conjugate_subgroup_by_word(context::MackeyContext,i::SubgroupIndex,w::GeneratorWord)::SubgroupIndex
+    result = i
+    for (g,n) in reverse(w)
+        if n>0
+            for j in 1:n
+                result = context.generatorLeftConjugationMatrix[g,result]
+            end
+        else
+            for j in 1:abs(n)
+                result = context.generatorRightConjugationMatrix[g,result]
+            end
+        end
+    end
+    return result
+end

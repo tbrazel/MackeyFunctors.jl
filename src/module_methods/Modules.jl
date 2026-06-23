@@ -4,6 +4,10 @@ function identity_isomorphism(M::AbstractAlgebra.FPModule)::Generic.ModuleIsomor
     ModuleIsomorphism(M, M, identity_matrix(base_ring(M), ngens(M)))
 end
 
+function zero_homomorphism(M::AbstractAlgebra.FPModule,N::AbstractAlgebra.FPModule)
+    ModuleHomomorphism(M,N,zero_matrix(base_ring(M), ngens(N),ngens(M)))
+end
+
 function is_zero_module_homomorphism(phi::Generic.ModuleHomomorphism)
     return all(x -> phi(x) == 0, gens(domain(phi)))
 end
