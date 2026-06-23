@@ -69,6 +69,8 @@ struct MackeyContext
             )
         end
 
+        # TODO Improve -- currently each pass through the while loop loops over ALL paths
+        # again, even the ones we just extended in all possible ways.
         changed = true
         while changed
             changed = false
