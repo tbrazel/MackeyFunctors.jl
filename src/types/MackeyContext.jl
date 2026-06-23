@@ -1,5 +1,5 @@
-const SubgroupIndex = Int
-const GeneratorIndex = Int
+const SubgroupIndex::DataType = Int
+const GeneratorIndex::DataType = Int
 const Group = GapObj
 const GroupElement = GapObj
 const GeneratorWord = Vector{Tuple{GeneratorIndex,Int}}
@@ -22,7 +22,6 @@ struct MackeyContext
     G::Group
     subgroups::Vector{Group}
     covers::Vector{Tuple{SubgroupIndex,SubgroupIndex}}
-    epimorphismFromFreeGroup::GapObj
     generators::Vector{GroupElement}
     generatorLeftConjugationMatrix::Matrix{SubgroupIndex}
     generatorRightConjugationMatrix::Matrix{SubgroupIndex}
@@ -65,12 +64,12 @@ struct MackeyContext
 
             has_intermediate || push!(covers, (i, j))
         end
-        
+
         # Get list of generators
         generators = Vector{GroupElement}(GAP.Globals.GeneratorsOfGroup(G))
 
         # Get epimorphism from free group
-        epi_from_free_group = GAP.Globals.EpimorphismFromFreeGroup(G)
+        # epi_from_free_group = GAP.Globals.EpimorphismFromFreeGroup(G)
 
         # Build conjugation matrices
         num_rows_conj_matrix = length(subgroups)
@@ -122,8 +121,8 @@ struct MackeyContext
                         x = entry[1]
                         intersection = GAP.Globals.Intersection(J^x, K)
                         (
-                            generator_word(epi_from_free_group, x),
-                            subgroup_index(subgroups, intersection, "J^x intersect K"),
+                            generator_word(G, x),
+                            subgroup_index(subgroups, intersection),
                         )
                     end
                     for entry in GAP.Globals.DoubleCosetRepsAndSizes(H, J, K)
@@ -135,7 +134,7 @@ struct MackeyContext
             G,
             subgroups,
             covers,
-            epi_from_free_group,
+            # epi_from_free_group,
             generators,
             left_conj_matx,
             right_conj_matx,
@@ -161,9 +160,9 @@ function double_coset_representative_data(
     h::SubgroupIndex,
     k::SubgroupIndex,
 )
-    j in eachindex(ctx.subgroups) || throw(ArgumentError("j is not a subgroup index"))
-    h in eachindex(ctx.subgroups) || throw(ArgumentError("h is not a subgroup index"))
-    k in eachindex(ctx.subgroups) || throw(ArgumentError("k is not a subgroup index"))
+    checkbounds(ctx.subgroups, j)
+    checkbounds(ctx.subgroups, h)
+    checkbounds(ctx.subgroups, k)
 
     key = (j, h, k)
     haskey(ctx.doubleCosetRepresentatives, key) ||
@@ -182,9 +181,9 @@ function double_coset_representative_data(
 )
     return double_coset_representative_data(
         ctx,
-        subgroup_index(ctx, J, "J"),
-        subgroup_index(ctx, H, "H"),
-        subgroup_index(ctx, K, "K"),
+        subgroup_index(ctx, J),
+        subgroup_index(ctx, H),
+        subgroup_index(ctx, K),
     )
 end
 
@@ -198,36 +197,31 @@ function double_coset_representative_words(ctx::MackeyContext, args...)
     return first.(double_coset_representative_data(ctx, args...))
 end
 
-function generator_word(free_group_map, element::GroupElement)
-    word = GAP.Globals.PreImagesRepresentative(free_group_map, element)
-    external_representation = Vector{Int}(GAP.Globals.ExtRepOfObj(word))
+function generator_word(group::Group, element::GroupElement)::GeneratorWord
+    word = Vector{Int}(GAP.Globals.ExtRepOfObj(GAP.Globals.Factorization(group, element)))
 
-    iseven(length(external_representation)) ||
+    iseven(length(word)) ||
         throw(ArgumentError("GAP returned an invalid free-group word representation"))
 
-    result = GeneratorWord()
-    for i in 1:2:length(external_representation)
-        push!(
-            result,
-            (
-                GeneratorIndex(external_representation[i]),
-                Int(external_representation[i + 1]),
-            ),
+    return [
+        (
+            word[i],
+            word[i+1],
         )
-    end
-
-    return result
+        for i in 1:2:length(word)
+    ]
 end
 
-function subgroup_index(subgroups::Vector{Group}, H::Group, name::AbstractString)
-    matches = findall(K -> K == H, subgroups)
+function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
+    return findfirst(K -> K == H, subgroups)
+    # matches = findall(K -> K == H, subgroups)
 
-    length(matches) == 1 ||
-        throw(ArgumentError("$name is not uniquely represented in the subgroup list"))
+    # length(matches) == 1 ||
+    #     throw(ArgumentError("Subgroup is not uniquely represented in the subgroup list"))
 
-    return SubgroupIndex(only(matches))
+    # return only(matches)
 end
 
-function subgroup_index(ctx::MackeyContext, H::Group, name::AbstractString)
-    return subgroup_index(ctx.subgroups, H, name)
+function subgroup_index(ctx::MackeyContext, H::Group)
+    return subgroup_index(ctx.subgroups, H)
 end
