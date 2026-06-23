@@ -77,18 +77,6 @@ function identity_isomorphism(M::AbstractAlgebra.FPModule)::Generic.ModuleIsomor
     ModuleIsomorphism(M, M, identity_matrix(base_ring(M), ngens(M)))
 end
 
-function is_zero_module_homomorphism(phi::Generic.ModuleHomomorphism)
-    return all(x -> phi(x) == 0, gens(domain(phi)))
-end
-
-function is_equal_module_homomorphism(phi::Generic.ModuleHomomorphism, psi::Generic.ModuleHomomorphism)
-    return domain(phi) === domain(psi) && codomain(phi) === codomain(psi) && is_zero_module_homomorphism(phi - psi)
-end
-
-function is_identity_module_homomorphism(phi::Generic.ModuleIsomorphism)
-    return domain(phi) === codomain(phi) && all(phi(x) == identity_isomorphism(domain(phi))(x) for x in gens(domain(phi)))
-end
-
 function same_module_map(f, g)
     domain(f) === domain(g) || return false
     codomain(f) === codomain(g) || return false
@@ -98,7 +86,6 @@ end
 # IN PROGRESS
 function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::Generic.ModuleIsomorphism
     G = mf.context.group
-    H = mf.context.subgroups[H_idx]
     result = identity_isomorphism(value(mf, H_idx))
     target_of_result = H_idx
     word = generator_word(G, g)
@@ -118,7 +105,6 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::
 
                 result = inv(mf.generator_conjugations[g, target_of_result]) * result
             end
-
         end
     end
     result
