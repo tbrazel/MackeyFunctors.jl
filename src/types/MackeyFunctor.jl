@@ -98,8 +98,8 @@ struct MackeyFunctor
                 # J = subgroups[j]
                 # H = subgroups[h]
                 # K = subgroups[k]
-                
-                dc_reps = doubleCosetRepresentatives[(j,h,k)]
+
+                dc_reps = doubleCosetRepresentatives[(j, h, k)]
 
                 dc_lhs = cover_restrictions[n1]*cover_transfers[n2]
 
@@ -128,8 +128,8 @@ struct MackeyFunctor
 
 
         # Initialize the dictionaries with restriction and transfer along covers
-        for (n,cov) in enumerate(context.covers)
-            dictionary_of_paths[cov] = (cover_transfers[n],cover_restrictions[n])
+        for (n, cov) in enumerate(context.covers)
+            dictionary_of_paths[cov] = (cover_transfers[n], cover_restrictions[n])
         end
 
         # Iterate and see 
@@ -137,37 +137,37 @@ struct MackeyFunctor
         while changed
             changed = false
 
-            for (n,(i,j)) in enumerate(context.covers)
-                for ((H_index,K_index),(tr,res)) in dictionary_of_paths
+            for (n, (i, j)) in enumerate(context.covers)
+                for ((H_index, K_index), (tr, res)) in dictionary_of_paths
                     K_index == i || continue
 
                     # So path goes H<K = H[i] < H[j]
                     # tr goes M(H) -> M(K)
                     # res goes M(K) -> M(H)
 
-                    new_key = (H_index,j)
+                    new_key = (H_index, j)
 
                     candidate_tr = cover_transfers[n]*tr
                     candidate_res = res*cover_restrictions[n]
                     candidate_value = (
-                        candidate_tr,candidate_res
+                        candidate_tr, candidate_res
                     )
 
-                    if haskey(dictionary_of_paths,new_key)
-                        (existing_tr,existing_res) = dictionary_of_paths[new_key]
+                    if haskey(dictionary_of_paths, new_key)
+                        (existing_tr, existing_res) = dictionary_of_paths[new_key]
                         is_equal_module_homomorphism(
-                            existing_tr,candidate_tr
+                            existing_tr, candidate_tr
                         ) || throw(ArgumentError("Transfers do not agree along all possible subgroup paths."))
 
                         is_equal_module_homomorphism(
-                            existing_res,candidate_res
+                            existing_res, candidate_res
                         ) || throw(ArgumentError("Restrictions do not agree along all possible subgroup paths."))
-                    
+
                     else
-                       push!(dictionary_of_paths,new_key=>candidate_value) 
-                       changed = true
+                        push!(dictionary_of_paths, new_key=>candidate_value)
+                        changed = true
                     end
-                
+
                 end
             end
 
@@ -249,7 +249,6 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, word::GeneratorWor
     G = mf.context.group
     result = identity_isomorphism(value(mf, H_idx))
     target_of_result = H_idx
-    # TODO come back and redo this with conjugate_subgroup_by_word method ?
     for (g, n) in reverse(word)
         if n>0
             for j in 1:n
