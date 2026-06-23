@@ -90,8 +90,8 @@ struct MackeyContext
         # epi_from_free_group = GAP.Globals.EpimorphismFromFreeGroup(G)
 
         # Build conjugation matrices
-        num_rows_conj_matrix = length(subgroups)
-        num_cols_conj_matrix = length(generators)
+        num_rows_conj_matrix = length(generators)
+        num_cols_conj_matrix = length(subgroups)
         left_conj_matx =
             Matrix{SubgroupIndex}(undef, num_rows_conj_matrix, num_cols_conj_matrix)
         right_conj_matx =
@@ -107,11 +107,11 @@ struct MackeyContext
 
                 for k in eachindex(subgroups)
                     if subgroups[k] == left_conjugated
-                        left_conj_matx[i, j] = k
+                        left_conj_matx[j, i] = k
                     end
 
                     if subgroups[k] == right_conjugated
-                        right_conj_matx[i, j] = k
+                        right_conj_matx[j, i] = k
                     end
                 end
             end
@@ -226,16 +226,16 @@ function subgroup_index(ctx::MackeyContext, H::Group)
     subgroup_index(ctx.subgroups, H)
 end
 
-function conjugate_subgroup_by_word(context::MackeyContext,i::SubgroupIndex,w::GeneratorWord)::SubgroupIndex
+function conjugate_subgroup_by_word(context::MackeyContext, i::SubgroupIndex, w::GeneratorWord)::SubgroupIndex
     result = i
-    for (g,n) in reverse(w)
+    for (g, n) in reverse(w)
         if n>0
             for j in 1:n
-                result = context.generatorLeftConjugationMatrix[g,result]
+                result = context.generatorLeftConjugationMatrix[g, result]
             end
         else
             for j in 1:abs(n)
-                result = context.generatorRightConjugationMatrix[g,result]
+                result = context.generatorRightConjugationMatrix[g, result]
             end
         end
     end
