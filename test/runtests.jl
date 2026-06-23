@@ -9,13 +9,17 @@ using MackeyFunctors
 
     @test length(context.covers) == 1
 
-    Z = free_module(ZZ,1)
-    values = [Z]
-    restrictions = [ModuleHomomorphism(Z,Z,identity_matrix(ZZ,1))]
-    transfers = [ModuleHomomorphism(Z,Z,matrix(ZZ,[[2]]))]
-    conjugations = [ModuleHomomorphism(Z,Z,identity_matrix(ZZ,1))]
+    M = free_module(ZZ,1)
+    values = [M,M]
 
-    MackeyFunctor(context, values, restrictions, transfers, conjugations)
+    id_hom = ModuleHomomorphism(M,M,identity_matrix(ZZ,1))
+    restrictions = [id_hom]
+    transfers = [id_hom + id_hom]
+
+    id_iso = ModuleIsomorphism(M,M,identity_matrix(ZZ,1))
+    conjugations = [id_iso for i in context.generators, j in context.subgroups]
+
+    MackeyFunctor(context, values, restrictions, transfers, conjugations, false)
 end
 
 @testset "MackeyContext" begin
