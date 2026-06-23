@@ -17,11 +17,11 @@ include("group_theory/HelperFunctions.jl")
 include("types/MackeyContext.jl")
 export MackeyContext, double_coset_representative_data, double_coset_representative_words
 
+include("types/MackeyFunctor.jl")
+export MackeyFunctor
+
 include("group_theory/SubgroupLattice.jl")
 export all_supergroups_from_lattice
-
-include("LatticeMackeyFunctorDataType.jl")
-export MackeyFunctor
 
 include("visualizers/MackeyFunctorVisualizerData.jl")
 export visualizer_data, visualizer_json
