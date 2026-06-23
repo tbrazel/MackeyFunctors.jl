@@ -120,6 +120,6 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::
             end
 
         end
-        result
     end
+    result
 end
