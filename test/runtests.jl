@@ -3,24 +3,27 @@ using GAP
 using AbstractAlgebra
 using MackeyFunctors
 
-@testset "Constant Z for cyclic 2-groups" begin
+@testset "Constant Mackey functors for cyclic 2-groups" begin
     for k in 1:5
         C2k = GAP.Globals.CyclicGroup(2^k)
         context = MackeyContext(C2k)
 
+        @test length(context.subgroups) == k+1
         @test length(context.covers) == k
 
-        M = free_module(ZZ, 1)
-        values = [M for i in context.subgroups]
+        for R in [ZZ, QQ, GF(2), GF(67)]
+            M = free_module(R, 1)
+            values = [M for i in context.subgroups]
 
-        id_hom = ModuleHomomorphism(M, M, identity_matrix(ZZ, 1))
-        restrictions = [id_hom for i in context.covers]
-        transfers = [ZZ(2) * id_hom for i in context.covers]
+            id_hom = ModuleHomomorphism(M, M, identity_matrix(R, 1))
+            restrictions = [id_hom for i in context.covers]
+            transfers = [R(2) * id_hom for i in context.covers]
 
-        id_iso = ModuleIsomorphism(M, M, identity_matrix(ZZ, 1))
-        conjugations = [id_iso for i in context.generators, j in context.subgroups]
+            id_iso = ModuleIsomorphism(M, M, identity_matrix(R, 1))
+            conjugations = [id_iso for i in context.generators, j in context.subgroups]
 
-        MackeyFunctor(context, values, restrictions, transfers, conjugations)
+            MackeyFunctor(context, values, restrictions, transfers, conjugations)
+        end
     end
 end
 
