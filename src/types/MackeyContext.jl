@@ -102,8 +102,8 @@ struct MackeyContext
                 H = subgroups[i]
                 g = generators[j]
 
-                left_conjugated = H^g
-                right_conjugated = H^(g^-1)
+                left_conjugated = H^(g^-1)
+                right_conjugated = H^(g)
 
                 for k in eachindex(subgroups)
                     if subgroups[k] == left_conjugated
