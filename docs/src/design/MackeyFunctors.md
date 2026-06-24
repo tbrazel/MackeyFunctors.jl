@@ -1,1 +1,0 @@
-# Mackey functors
