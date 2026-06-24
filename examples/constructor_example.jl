@@ -75,4 +75,4 @@ struct makeZeroMackeyFunctor
 
         res = hom(ZeroFixed, ZeroUnderlying, matrix(0))
         tr = hom(ZeroUnderlying, ZeroFixed, matrix(0))
-end 
+end

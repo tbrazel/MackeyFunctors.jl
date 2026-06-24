@@ -22,6 +22,9 @@ include("types/MackeyFunctor.jl")
 export MackeyFunctor,
     coefficient_ring
 
+include("Shift.jl")
+export shift
+
 include("Constructors.jl")
 export constant_mackey_functor, burnside_mackey_functor
 
