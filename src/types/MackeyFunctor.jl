@@ -41,6 +41,8 @@ struct MackeyFunctor
             }(),
         )
 
+        # TODO: sanity check that all the values are modules over the same basering
+
         # If the user doesn't want verification, we just return the result. Default setting is to verify
         if !verify
             return result
@@ -335,4 +337,13 @@ function conjugation(mf::MackeyFunctor, word::GeneratorWord, H_idx::SubgroupInde
     end
     mf.conjugation_cache[key] = result
     result
+end
+
+"""
+    coefficient_ring(M)
+
+Returns the underlying coefficient ring of the Mackey functor `M`.
+"""
+function coefficient_ring(mf::MackeyFunctor)
+    return base_ring(mf.values[1])
 end

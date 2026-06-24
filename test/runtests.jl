@@ -23,7 +23,9 @@ using MackeyFunctors
             #     conjugations = [id_iso for i in context.generators, j in context.subgroups]
 
             #     @test MackeyFunctor(context, values, restrictions, transfers, conjugations) isa MackeyFunctor
-            @test constant_mackey_functor(context, M) isa MackeyFunctor
+            cmf = constant_mackey_functor(context, M)
+            @test cmf isa MackeyFunctor
+            @test coefficient_ring(cmf) == R
         end
     end
 end
