@@ -1,3 +1,5 @@
 # Constructors
 
-tbd
+```@docs
+constant_mackey_functor
+```
