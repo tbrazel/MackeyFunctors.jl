@@ -227,12 +227,7 @@ function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
 end
 
 function is_subgroup(ctx::MackeyContext, i::SubgroupIndex, j::SubgroupIndex)
-    # TODO: not needed rn because ctx.paths has reflexive paths, but we might revise this later?
-    if i==j
-        return true
-    else
-        return haskey(ctx.paths, (i, j))
-    end
+    haskey(ctx.paths, (i, j))
 end
 
 function subgroup_index(ctx::MackeyContext, H::Group)
