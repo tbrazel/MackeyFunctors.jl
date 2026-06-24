@@ -1,5 +1,4 @@
-# using AbstractAlgebra
-
+const ImmutableGeneratorWord = Tuple{Vararg{Tuple{GeneratorIndex,Int}}}
 
 """
     MackeyFunctor(G)
@@ -13,6 +12,12 @@ struct MackeyFunctor
     cover_transfers::Vector{Generic.ModuleHomomorphism}
     # generator_conjugations[i ,j] is the conjugation map c_{g_i} : M(H_j) ->  M(g_i H_j g_i^{-1})
     generator_conjugations::Matrix{Generic.ModuleIsomorphism}
+    restriction_cache::Dict{Tuple{SubgroupIndex,SubgroupIndex},Generic.ModuleHomomorphism}
+    transfer_cache::Dict{Tuple{SubgroupIndex,SubgroupIndex},Generic.ModuleHomomorphism}
+    conjugation_cache::Dict{
+        Tuple{SubgroupIndex,ImmutableGeneratorWord},
+        Generic.ModuleIsomorphism,
+    }
 
     function MackeyFunctor(
         context::MackeyContext,
@@ -28,6 +33,12 @@ struct MackeyFunctor
             cover_restrictions,
             cover_transfers,
             generator_conjugations,
+            Dict{Tuple{SubgroupIndex,SubgroupIndex},Generic.ModuleHomomorphism}(),
+            Dict{Tuple{SubgroupIndex,SubgroupIndex},Generic.ModuleHomomorphism}(),
+            Dict{
+                Tuple{SubgroupIndex,ImmutableGeneratorWord},
+                Generic.ModuleIsomorphism,
+            }(),
         )
 
         # If the user doesn't want verification, ok then I guess
@@ -49,14 +60,14 @@ struct MackeyFunctor
         # 1. For H <= G and h \in H, conjugation by h at level G/H should be identity
         for (i, H) in enumerate(subgroups)
             for h in GAP.Globals.GeneratorsOfGroup(H)
-                conj_h_H = conjugation(result, i, h)
+                conj_h_H = conjugation(result, h, i)
                 is_identity_module_homomorphism(conj_h_H) || throw(ArgumentError("Conjugation by $h at level $H is not the identity"))
             end
         end
         # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
         for i in eachindex(subgroups)
             for relation_word in generator_relations(G, generators)
-                conj_by_relation_word = conjugation(result, i, relation_word)
+                conj_by_relation_word = conjugation(result, relation_word, i)
 
                 is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
             end
@@ -110,7 +121,7 @@ struct MackeyFunctor
 
                     dc_restriction = restriction(result, JxcapK_index, k)
                     dc_transfer = transfer(result, JcapxK_index, j)
-                    dc_conjugation = conjugation(result, JxcapK_index, w)
+                    dc_conjugation = conjugation(result, w, JxcapK_index)
 
                     dc_rhs += dc_restriction * dc_conjugation * dc_transfer
                 end
@@ -171,6 +182,11 @@ struct MackeyFunctor
             end
         end
 
+        for (key, (tr, res)) in dictionary_of_paths
+            result.transfer_cache[key] = tr
+            result.restriction_cache[key] = res
+        end
+
         return result
     end
 end
@@ -187,6 +203,11 @@ end
 If ``H`` is the `i`th subgroup and ``K`` is the `j`th subgroup, this returns the restriction map ``M(K) \\to M(H)``.
 """
 function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
+    key = (H_index, K_index)
+    if haskey(mf.restriction_cache, key)
+        return mf.restriction_cache[key]
+    end
+
     # Make sure H<K first
     is_subgroup(mf.context, H_index, K_index) || throw(ArgumentError("There must exist a path from subgroup 1 to subgroup 2 in order to restrict."))
 
@@ -199,6 +220,7 @@ function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::Subgrou
         result = mf.cover_restrictions[idx] * result
     end
 
+    mf.restriction_cache[key] = result
     return result
 end
 
@@ -208,6 +230,11 @@ end
 todo
 """
 function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
+    key = (H_index, K_index)
+    if haskey(mf.transfer_cache, key)
+        return mf.transfer_cache[key]
+    end
+
     is_subgroup(mf.context, H_index, K_index) || throw(ArgumentError("There must exist a path from subgroup 1 to subgroup 2 in order to transfer."))
     path_indices = mf.context.paths[(H_index, K_index)]
 
@@ -217,19 +244,25 @@ function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIn
         result = result * mf.cover_transfers[idx]
     end
 
+    mf.transfer_cache[key] = result
     return result
 end
 
 """
-    conjugation(M,n,g)
+    conjugation(M,g,n)
 
 If ``H`` denotes the ``n``th subgroup for `G = M.group`, and ``g\\in G`` is a group element, this method returns the conjugation map ``M(H) \\to M(gHg^{-1})`` in the Mackey functor.
 """
-function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, g::GroupElement)::Generic.ModuleIsomorphism
-    conjugation(mf, H_idx, generator_word(mf.context.group, g))
+function conjugation(mf::MackeyFunctor, g::GroupElement, H_idx::SubgroupIndex)::Generic.ModuleIsomorphism
+    conjugation(mf, generator_word(mf.context.group, g), H_idx)
 end
 
-function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, word::GeneratorWord)::Generic.ModuleIsomorphism
+function conjugation(mf::MackeyFunctor, word::GeneratorWord, H_idx::SubgroupIndex)::Generic.ModuleIsomorphism
+    key = (H_idx, Tuple(word))
+    if haskey(mf.conjugation_cache, key)
+        return mf.conjugation_cache[key]
+    end
+
     G = mf.context.group
     result = identity_isomorphism(value(mf, H_idx))
     target_of_result = H_idx
@@ -249,5 +282,6 @@ function conjugation(mf::MackeyFunctor, H_idx::SubgroupIndex, word::GeneratorWor
             end
         end
     end
+    mf.conjugation_cache[key] = result
     result
 end

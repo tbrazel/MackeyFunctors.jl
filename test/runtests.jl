@@ -90,7 +90,7 @@ end
     )
 
     conjugation_word = [(1, 1), (2, 1)]
-    conj = MackeyFunctors.conjugation(s3_mackey_functor, 1, conjugation_word)
+    conj = MackeyFunctors.conjugation(s3_mackey_functor, conjugation_word, 1)
     @test all(gens(M)) do x
         conj(x) == A_iso(B_iso(x))
     end
