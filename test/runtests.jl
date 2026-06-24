@@ -28,6 +28,31 @@ using MackeyFunctors
     end
 end
 
+@testset "Burnside Mackey functors for Cp" begin
+    for p in [2, 3, 5, 7, 11, 67] 
+        Cp = GAP.Globals.CyclicGroup(p)
+        context = MackeyContext(Cp)
+
+        @test length(context.subgroups) == 2
+        @test length(context.covers) == 1
+        
+        for R in [ZZ, QQ, GF(p), GF(1000000007)]
+            Ae = free_module(R, 1)
+            ACp = free_module(R, 2) 
+            val = [Ae, ACp]
+
+            res = [hom(ACp, Ae, R[1; p])]
+            tr = [hom(Ae, ACp, R[0 1;])]
+
+            conj_e = ModuleIsomorphism(Ae, Ae, R[1;])
+            conj_Cp = ModuleIsomorphism(ACp, ACp, identity_matrix(R,2))
+            conj = Generic.ModuleIsomorphism[conj_e conj_Cp;]
+
+            @test MackeyFunctor(context, val, res, tr, conj) isa MackeyFunctor
+        end
+    end
+end
+
 @testset "Module map composition order" begin
     M = free_module(ZZ, 2)
     A_hom = ModuleHomomorphism(M, M, matrix(ZZ, [1 1; 0 1]))
