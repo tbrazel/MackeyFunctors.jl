@@ -34,10 +34,7 @@ Return GAP's relators for a finite presentation of `group` on `generators`.
 Each relator is returned as a `GeneratorWord`, with the same `(generator_index,
 exponent)` convention.
 """
-function generator_relations(group::Group, generators::AbstractVector{<:GroupElement})::Vector{GeneratorWord}
-    GAP.Globals.IsGroup(group) ||
-        throw(ArgumentError("Input group must be a GAP group"))
-
+function generator_relations(group::Group, generators::Vector{GroupElement})::Vector{GeneratorWord}
     fp_isomorphism =
         GAP.Globals.IsomorphismFpGroupByGenerators(group, GapObj(generators; recursive=true))
     fp_group = GAP.Globals.Image(fp_isomorphism)
