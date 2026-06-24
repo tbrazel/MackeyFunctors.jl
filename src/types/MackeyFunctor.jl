@@ -172,10 +172,29 @@ struct MackeyFunctor
 
         # 5. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
 
-        # Strategy: we first build an empty dictionary whose keys (i,j) will correspond to subgroup inclusions H[i] < H[j], and whose values will be a transfer tr: M(H[i]) -> M(H[j]) and a restriction res: M(H[j]) -> M(H[i])
+        # Strategy: we build the restrictions and transfers along arbitrary subgroup
+        # inclusions by induction on chains of covers in the subgroup lattice.
+        #
+        # The dictionary has one entry for each inclusion H <= K whose composite maps
+        # we have already constructed. Its value is a pair (tr, res), where
+        # tr: M(H) -> M(K) and res: M(K) -> M(H).
+        #
+        # We begin with the cover inclusions, since those maps are part of the input.
+        # Then we keep a queue of the inclusions whose composites have just become
+        # known. When an inclusion H <= K is taken from the queue, we extend it only
+        # across covers K < L. This gives a candidate composite for H <= L.
+        #
+        # If H <= L has not appeared before, we record this candidate and add H <= L
+        # to the queue, so it can itself be extended later. If H <= L has appeared
+        # before, then we have found a second chain of covers from H to L, and we
+        # check that the two resulting transfer maps agree and that the two resulting
+        # restriction maps agree.
+        #
+        # Since the subgroup lattice is finite, this process eventually considers
+        # every composite of cover maps. Thus the input cover maps determine
+        # well-defined restrictions and transfers along all subgroup inclusions
+        # exactly when every repeated inclusion gives the same maps.
         dictionary_of_paths = Dict{Tuple{SubgroupIndex,SubgroupIndex},Tuple{Generic.ModuleHomomorphism,Generic.ModuleHomomorphism}}()
-
-        # Strategy: we will eventually populate this dictionary with a transfer along every possible subgroup inclusion. The idea is to iterate over the dictionary, iterate over covers, and try to compose a res/tr in the dictionary with a res/tr in the covers. If that value already exists in the dictionary, we check against it to see if they are equal. If not, we add it to the dictionary. Eventually (one needs to prove this), every possible valid path will be checked, and we can safely say that the cover restrictions and transfers give well-defined restrictions/transfers for the entire Mackey functor!
 
         # We first initialize the dictionaries with restriction and transfer along covers
         for (n, cov) in enumerate(context.covers)
