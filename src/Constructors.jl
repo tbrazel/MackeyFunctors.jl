@@ -8,16 +8,16 @@ function constant_mackey_functor(context::MackeyContext, M::AbstractAlgebra.FPMo
     R = base_ring(M)
     id_hom = identity_homomorphism(M)
     id_iso = identity_isomorphism(M)
-    
+
     # Every value is M
     values = fill(M, length(context.subgroups))
-    
+
     # Every restriction is id_M
     restrictions = fill(id_hom, length(context.covers))
-    
+
     # A transfer M(H)->M(K) is multiplication by [K:H]
-    transfers = [R(subgroup_inclusion_index(context,cover_index))*id_hom for cover_index in context.covers]
-    
+    transfers = [R(subgroup_inclusion_index(context, cover_index))*id_hom for cover_index in context.covers]
+
     # Every conjugation is the identity
     conjugations = fill(id_iso, length(context.generators), length(context.subgroups))
     MackeyFunctor(context, values, restrictions, transfers, conjugations)
@@ -27,9 +27,9 @@ end
 
 This method can also be fed a context and a ring ``R``, and it will output the constant Mackey functor valued at ``R`` considered as a free rank one ``R``-module.
 """
-function constant_mackey_functor(context::MackeyContext,R::Ring)
-    M = free_module(R,1)
-    return constant_mackey_functor(context,M)
+function constant_mackey_functor(context::MackeyContext, R::Ring)
+    M = free_module(R, 1)
+    return constant_mackey_functor(context, M)
 end
 
 function burnside_transfer(R, M1, M2, cc1, cc2, H2)
@@ -79,7 +79,7 @@ function burnside_mackey_functor(mc::MackeyContext, R::Ring)
     cover_transfers = [burnside_transfer(R, values[i], values[j], conj_classes[i], conj_classes[j], mc.subgroups[j]) for (i, j) in mc.covers]
     cover_restrictions = [burnside_restriction(R, values[i], values[j], conj_classes[i], conj_classes[j], mc.subgroups[i], mc.subgroups[j]) for (i, j) in mc.covers]
     generator_conjugations = [burnside_conjugation(R, mc, conj_classes, gi, Hi, values[Hi])
-        for gi in eachindex(mc.generators), Hi in eachindex(mc.subgroups)]
+                              for gi in eachindex(mc.generators), Hi in eachindex(mc.subgroups)]
 
     MackeyFunctor(mc, values, cover_restrictions, cover_transfers, generator_conjugations)  # TODO: turn off argument checking
 end
