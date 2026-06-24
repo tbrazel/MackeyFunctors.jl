@@ -132,45 +132,43 @@ struct MackeyFunctor
             dictionary_of_paths[cov] = (cover_transfers[n], cover_restrictions[n])
         end
 
-        # Iterate and see 
-        changed = true
-        while changed
-            changed = false
+        outgoing_covers = [Tuple{Int,SubgroupIndex}[] for _ in eachindex(context.subgroups)]
+        for (n, (i, j)) in enumerate(context.covers)
+            push!(outgoing_covers[i], (n, j))
+        end
 
-            for (n, (i, j)) in enumerate(context.covers)
-                for ((H_index, K_index), (tr, res)) in dictionary_of_paths
-                    K_index == i || continue
+        queue = collect(keys(dictionary_of_paths))
+        queue_head = 1
+        while queue_head <= length(queue)
+            H_index, K_index = queue[queue_head]
+            queue_head += 1
 
-                    # So path goes H<K = H[i] < H[j]
-                    # tr goes M(H) -> M(K)
-                    # res goes M(K) -> M(H)
+            tr, res = dictionary_of_paths[(H_index, K_index)]
+            for (n, next_K_index) in outgoing_covers[K_index]
+                # Extend the path H < K by a cover K < next_K.
+                # tr goes M(H) -> M(K)
+                # res goes M(K) -> M(H)
 
-                    new_key = (H_index, j)
+                new_key = (H_index, next_K_index)
 
-                    candidate_tr = tr * cover_transfers[n]
-                    candidate_res = cover_restrictions[n] * res
-                    candidate_value = (
-                        candidate_tr, candidate_res
-                    )
+                candidate_tr = tr * cover_transfers[n]
+                candidate_res = cover_restrictions[n] * res
 
-                    if haskey(dictionary_of_paths, new_key)
-                        (existing_tr, existing_res) = dictionary_of_paths[new_key]
-                        map_eq(
-                            existing_tr, candidate_tr
-                        ) || throw(ArgumentError("Transfers do not agree along all possible subgroup paths."))
+                if haskey(dictionary_of_paths, new_key)
+                    existing_tr, existing_res = dictionary_of_paths[new_key]
+                    map_eq(
+                        existing_tr, candidate_tr
+                    ) || throw(ArgumentError("Transfers do not agree along all possible subgroup paths."))
 
-                        map_eq(
-                            existing_res, candidate_res
-                        ) || throw(ArgumentError("Restrictions do not agree along all possible subgroup paths."))
+                    map_eq(
+                        existing_res, candidate_res
+                    ) || throw(ArgumentError("Restrictions do not agree along all possible subgroup paths."))
 
-                    else
-                        push!(dictionary_of_paths, new_key=>candidate_value)
-                        changed = true
-                    end
-
+                else
+                    dictionary_of_paths[new_key] = (candidate_tr, candidate_res)
+                    push!(queue, new_key)
                 end
             end
-
         end
 
         return result

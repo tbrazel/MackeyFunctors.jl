@@ -65,20 +65,24 @@ struct MackeyContext
             )
         end
 
-        # TODO Improve -- currently each pass through the while loop loops over ALL paths
-        # again, even the ones we just extended in all possible ways.
-        changed = true
-        while changed
-            changed = false
-            for (cover_index, (i, j)) in enumerate(covers)
-                for ((source, target), path) in paths
-                    if target == i
-                        new_path = vcat(path, cover_index)
-                        if !haskey(paths, (source, j)) || length(new_path) < length(paths[(source, j)])
-                            paths[(source, j)] = new_path
-                            changed = true
-                        end
-                    end
+        outgoing_covers = [Tuple{Int,SubgroupIndex}[] for _ in eachindex(subgroups)]
+        for (cover_index, (i, j)) in enumerate(covers)
+            push!(outgoing_covers[i], (cover_index, j))
+        end
+
+        queue = collect(keys(paths))
+        queue_head = 1
+        while queue_head <= length(queue)
+            source, target = queue[queue_head]
+            queue_head += 1
+
+            path = paths[(source, target)]
+            for (cover_index, next_target) in outgoing_covers[target]
+                new_key = (source, next_target)
+                new_path_length = length(path) + 1
+                if !haskey(paths, new_key) || new_path_length < length(paths[new_key])
+                    paths[new_key] = vcat(path, cover_index)
+                    push!(queue, new_key)
                 end
             end
         end
