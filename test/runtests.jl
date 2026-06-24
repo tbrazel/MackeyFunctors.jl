@@ -13,16 +13,56 @@ using MackeyFunctors
 
         for R in [ZZ, QQ, GF(2), GF(67)]
             M = free_module(R, 1)
-            values = [M for i in context.subgroups]
+            #     values = [M for i in context.subgroups]
 
-            id_hom = ModuleHomomorphism(M, M, identity_matrix(R, 1))
-            restrictions = [id_hom for i in context.covers]
-            transfers = [R(2) * id_hom for i in context.covers]
+            #     id_hom = ModuleHomomorphism(M, M, identity_matrix(R, 1))
+            #     restrictions = [id_hom for i in context.covers]
+            #     transfers = [R(2) * id_hom for i in context.covers]
 
-            id_iso = ModuleIsomorphism(M, M, identity_matrix(R, 1))
-            conjugations = [id_iso for i in context.generators, j in context.subgroups]
+            #     id_iso = ModuleIsomorphism(M, M, identity_matrix(R, 1))
+            #     conjugations = [id_iso for i in context.generators, j in context.subgroups]
 
-            MackeyFunctor(context, values, restrictions, transfers, conjugations)
+            #     @test MackeyFunctor(context, values, restrictions, transfers, conjugations) isa MackeyFunctor
+            @test constant_mackey_functor(context, M) isa MackeyFunctor
+        end
+    end
+end
+
+@testset "Constant Mackey functors for symmetric groups" begin
+    for n in 2:5
+        S_n = GAP.Globals.SymmetricGroup(n)
+        context = MackeyContext(S_n)
+
+        @test length(context.subgroups) == length(GAP.Globals.AllSubgroups(S_n))
+
+        for R in [ZZ, QQ, GF(2), GF(67)]
+            M = free_module(R, 1)
+            @test constant_mackey_functor(context, M) isa MackeyFunctor
+        end
+    end
+end
+
+@testset "Burnside Mackey functors for Cp" begin
+    for p in [2, 3, 5, 7, 11, 67]
+        Cp = GAP.Globals.CyclicGroup(p)
+        context = MackeyContext(Cp)
+
+        @test length(context.subgroups) == 2
+        @test length(context.covers) == 1
+
+        for R in [ZZ, QQ, GF(p), GF(1000000007)]
+            Ae = free_module(R, 1)
+            ACp = free_module(R, 2)
+            val = [Ae, ACp]
+
+            res = [hom(ACp, Ae, R[1; p])]
+            tr = [hom(Ae, ACp, R[0 1;])]
+
+            conj_e = ModuleIsomorphism(Ae, Ae, R[1;])
+            conj_Cp = ModuleIsomorphism(ACp, ACp, identity_matrix(R, 2))
+            conj = Generic.ModuleIsomorphism[conj_e conj_Cp;]
+
+            @test MackeyFunctor(context, val, res, tr, conj) isa MackeyFunctor
         end
     end
 end
@@ -134,9 +174,9 @@ end
         push!(expected_double_coset_keys, (j, h, k))
     end
 
-    @test Set(keys(ctx.doubleCosetRepresentatives)) == expected_double_coset_keys
+    @test Set(keys(ctx.double_coset_formulae)) == expected_double_coset_keys
 
-    for ((j, h, k), representatives) in ctx.doubleCosetRepresentatives
+    for ((j, h, k), representatives) in ctx.double_coset_formulae
         @test (j, h) in cover_pairs
         @test (k, h) in cover_pairs
         @test all(representatives) do (word, intersection_index)
@@ -161,12 +201,12 @@ end
     trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, ctx.subgroups)
     whole = findfirst(H -> Int(GAP.Globals.Size(H)) == Int(GAP.Globals.Size(G)), ctx.subgroups)
 
-    @test !haskey(ctx.doubleCosetRepresentatives, (trivial, whole, trivial))
+    @test !haskey(ctx.double_coset_formulae, (trivial, whole, trivial))
     @test_throws ArgumentError double_coset_representative_data(ctx, trivial, whole, trivial)
     @test_throws ArgumentError double_coset_representative_words(ctx, trivial, whole, trivial)
 
     j, h = first(ctx.covers)
-    @test haskey(ctx.doubleCosetRepresentatives, (j, h, j))
+    @test haskey(ctx.double_coset_formulae, (j, h, j))
 
     representative_data = double_coset_representative_data(ctx, j, h, j)
     @test double_coset_representative_data(

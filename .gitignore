@@ -29,3 +29,6 @@ JuliaLocalPreferences.toml
 
 # Mac directory files
 .DS_Store
+
+# Personal init file
+init.jl

@@ -9,7 +9,7 @@ include("group_theory/Words.jl")
 export generator_relations
 
 include("types/MackeyContext.jl")
-export MackeyContext, 
+export MackeyContext,
     double_coset_representative_data,
     double_coset_representative_words,
     restriction,
@@ -17,5 +17,8 @@ export MackeyContext,
 
 include("types/MackeyFunctor.jl")
 export MackeyFunctor
+
+include("Constructors.jl")
+export constant_mackey_functor
 
 end

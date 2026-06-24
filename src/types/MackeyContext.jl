@@ -20,9 +20,9 @@ struct MackeyContext
     covers::Vector{Tuple{SubgroupIndex,SubgroupIndex}}
     paths::Dict{Tuple{SubgroupIndex,SubgroupIndex},Vector{Int}}
     generators::Vector{GroupElement}
-    generatorLeftConjugationMatrix::Matrix{SubgroupIndex}
-    generatorRightConjugationMatrix::Matrix{SubgroupIndex}
-    doubleCosetRepresentatives::Dict{
+    generator_left_conjugation_matrix::Matrix{SubgroupIndex}
+    generator_right_conjugation_matrix::Matrix{SubgroupIndex}
+    double_coset_formulae::Dict{
         Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
         Vector{DoubleCosetFormulaTerm},
     }
@@ -122,7 +122,7 @@ struct MackeyContext
         end
 
         ########## double coset stuff below here
-        doubleCosetRepresentatives =
+        double_coset_formulae =
             Dict{
                 Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
                 Vector{DoubleCosetFormulaTerm},
@@ -137,7 +137,7 @@ struct MackeyContext
                 J = subgroups[j]
                 K = subgroups[k]
 
-                doubleCosetRepresentatives[(j, h, k)] = [
+                double_coset_formulae[(j, h, k)] = [
                     begin
                         x = entry[1]
                         intersection = GAP.Globals.Intersection(J^x, K)
@@ -159,7 +159,7 @@ struct MackeyContext
             generators,
             left_conj_matx,
             right_conj_matx,
-            doubleCosetRepresentatives,
+            double_coset_formulae,
         )
     end
 end
@@ -186,12 +186,12 @@ function double_coset_representative_data(
     checkbounds(ctx.subgroups, k)
 
     key = (j, h, k)
-    haskey(ctx.doubleCosetRepresentatives, key) ||
+    haskey(ctx.double_coset_formulae, key) ||
         throw(ArgumentError(
             "double-coset representatives are stored only when (j, h) and (k, h) are cover relations",
         ))
 
-    return ctx.doubleCosetRepresentatives[key]
+    return ctx.double_coset_formulae[key]
 end
 
 function double_coset_representative_data(
@@ -218,6 +218,34 @@ function double_coset_representative_words(ctx::MackeyContext, args...)
     return first.(double_coset_representative_data(ctx, args...))
 end
 
+"""
+    subgroup_inclusion_index(ctx, i, j)
+    subgroup_inclusion_index(ctx, (i, j))
+
+Return the group-theoretic index ``[H[j] : H[i]]`` as an `Int`, where
+`H[i]` and `H[j]` are entries of `ctx.subgroups`.
+"""
+function subgroup_inclusion_index(
+    ctx::MackeyContext,
+    i::SubgroupIndex,
+    j::SubgroupIndex,
+)::Int
+    checkbounds(ctx.subgroups, i)
+    checkbounds(ctx.subgroups, j)
+
+    is_subgroup(ctx, i, j) ||
+        throw(ArgumentError("Subgroup $i must be contained in subgroup $j."))
+
+    return Int(GAP.Globals.Index(ctx.subgroups[j], ctx.subgroups[i]))
+end
+
+function subgroup_inclusion_index(
+    ctx::MackeyContext,
+    cover::Tuple{SubgroupIndex,SubgroupIndex},
+)::Int
+    return subgroup_inclusion_index(ctx, cover[1], cover[2])
+end
+
 function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
     index = findfirst(K -> K == H, subgroups)
     index === nothing &&
@@ -227,12 +255,7 @@ function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
 end
 
 function is_subgroup(ctx::MackeyContext, i::SubgroupIndex, j::SubgroupIndex)
-    # TODO: not needed rn because ctx.paths has reflexive paths, but we might revise this later?
-    if i==j
-        return true
-    else
-        return haskey(ctx.paths, (i, j))
-    end
+    haskey(ctx.paths, (i, j))
 end
 
 function subgroup_index(ctx::MackeyContext, H::Group)
@@ -244,11 +267,11 @@ function conjugate_subgroup_by_word(context::MackeyContext, i::SubgroupIndex, w:
     for (g, n) in reverse(w)
         if n>0
             for j in 1:n
-                result = context.generatorLeftConjugationMatrix[g, result]
+                result = context.generator_left_conjugation_matrix[g, result]
             end
         else
             for j in 1:abs(n)
-                result = context.generatorRightConjugationMatrix[g, result]
+                result = context.generator_right_conjugation_matrix[g, result]
             end
         end
     end
