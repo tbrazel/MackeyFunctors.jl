@@ -81,25 +81,22 @@ struct MackeyFunctor
 
         # 1. For h in H, conjugation by h is the identity on M(H)
         for (i, H) in enumerate(subgroups)
-            
+
             # It suffices to check on generators of H
             for h in GAP.Globals.GeneratorsOfGroup(H)
                 conj_h_H = conjugation(result, h, i)
                 is_identity_module_homomorphism(conj_h_H) || throw(ArgumentError("Conjugation by $h at level $H is not the identity"))
             end
         end
-        
-        # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
-        for i in eachindex(subgroups)
-            # For each subgroup H, and for every relation (viewed as a word in the generators)
-            for relation_word in generator_relations(G, generators)
-                
-                # We build the map which conjugates M(H) by the relation word
-                conj_by_relation_word = conjugation(result, relation_word, i)
 
-                # We assert this is the identity homomorphism on M(H)
-                is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
-            end
+        # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
+        for i in eachindex(subgroups), relation_word in generator_relations(G, generators)
+            # For each subgroup H, and for every relation (viewed as a word in the generators)
+            # We build the map which conjugates M(H) by the relation word
+            conj_by_relation_word = conjugation(result, relation_word, i)
+
+            # We assert this is the identity homomorphism on M(H)
+            is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
         end
 
         # 3. Check Webb Axiom 4 and 5 for covers (compatibililty of transfers/conjugation and restriction/conjugation)
@@ -117,13 +114,13 @@ struct MackeyFunctor
                 # Since H<K was a cover, we know gHg^{-1}<gKg^{-1} must be a cover, so we get its index
                 index_of_conjugated_cover = first(context.paths[(gHginvs_index, gKginvs_index)])
 
-                # We assert restriction along covers commutes with comjugation by generators
+                # We assert restriction along covers commutes with conjugation by generators
                 map_eq(
                     cover_restrictions[cover_index] * generator_conjugations[n, i],
                     generator_conjugations[n, j] * cover_restrictions[index_of_conjugated_cover]
                 ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
 
-                # We assert transfer along covers commutes with comjugation by generators
+                # We assert transfer along covers commutes with conjugation by generators
                 map_eq(
                     cover_transfers[cover_index] * generator_conjugations[n, j],
                     generator_conjugations[n, i] * cover_transfers[index_of_conjugated_cover]
