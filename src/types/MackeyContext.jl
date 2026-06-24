@@ -227,7 +227,7 @@ function is_subgroup(ctx::MackeyContext, i::SubgroupIndex, j::SubgroupIndex)
     if i==j
         return true
     else
-        return haskey(ctx.paths, (i,j))
+        return haskey(ctx.paths, (i, j))
     end
 end
 
