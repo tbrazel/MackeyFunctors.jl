@@ -347,3 +347,9 @@ Returns the underlying coefficient ring of the Mackey functor `M`.
 function coefficient_ring(mf::MackeyFunctor)
     return base_ring(mf.values[1])
 end
+
+function Base.show(io::IO, obj::MackeyFunctor)
+
+    print(io, "MackeyFunctor for group ", obj.context.group, "over base ring ", coefficient_ring(obj) ," with ", length(obj.context.covers), " covers and ", length(obj.context.generators), " generators supplied.")
+
+end
