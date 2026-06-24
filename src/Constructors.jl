@@ -8,3 +8,8 @@ function constant_mackey_functor(context::MackeyContext, M::AbstractAlgebra.FPMo
     conjugations = fill(id_iso, length(context.generators), length(context.subgroups))
     MackeyFunctor(context, values, restrictions, transfers, conjugations)
 end
+
+function constant_mackey_functor(context::MackeyContext,R::Ring)
+    M = free_module(R,1)
+    return constant_mackey_functor(context,M)
+end
