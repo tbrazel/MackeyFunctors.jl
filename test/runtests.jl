@@ -69,6 +69,62 @@ end
     end
 end
 
+# eventually we will have a constructor for these,
+# but putting this here for us to compare against
+@testset "Free Mackey functors for C4" begin
+    C4 = GAP.Globals.CyclicGroup(4)
+    context = MackeyContext(C4)
+
+    for R in [ZZ, QQ, GF(2), GF(67)]
+        # A4 = Burnside Mackey functor 
+        A4_1 = free_module(R, 1)
+        A4_2 = free_module(R, 2)
+        A4_4 = free_module(R, 3)
+        A4_val = [A4_1, A4_2, A4_4]
+        
+        A4_res = [hom(A4_2, A4_1, R[1; 2]),
+            hom(A4_4, A4_2, R[1 0; 2 0; 0 2])]
+        A4_tr = [hom(A4_1, A4_2, R[0 1;]),
+            hom(A4_2, A4_4, R[0 1 0; 0 0 1])]
+        # all conjugations trivial in A2
+        A4_conj = [MackeyFunctors.identity_isomorphism(A4_val[j]) 
+            for j in eachindex(context.generators), j in eachindex(A4_val)]
+
+        A4 = MackeyFunctor(context, A4_val, A4_res, A4_tr, A4_conj)
+        @test A4 isa MackeyFunctor
+
+        # A2 = free at level C2
+        A2_1 = free_module(R, 2)
+        A2_2 = free_module(R, 4)
+        A2_4 = free_module(R, 2)
+        A2_val = [A2_1, A2_2, A2_4]
+        
+        A2_res = [hom(A2_2, A2_1, R[1 0; 2 0; 0 1; 0 2]),
+            hom(A2_4, A2_2, R[1 0 1 0; 0 1 0 1])]
+        A2_tr = [hom(A2_1, A2_2, R[0 1 0 0; 0 0 0 1]),
+            hom(A2_2, A2_4, R[1 0; 0 1; 1 0; 0 1])]
+        A2_conj = Generic.ModuleIsomorphism[ModuleIsomorphism(A2_1, A2_1,  R[0 1; 1 0]) ModuleIsomorphism(A2_2, A2_2, R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) MackeyFunctors.identity_isomorphism(A2_4); MackeyFunctors.identity_isomorphism(A2_1) MackeyFunctors.identity_isomorphism(A2_2) MackeyFunctors.identity_isomorphism(A2_4)] # I'm sorry
+
+        A2 = MackeyFunctor(context, A2_val, A2_res, A2_tr, A2_conj)
+        @test A2 isa MackeyFunctor
+
+        # A1 = free at underlying level
+        A1_1 = free_module(R, 4)
+        A1_2 = free_module(R, 2)
+        A1_4 = free_module(R, 1)
+        A1_val = [A1_1, A1_2, A1_4]
+        
+        A1_res = [hom(A1_2, A1_1, R[1 0 1 0; 0 1 0 1]),
+            hom(A1_4, A1_2, R[1 1;])]
+        A1_tr = [hom(A1_1, A1_2, R[1 0; 0 1; 1 0; 0 1]),
+            hom(A1_2, A1_4, R[1; 1])]
+        A1_conj = Generic.ModuleIsomorphism[ModuleIsomorphism(A1_1, A1_1,  R[0 0 0 1; 1 0 0 0; 0 1 0 0; 0 0 1 0]) ModuleIsomorphism(A1_2, A1_2, R[0 1; 1 0]) MackeyFunctors.identity_isomorphism(A1_4); ModuleIsomorphism(A1_1, A1_1,  R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) MackeyFunctors.identity_isomorphism(A1_2) MackeyFunctors.identity_isomorphism(A1_4)] # I'm sorry again
+
+        A1 = MackeyFunctor(context, A1_val, A1_res, A1_tr, A1_conj)
+        @test A1 isa MackeyFunctor
+    end
+end
+
 @testset "Module map composition order" begin
     M = free_module(ZZ, 2)
     A_hom = ModuleHomomorphism(M, M, matrix(ZZ, [1 1; 0 1]))
