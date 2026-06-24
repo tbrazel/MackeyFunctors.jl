@@ -269,7 +269,7 @@ function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::Subgrou
     # Start with identity on M(H)
     result = identity_homomorphism(value(mf, H_index))
 
-    # 
+    #
     for idx in path_indices
         result = mf.cover_restrictions[idx] * result
     end

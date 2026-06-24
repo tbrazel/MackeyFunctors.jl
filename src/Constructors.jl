@@ -1,6 +1,6 @@
 """
     constant_mackey_functor(ctx,M)
-    
+
 
 Given a [`MackeyContext`](@ref) and an ``R``-module ``M``, this method outputs the fixed-point Mackey functor for ``M`` with trivial ``G``-action. This is also called the *constant Mackey functor* valued at ``M``.
 """
