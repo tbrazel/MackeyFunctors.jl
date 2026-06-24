@@ -5,6 +5,7 @@ One of our time-saving design choices is the idea of a [`MackeyContext`](@ref), 
 **Definition** Let $H\le K\le G$ be subgroups of a group $G$. We say that the tuple $(H,K)$ is a *cover* (and we will denote this by $H\lesssim K$) if $H$ is a proper subgroup of $K$, and if $H\le L \le K$ is a pair of subgroup inclusions, then either $H=L$ or $L=K$.
 
 The MackeyContext data type stores the following information about the group:
+
 - the group itself
 - a list of all subgroups of the group
 - a list of all the *covers* $H\lesssim K$
