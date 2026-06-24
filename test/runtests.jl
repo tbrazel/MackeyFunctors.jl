@@ -103,7 +103,13 @@ end
             hom(A2_4, A2_2, R[1 0 1 0; 0 1 0 1])]
         A2_tr = [hom(A2_1, A2_2, R[0 1 0 0; 0 0 0 1]),
             hom(A2_2, A2_4, R[1 0; 0 1; 1 0; 0 1])]
-        A2_conj = Generic.ModuleIsomorphism[ModuleIsomorphism(A2_1, A2_1,  R[0 1; 1 0]) ModuleIsomorphism(A2_2, A2_2, R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) MackeyFunctors.identity_isomorphism(A2_4); MackeyFunctors.identity_isomorphism(A2_1) MackeyFunctors.identity_isomorphism(A2_2) MackeyFunctors.identity_isomorphism(A2_4)] # I'm sorry
+        A2_conj = Generic.ModuleIsomorphism[ #=
+            =# ModuleIsomorphism(A2_1, A2_1,  R[0 1; 1 0]) #=
+            =# ModuleIsomorphism(A2_2, A2_2, R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) #=
+            =# MackeyFunctors.identity_isomorphism(A2_4); #=
+            =# MackeyFunctors.identity_isomorphism(A2_1) #=
+            =# MackeyFunctors.identity_isomorphism(A2_2) #=
+            =# MackeyFunctors.identity_isomorphism(A2_4)]
 
         A2 = MackeyFunctor(context, A2_val, A2_res, A2_tr, A2_conj)
         @test A2 isa MackeyFunctor
@@ -118,10 +124,21 @@ end
             hom(A1_4, A1_2, R[1 1;])]
         A1_tr = [hom(A1_1, A1_2, R[1 0; 0 1; 1 0; 0 1]),
             hom(A1_2, A1_4, R[1; 1])]
-        A1_conj = Generic.ModuleIsomorphism[ModuleIsomorphism(A1_1, A1_1,  R[0 0 0 1; 1 0 0 0; 0 1 0 0; 0 0 1 0]) ModuleIsomorphism(A1_2, A1_2, R[0 1; 1 0]) MackeyFunctors.identity_isomorphism(A1_4); ModuleIsomorphism(A1_1, A1_1,  R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) MackeyFunctors.identity_isomorphism(A1_2) MackeyFunctors.identity_isomorphism(A1_4)] # I'm sorry again
+        A1_conj = Generic.ModuleIsomorphism[ #=
+            =# ModuleIsomorphism(A1_1, A1_1, R[0 0 0 1; 1 0 0 0; 0 1 0 0; 0 0 1 0]) #=
+            =# ModuleIsomorphism(A1_2, A1_2, R[0 1; 1 0]) #=
+            =# MackeyFunctors.identity_isomorphism(A1_4); #=
+            =# ModuleIsomorphism(A1_1, A1_1,  R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) #=
+            =# MackeyFunctors.identity_isomorphism(A1_2) #=
+            =# MackeyFunctors.identity_isomorphism(A1_4)] 
 
         A1 = MackeyFunctor(context, A1_val, A1_res, A1_tr, A1_conj)
         @test A1 isa MackeyFunctor
+
+        # TODO: uncomment when free constructor is done 
+        # check A1 is free_mackey_functor(context, 1)
+        # check A2 is free_mackey_functor(context, 2)
+        # check A4 is free_mackey_functor(context, 3)
     end
 end
 
