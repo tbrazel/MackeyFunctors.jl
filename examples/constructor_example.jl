@@ -4,7 +4,9 @@ using MackeyFunctors
 
 C2 = GAP.Globals.CyclicGroup(2)
 
-
+"""
+Construct the free Cp Mackey functor on an underlying generator.  
+"""
 
 function prime_p(n::Int)
     n <= 1 && return false
@@ -52,7 +54,25 @@ struct makeUnderlyingFreeMackeyFunctor
     end          
 end              
 
+""" 
+Constructs the zero Mackey functor for the group, 
+which assigns the zero module to every finite G-set. 
+"""
 
+struct makeZeroMackeyFunctor
+    context :: MackeyContext
+    modules :: Vector{AbstractAlgebra.FPModule}
+    res     :: Generic.ModuleHomomorphism
+    tr      :: Generic.ModuleHomomorphism
+    conj    :: Generic.ModuleHomomorphism
 
+    function makeZeroMackeyFunctor(group::Group)
 
+        context = MackeyContext(group)
 
+        ZeroUnderlying = free_module(ZZ, 0)
+        ZeroFixed = free_module(ZZ, 0)
+
+        res = hom(ZeroFixed, ZeroUnderlying, matrix(0))
+        tr = hom(ZeroUnderlying, ZeroFixed, matrix(0))
+end 
