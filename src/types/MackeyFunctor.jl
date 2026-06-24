@@ -239,7 +239,7 @@ end
 """
     restriction(M,i,j)
 
-If ``H`` is the `i`th subgroup and ``K`` is the `j`th subgroup, this returns the restriction map ``M(K) \\to M(H)``.
+Given a Mackey functor `M` and two `SubgroupIndex` values `i` and `j` corresponding to subgroups ``H[i]\\le G`` and ``H[j]\\le M``, this method returns the restriction homomorphism ``M(H[j]) \\to M(H[i])`` as the type `AbstractAlgebra.Generic.ModuleHomomorphism`.
 """
 function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
     key = (H_index, K_index)
@@ -264,9 +264,9 @@ function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::Subgrou
 end
 
 """
-    transfer(M,H,K)
+    transfer(M,i,j)
 
-todo
+Given a Mackey functor `M` and two `SubgroupIndex` values `i` and `j` corresponding to subgroups ``H[i]\\le G`` and ``H[j]\\le M``, this method returns the transfer homomorphism ``M(H[i]) \\to M(H[j])`` as the type `AbstractAlgebra.Generic.ModuleHomomorphism`.
 """
 function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
     key = (H_index, K_index)
@@ -288,9 +288,9 @@ function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIn
 end
 
 """
-    conjugation(M,g,n)
+    conjugation(M,g,i)
 
-If ``H`` denotes the ``n``th subgroup for `G = M.group`, and ``g\\in G`` is a group element, this method returns the conjugation map ``M(H) \\to M(gHg^{-1})`` in the Mackey functor.
+Given a Mackey functor `M`, a `GroupElement` ``g\\in G``, and a `SubgroupIndex` `i`, this method returns the restriction homomorphism ``M(H[i])\\to M(gH[i]g^{-1})`` as the type `AbstractAlgebra.Generic.ModuleIsomorphism`.
 """
 function conjugation(mf::MackeyFunctor, g::GroupElement, H_idx::SubgroupIndex)::Generic.ModuleIsomorphism
     conjugation(mf, generator_word(mf.context.group, g), H_idx)
