@@ -318,7 +318,7 @@ function conjugation(mf::MackeyFunctor, word::GeneratorWord, H_idx::SubgroupInde
 
     result = identity_isomorphism(value(mf, H_idx))
     target_of_result = H_idx
-    for (g, n) in reverse(word)
+    for (g, n) in reverse{GeneratorWord}(word)
         if n>0
             for j in 1:n
                 result = result * mf.generator_conjugations[g, target_of_result]
