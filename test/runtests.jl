@@ -211,6 +211,61 @@ end
     end
 end
 
+@testset "Shifts of Mackey functors" begin
+    C4 = GAP.Globals.CyclicGroup(4)
+    c4_context = MackeyContext(C4)
+    c4_constant = constant_mackey_functor(c4_context, ZZ)
+    c4_trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, c4_context.subgroups)
+    c4_whole = findfirst(
+        H -> Int(GAP.Globals.Size(H)) == Int(GAP.Globals.Size(C4)),
+        c4_context.subgroups,
+    )
+
+    shifted_by_trivial = shift(c4_constant, c4_trivial)
+    @test shifted_by_trivial isa MackeyFunctor
+    @test shift(c4_constant, c4_trivial; verify=false) isa MackeyFunctor
+
+    for (K_index, K) in enumerate(c4_context.subgroups)
+        expected_rank = Int(GAP.Globals.Index(C4, K))
+        @test rank(MackeyFunctors.value(shifted_by_trivial, K_index)) == expected_rank
+    end
+
+    shifted_by_whole = shift(c4_constant, c4_whole)
+    @test shifted_by_whole isa MackeyFunctor
+    @test all(eachindex(c4_context.subgroups)) do K_index
+        rank(MackeyFunctors.value(shifted_by_whole, K_index)) == 1
+    end
+    @test all(eachindex(c4_context.covers)) do cover_index
+        matrix(shifted_by_whole.cover_restrictions[cover_index]) ==
+            matrix(c4_constant.cover_restrictions[cover_index]) &&
+            matrix(shifted_by_whole.cover_transfers[cover_index]) ==
+            matrix(c4_constant.cover_transfers[cover_index])
+    end
+
+    S3 = GAP.Globals.SymmetricGroup(3)
+    s3_context = MackeyContext(S3)
+    s3_constant = constant_mackey_functor(s3_context, ZZ)
+    subgroup_of_order_two =
+        findfirst(H -> Int(GAP.Globals.Size(H)) == 2, s3_context.subgroups)
+
+    shifted_s3 = shift(s3_constant, subgroup_of_order_two)
+    @test shifted_s3 isa MackeyFunctor
+
+    for (K_index, K) in enumerate(s3_context.subgroups)
+        expected_rank = length(
+            GAP.Globals.DoubleCosetRepsAndSizes(
+                S3,
+                s3_context.subgroups[subgroup_of_order_two],
+                K,
+            ),
+        )
+        @test rank(MackeyFunctors.value(shifted_s3, K_index)) == expected_rank
+    end
+
+    s3_burnside = burnside_mackey_functor(s3_context, ZZ)
+    @test shift(s3_burnside, subgroup_of_order_two) isa MackeyFunctor
+end
+
 @testset "MackeyContext" begin
     G = GAP.Globals.SymmetricGroup(3)
     ctx = MackeyContext(G)
