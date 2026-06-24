@@ -236,7 +236,7 @@ end
 
 function conjugate_subgroup_by_word(context::MackeyContext, i::SubgroupIndex, w::GeneratorWord)::SubgroupIndex
     result = i
-    for (g, n) in reverse{GeneratorWord}(w)
+    for (g, n) in reverse(w)
         if n>0
             for j in 1:n
                 result = context.generator_left_conjugation_matrix[g, result]
