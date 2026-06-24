@@ -51,8 +51,8 @@ struct MackeyFunctor
         subgroups = context.subgroups
         covers = context.covers
         generators = context.generators
-        generatorLeftConjugationMatrix = context.generatorLeftConjugationMatrix
-        doubleCosetRepresentatives = context.doubleCosetRepresentatives
+        generator_left_conjugation_matrix = context.generator_left_conjugation_matrix
+        double_coset_formulae = context.double_coset_formulae
 
 
         # Before the Mackey axioms, we check that the input is well-formed, i.e. that the values, restrictions, transfers, and conjugations have the right domains and codomains (and that there is the right number of each)
@@ -73,7 +73,7 @@ struct MackeyFunctor
 
         for i in eachindex(subgroups), n in eachindex(generators)
             conjugation_map = generator_conjugations[n, i]
-            target_index = generatorLeftConjugationMatrix[n, i]
+            target_index = generator_left_conjugation_matrix[n, i]
 
             domain(conjugation_map) === values[i] || throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong domain."))
             codomain(conjugation_map) === values[target_index] || throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong codomain."))
@@ -102,14 +102,12 @@ struct MackeyFunctor
         # 3. Check Webb Axiom 4 and 5 for covers (compatibililty of transfers/conjugation and restriction/conjugation)
         for (cover_index, (i, j)) in enumerate(covers)
             for (n, g) in enumerate(generators)
-                H = subgroups[i]
-                K = subgroups[j]
 
                 # We have res/tr between M(H) and M(K), and we have a generator g. Now we want to check that conjugation by g commutes with res/tr on M(gHg^{-1}) and M(gKg^{-1})
 
                 # First we get the indices of the subgroups gHg^{-1} and gKg^{-1} in our subgroup list
-                gHginvs_index = generatorLeftConjugationMatrix[n, i]
-                gKginvs_index = generatorLeftConjugationMatrix[n, j]
+                gHginvs_index = generator_left_conjugation_matrix[n, i]
+                gKginvs_index = generator_left_conjugation_matrix[n, j]
 
                 # Since H<K was a cover, we know gHg^{-1}<gKg^{-1} must be a cover, so we get its index
                 index_of_conjugated_cover = first(context.paths[(gHginvs_index, gKginvs_index)])
@@ -140,7 +138,7 @@ struct MackeyFunctor
                 # K = subgroups[k]
 
                 # Pull the double coset representatives for J\H/K
-                dc_reps = doubleCosetRepresentatives[(j, h, k)]
+                dc_reps = double_coset_formulae[(j, h, k)]
 
                 # The LHS of the double coset formula is res_J^H tr_K^H
                 dc_lhs = cover_transfers[n2] * cover_restrictions[n1]
@@ -255,7 +253,7 @@ end
 """
     restriction(M,i,j)
 
-Given a Mackey functor `M` and two `SubgroupIndex` values `i` and `j` corresponding to subgroups ``H[i]\\le G`` and ``H[j]\\le M``, this method returns the restriction homomorphism ``M(H[j]) \\to M(H[i])`` as the type `AbstractAlgebra.Generic.ModuleHomomorphism`.
+Given a Mackey functor `M` and two `SubgroupIndex` values `i` and `j` corresponding to subgroups ``H = H[i] \\le H[j] = K \\le G``, this method returns the restriction homomorphism ``M(K) \\to M(H)`` as the type `AbstractAlgebra.Generic.ModuleHomomorphism`.
 """
 function restriction(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
     key = (H_index, K_index)
@@ -306,7 +304,7 @@ end
 """
     conjugation(M,g,i)
 
-Given a Mackey functor `M`, a `GroupElement` ``g\\in G``, and a `SubgroupIndex` `i`, this method returns the restriction homomorphism ``M(H[i])\\to M(gH[i]g^{-1})`` as the type `AbstractAlgebra.Generic.ModuleIsomorphism`.
+Given a Mackey functor `M`, a `GroupElement` ``g\\in G``, and a `SubgroupIndex` `i`, this method returns the conjugation isomorphism ``M(H[i])\\to M(gH[i]g^{-1})`` as an `AbstractAlgebra.Generic.ModuleIsomorphism`.
 """
 function conjugation(mf::MackeyFunctor, g::GroupElement, H_idx::SubgroupIndex)::Generic.ModuleIsomorphism
     conjugation(mf, generator_word(mf.context.group, g), H_idx)
@@ -318,7 +316,6 @@ function conjugation(mf::MackeyFunctor, word::GeneratorWord, H_idx::SubgroupInde
         return mf.conjugation_cache[key]
     end
 
-    G = mf.context.group
     result = identity_isomorphism(value(mf, H_idx))
     target_of_result = H_idx
     for (g, n) in reverse(word)
@@ -326,12 +323,12 @@ function conjugation(mf::MackeyFunctor, word::GeneratorWord, H_idx::SubgroupInde
             for j in 1:n
                 result = result * mf.generator_conjugations[g, target_of_result]
 
-                target_of_result = mf.context.generatorLeftConjugationMatrix[g, target_of_result]
+                target_of_result = mf.context.generator_left_conjugation_matrix[g, target_of_result]
             end
 
         else
             for j in 1:abs(n)
-                target_of_result = mf.context.generatorRightConjugationMatrix[g, target_of_result]
+                target_of_result = mf.context.generator_right_conjugation_matrix[g, target_of_result]
 
                 result = result * inv(mf.generator_conjugations[g, target_of_result])
             end

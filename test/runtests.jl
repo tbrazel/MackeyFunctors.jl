@@ -135,9 +135,9 @@ end
         push!(expected_double_coset_keys, (j, h, k))
     end
 
-    @test Set(keys(ctx.doubleCosetRepresentatives)) == expected_double_coset_keys
+    @test Set(keys(ctx.double_coset_formulae)) == expected_double_coset_keys
 
-    for ((j, h, k), representatives) in ctx.doubleCosetRepresentatives
+    for ((j, h, k), representatives) in ctx.double_coset_formulae
         @test (j, h) in cover_pairs
         @test (k, h) in cover_pairs
         @test all(representatives) do (word, intersection_index)
@@ -162,12 +162,12 @@ end
     trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, ctx.subgroups)
     whole = findfirst(H -> Int(GAP.Globals.Size(H)) == Int(GAP.Globals.Size(G)), ctx.subgroups)
 
-    @test !haskey(ctx.doubleCosetRepresentatives, (trivial, whole, trivial))
+    @test !haskey(ctx.double_coset_formulae, (trivial, whole, trivial))
     @test_throws ArgumentError double_coset_representative_data(ctx, trivial, whole, trivial)
     @test_throws ArgumentError double_coset_representative_words(ctx, trivial, whole, trivial)
 
     j, h = first(ctx.covers)
-    @test haskey(ctx.doubleCosetRepresentatives, (j, h, j))
+    @test haskey(ctx.double_coset_formulae, (j, h, j))
 
     representative_data = double_coset_representative_data(ctx, j, h, j)
     @test double_coset_representative_data(
