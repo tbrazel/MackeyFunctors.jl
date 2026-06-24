@@ -41,7 +41,7 @@ struct MackeyFunctor
             }(),
         )
 
-        # If the user doesn't want verification, ok then I guess
+        # If the user doesn't want verification, we just return the result. Default setting is to verify
         if !verify
             return result
         end
@@ -79,19 +79,25 @@ struct MackeyFunctor
             codomain(conjugation_map) === values[target_index] || throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong codomain."))
         end
 
-        # First thing to verify: conjugations are valid. This means:
-        # 1. For H <= G and h \in H, conjugation by h at level G/H should be identity
+        # 1. For h in H, conjugation by h is the identity on M(H)
         for (i, H) in enumerate(subgroups)
+            
+            # It suffices to check on generators of H
             for h in GAP.Globals.GeneratorsOfGroup(H)
                 conj_h_H = conjugation(result, h, i)
                 is_identity_module_homomorphism(conj_h_H) || throw(ArgumentError("Conjugation by $h at level $H is not the identity"))
             end
         end
+        
         # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
         for i in eachindex(subgroups)
+            # For each subgroup H, and for every relation (viewed as a word in the generators)
             for relation_word in generator_relations(G, generators)
+                
+                # We build the map which conjugates M(H) by the relation word
                 conj_by_relation_word = conjugation(result, relation_word, i)
 
+                # We assert this is the identity homomorphism on M(H)
                 is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
             end
         end
@@ -102,19 +108,22 @@ struct MackeyFunctor
                 H = subgroups[i]
                 K = subgroups[j]
 
-                gHginvs_index = generatorLeftConjugationMatrix[n, i]
+                # We have res/tr between M(H) and M(K), and we have a generator g. Now we want to check that conjugation by g commutes with res/tr on M(gHg^{-1}) and M(gKg^{-1})
 
+                # First we get the indices of the subgroups gHg^{-1} and gKg^{-1} in our subgroup list
+                gHginvs_index = generatorLeftConjugationMatrix[n, i]
                 gKginvs_index = generatorLeftConjugationMatrix[n, j]
 
+                # Since H<K was a cover, we know gHg^{-1}<gKg^{-1} must be a cover, so we get its index
                 index_of_conjugated_cover = first(context.paths[(gHginvs_index, gKginvs_index)])
 
-                # Check res commutes
+                # We assert restriction along covers commutes with comjugation by generators
                 map_eq(
                     cover_restrictions[cover_index] * generator_conjugations[n, i],
                     generator_conjugations[n, j] * cover_restrictions[index_of_conjugated_cover]
                 ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
 
-                # Check tr commutes
+                # We assert transfer along covers commutes with comjugation by generators
                 map_eq(
                     cover_transfers[cover_index] * generator_conjugations[n, j],
                     generator_conjugations[n, i] * cover_transfers[index_of_conjugated_cover]
@@ -128,17 +137,21 @@ struct MackeyFunctor
             for (n2, (k, l)) in enumerate(covers)
                 h == l || continue
 
-                # We have J<H and K<H both covers
+                # We have J<H and K<H, which are both covers
                 # J = subgroups[j]
                 # H = subgroups[h]
                 # K = subgroups[k]
 
+                # Pull the double coset representatives for J\H/K
                 dc_reps = doubleCosetRepresentatives[(j, h, k)]
 
+                # The LHS of the double coset formula is res_J^H tr_K^H
                 dc_lhs = cover_transfers[n2] * cover_restrictions[n1]
 
+                # We start with the RHS being the zero map from M(K) -> M(J)
                 dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
 
+                # For each pair of (g,J^x \cap K), we add the needed term to the RHS of the double coset formula
                 for (w, JxcapK_index) in dc_reps
                     JcapxK_index = conjugate_subgroup_by_word(context, JxcapK_index, w)
 
@@ -148,6 +161,8 @@ struct MackeyFunctor
 
                     dc_rhs += dc_restriction * dc_conjugation * dc_transfer
                 end
+
+                # Assert that the LHS and RHS of the double coset formula agree
                 map_eq(
                     dc_lhs,
                     dc_rhs
@@ -157,11 +172,12 @@ struct MackeyFunctor
 
         # 5. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
 
-        # Dictionary has keys (i,j) corresponding to H[i]<H[j], and values (t,r) for t: M(H[i]) -> M(H[j]) a transfer, and r: M(H[j]) -> M(H[i]) a restriction
+        # Strategy: we first build an empty dictionary whose keys (i,j) will correspond to subgroup inclusions H[i] < H[j], and whose values will be a transfer tr: M(H[i]) -> M(H[j]) and a restriction res: M(H[j]) -> M(H[i])
         dictionary_of_paths = Dict{Tuple{SubgroupIndex,SubgroupIndex},Tuple{Generic.ModuleHomomorphism,Generic.ModuleHomomorphism}}()
 
+        # Strategy: we will eventually populate this dictionary with a transfer along every possible subgroup inclusion. The idea is to iterate over the dictionary, iterate over covers, and try to compose a res/tr in the dictionary with a res/tr in the covers. If that value already exists in the dictionary, we check against it to see if they are equal. If not, we add it to the dictionary. Eventually (one needs to prove this), every possible valid path will be checked, and we can safely say that the cover restrictions and transfers give well-defined restrictions/transfers for the entire Mackey functor!
 
-        # Initialize the dictionaries with restriction and transfer along covers
+        # We first initialize the dictionaries with restriction and transfer along covers
         for (n, cov) in enumerate(context.covers)
             dictionary_of_paths[cov] = (cover_transfers[n], cover_restrictions[n])
         end
