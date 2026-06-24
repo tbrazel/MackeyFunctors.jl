@@ -52,9 +52,32 @@ struct MackeyFunctor
         covers = context.covers
         generators = context.generators
         generatorLeftConjugationMatrix = context.generatorLeftConjugationMatrix
-        generatorRightConjugationMatrix = context.generatorRightConjugationMatrix
         doubleCosetRepresentatives = context.doubleCosetRepresentatives
 
+
+        # Before the Mackey axioms, we check that the input is well-formed, i.e. that the values, restrictions, transfers, and conjugations have the right domains and codomains (and that there is the right number of each)
+        length(values) == length(subgroups) || throw(ArgumentError("There must be one value for each subgroup."))
+        length(cover_restrictions) == length(covers) || throw(ArgumentError("There must be one restriction for each cover."))
+        length(cover_transfers) == length(covers) || throw(ArgumentError("There must be one transfer for each cover."))
+        size(generator_conjugations) == (length(generators), length(subgroups)) || throw(ArgumentError("There must be one conjugation for each generator and subgroup."))
+
+        for (cover_index, (i, j)) in enumerate(covers)
+            restriction_map = cover_restrictions[cover_index]
+            domain(restriction_map) === values[j] || throw(ArgumentError("Restriction for cover $((i, j)) has the wrong domain."))
+            codomain(restriction_map) === values[i] || throw(ArgumentError("Restriction for cover $((i, j)) has the wrong codomain."))
+
+            transfer_map = cover_transfers[cover_index]
+            domain(transfer_map) === values[i] || throw(ArgumentError("Transfer for cover $((i, j)) has the wrong domain."))
+            codomain(transfer_map) === values[j] || throw(ArgumentError("Transfer for cover $((i, j)) has the wrong codomain."))
+        end
+
+        for i in eachindex(subgroups), n in eachindex(generators)
+            conjugation_map = generator_conjugations[n, i]
+            target_index = generatorLeftConjugationMatrix[n, i]
+
+            domain(conjugation_map) === values[i] || throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong domain."))
+            codomain(conjugation_map) === values[target_index] || throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong codomain."))
+        end
 
         # First thing to verify: conjugations are valid. This means:
         # 1. For H <= G and h \in H, conjugation by h at level G/H should be identity
