@@ -218,6 +218,34 @@ function double_coset_representative_words(ctx::MackeyContext, args...)
     return first.(double_coset_representative_data(ctx, args...))
 end
 
+"""
+    subgroup_inclusion_index(ctx, i, j)
+    subgroup_inclusion_index(ctx, (i, j))
+
+Return the group-theoretic index ``[H[j] : H[i]]`` as an `Int`, where
+`H[i]` and `H[j]` are entries of `ctx.subgroups`.
+"""
+function subgroup_inclusion_index(
+    ctx::MackeyContext,
+    i::SubgroupIndex,
+    j::SubgroupIndex,
+)::Int
+    checkbounds(ctx.subgroups, i)
+    checkbounds(ctx.subgroups, j)
+
+    is_subgroup(ctx, i, j) ||
+        throw(ArgumentError("Subgroup $i must be contained in subgroup $j."))
+
+    return Int(GAP.Globals.Index(ctx.subgroups[j], ctx.subgroups[i]))
+end
+
+function subgroup_inclusion_index(
+    ctx::MackeyContext,
+    cover::Tuple{SubgroupIndex,SubgroupIndex},
+)::Int
+    return subgroup_inclusion_index(ctx, cover[1], cover[2])
+end
+
 function subgroup_index(subgroups::Vector{Group}, H::Group)::SubgroupIndex
     index = findfirst(K -> K == H, subgroups)
     index === nothing &&
