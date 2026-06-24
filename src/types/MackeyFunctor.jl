@@ -126,46 +126,7 @@ struct MackeyFunctor
             end
         end
 
-        # Next, we need to check the restrictions and transfers. This entails:
-        # 4. Check double coset formula for covers
-        for (n1, (j, h)) in enumerate(covers)
-            for (n2, (k, l)) in enumerate(covers)
-                h == l || continue
-
-                # We have J<H and K<H, which are both covers
-                # J = subgroups[j]
-                # H = subgroups[h]
-                # K = subgroups[k]
-
-                # Pull the double coset representatives for J\H/K
-                dc_reps = double_coset_formulae[(j, h, k)]
-
-                # The LHS of the double coset formula is res_J^H tr_K^H
-                dc_lhs = cover_transfers[n2] * cover_restrictions[n1]
-
-                # We start with the RHS being the zero map from M(K) -> M(J)
-                dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
-
-                # For each pair of (g,J^x \cap K), we add the needed term to the RHS of the double coset formula
-                for (w, JxcapK_index) in dc_reps
-                    JcapxK_index = conjugate_subgroup_by_word(context, JxcapK_index, w)
-
-                    dc_restriction = restriction(result, JxcapK_index, k)
-                    dc_transfer = transfer(result, JcapxK_index, j)
-                    dc_conjugation = conjugation(result, w, JxcapK_index)
-
-                    dc_rhs += dc_restriction * dc_conjugation * dc_transfer
-                end
-
-                # Assert that the LHS and RHS of the double coset formula agree
-                map_eq(
-                    dc_lhs,
-                    dc_rhs
-                ) || throw(ArgumentError("Double coset formula failed."))
-            end
-        end
-
-        # 5. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
+        # 4. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
 
         # Strategy: we build the restrictions and transfers along arbitrary subgroup
         # inclusions by induction on chains of covers in the subgroup lattice.
@@ -238,6 +199,44 @@ struct MackeyFunctor
         for (key, (tr, res)) in dictionary_of_paths
             result.transfer_cache[key] = tr
             result.restriction_cache[key] = res
+        end
+
+        # 5. Check double coset formula for covers
+        for (n1, (j, h)) in enumerate(covers)
+            for (n2, (k, l)) in enumerate(covers)
+                h == l || continue
+
+                # We have J<H and K<H, which are both covers
+                # J = subgroups[j]
+                # H = subgroups[h]
+                # K = subgroups[k]
+
+                # Pull the double coset representatives for J\H/K
+                dc_reps = double_coset_formulae[(j, h, k)]
+
+                # The LHS of the double coset formula is res_J^H tr_K^H
+                dc_lhs = cover_transfers[n2] * cover_restrictions[n1]
+
+                # We start with the RHS being the zero map from M(K) -> M(J)
+                dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
+
+                # For each pair of (g,J^x \cap K), we add the needed term to the RHS of the double coset formula
+                for (w, JxcapK_index) in dc_reps
+                    JcapxK_index = conjugate_subgroup_by_word(context, JxcapK_index, w)
+
+                    dc_restriction = restriction(result, JxcapK_index, k)
+                    dc_transfer = transfer(result, JcapxK_index, j)
+                    dc_conjugation = conjugation(result, w, JxcapK_index)
+
+                    dc_rhs += dc_restriction * dc_conjugation * dc_transfer
+                end
+
+                # Assert that the LHS and RHS of the double coset formula agree
+                map_eq(
+                    dc_lhs,
+                    dc_rhs
+                ) || throw(ArgumentError("Double coset formula failed."))
+            end
         end
 
         return result

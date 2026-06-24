@@ -13,9 +13,10 @@ This is a compression of the data of a Mackey functor available in [Webb](https:
 
 **Check 3**: Conjugation by generators commutes with restrictions and transfers along covers.
 
-**Check 4**: The double coset formula holds for triples $(J,H,K)$ where $J\lesssim H$ and $K\lesssim H$ are covers.
+**Check 4**: For any two factorizations of $H \le K$ into covers, the supplied cover restriction maps and cover transfer maps yield a well-defined restriction/transfer between $M(H)$ and $M(K)$.
 
-**Check 5**: For any two factorizations of $H \le K$ into covers, the supplied cover restriction maps and cover transfer maps yield a well-defined restriction/transfer between $M(H)$ and $M(K)$.
+**Check 5**: The double coset formula holds for triples $(J,H,K)$ where $J\lesssim H$ and $K\lesssim H$ are covers.
+
 
 **Theorem**: The data supplied above, satisfying all three checks, uniquely specifies a $G$-Mackey functor.
 
