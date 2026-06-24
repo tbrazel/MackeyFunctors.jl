@@ -22,7 +22,8 @@ using MackeyFunctors
             id_iso = ModuleIsomorphism(M, M, identity_matrix(R, 1))
             conjugations = [id_iso for i in context.generators, j in context.subgroups]
 
-            MackeyFunctor(context, values, restrictions, transfers, conjugations)
+            @test MackeyFunctor(context, values, restrictions, transfers, conjugations) isa MackeyFunctor
+            @test constant_mackey_functor(context, M) isa MackeyFunctor
         end
     end
 end
