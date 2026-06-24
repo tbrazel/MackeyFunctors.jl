@@ -23,6 +23,6 @@ export MackeyFunctor,
     coefficient_ring
 
 include("Constructors.jl")
-export constant_mackey_functor
+export constant_mackey_functor, burnside_mackey_functor
 
 end
