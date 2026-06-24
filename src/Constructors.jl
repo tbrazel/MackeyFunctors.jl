@@ -1,6 +1,6 @@
 """
-    constant_mackey_functor(ctx,M)
-
+    constant_mackey_functor(ctx::MackeyContext, M::AbstractAlgebra.FPModule) -> MackeyFunctor
+    
 
 Given a [`MackeyContext`](@ref) and an ``R``-module ``M``, this method outputs the fixed-point Mackey functor for ``M`` with trivial ``G``-action. This is also called the *constant Mackey functor* valued at ``M``.
 """
@@ -23,7 +23,7 @@ function constant_mackey_functor(context::MackeyContext, M::AbstractAlgebra.FPMo
     MackeyFunctor(context, values, restrictions, transfers, conjugations)
 end
 """
-    constant_mackey_functor(ctx,R)
+    constant_mackey_functor(ctx::MackeyContext, R::Ring) -> MackeyFunctor
 
 This method can also be fed a context and a ring ``R``, and it will output the constant Mackey functor valued at ``R`` considered as a free rank one ``R``-module.
 """
@@ -68,11 +68,11 @@ function burnside_conjugation(R, mc, conj_classes, gi, Hi, M)
 end
 
 """
-    burnside_mackey_functor(mc::MackeyContext, R::Ring) -> MackeyFunctor
+    burnside_mackey_functor(mc::MackeyContext, R::Ring = ZZ) -> MackeyFunctor
 
 Return the Burnside Mackey functor for the group specified by `mc` and the coefficient ring `R`.
 """
-function burnside_mackey_functor(mc::MackeyContext, R::Ring)
+function burnside_mackey_functor(mc::MackeyContext, R::Ring = ZZ)
     conj_classes = [collect(GAP.Globals.ConjugacyClassesSubgroups(H)) for H in mc.subgroups]
     values = [free_module(R, length(cc)) for cc in conj_classes]
 
@@ -85,8 +85,17 @@ function burnside_mackey_functor(mc::MackeyContext, R::Ring)
 end
 
 """
-    burnside_mackey_functor(G, R::Ring) -> MackeyFunctor
+    burnside_mackey_functor(G, R::Ring = ZZ) -> MackeyFunctor
 
 Return the Burnside Mackey functor for the group `G` and the coefficient ring `R`.
 """
-burnside_mackey_functor(G::GapObj, R::Ring) = burnside_mackey_functor(MackeyContext(G), R)
+burnside_mackey_functor(G::GapObj, R::Ring = ZZ) = burnside_mackey_functor(MackeyContext(G), R)
+
+"""
+    free_mackey_functor(mf::MackeyFunctor, i::SubgroupIndex) -> MackeyFunctor
+
+Given a Mackey functor `M` and a subgroup index `i` corresponding to a subgroup ``H\\le G``, this returns the shifted Mackey functor ``M_H``.
+"""
+function free_mackey_functor(mf::MackeyFunctor, i::SubgroupIndex;verify :: Bool=true)
+    shift(mf, i, verify)
+end

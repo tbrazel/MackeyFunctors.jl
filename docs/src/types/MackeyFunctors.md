@@ -17,9 +17,17 @@ This is a compression of the data of a Mackey functor available in [Webb](https:
 
 **Check 5**: The double coset formula holds for triples $(J,H,K)$ where $J\lesssim H$ and $K\lesssim H$ are covers.
 
-
 **Theorem**: The data supplied above, satisfying all three checks, uniquely specifies a $G$-Mackey functor.
 
 ```@docs
 MackeyFunctor
+```
+
+## Extracting data from a Mackey functor
+Given a Mackey functor, we can access various parts of the data.
+
+```@docs
+coefficient_ring
+transfer
+restriction
 ```
