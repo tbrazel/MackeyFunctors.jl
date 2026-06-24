@@ -33,17 +33,17 @@ function constant_mackey_functor(context::MackeyContext,R::Ring)
 end
 
 function burnside_transfer(R, M1, M2, cc1, cc2, H2)
-    m = zeros(R, rank(M1), rank(M2))
+    m = zero_matrix(R, rank(M1), rank(M2))
     for (i, II) in enumerate(cc1)
         I = GAP.Globals.Representative(II)
         j = findfirst(==(GAP.Globals.ConjugacyClassSubgroups(H2, I)), cc2)::Int
         m[i, j] = 1
     end
-    ModuleHomomorphism(M1, M2, matrix(R, m))
+    ModuleHomomorphism(M1, M2, m)
 end
 
 function burnside_restriction(R, M1, M2, cc1, cc2, H1, H2)
-    m = zeros(R, rank(M2), rank(M1))
+    m = zero_matrix(R, rank(M2), rank(M1))
     for (j, JJ) in enumerate(cc2)
         J = GAP.Globals.Representative(JJ)
         for (h, n) in GAP.Globals.DoubleCosetRepsAndSizes(H2, H1, J)
@@ -52,19 +52,19 @@ function burnside_restriction(R, M1, M2, cc1, cc2, H1, H2)
             m[j, i] += n * GAP.Globals.Size(L) ÷ (GAP.Globals.Size(H1) * GAP.Globals.Size(J))
         end
     end
-    ModuleHomomorphism(M2, M1, matrix(R, m))
+    ModuleHomomorphism(M2, M1, m)
 end
 
 function burnside_conjugation(R, mc, conj_classes, gi, Hi, M)
     g = mc.generators[gi]
-    m = zeros(R, rank(M), rank(M))
+    m = zero_matrix(R, rank(M), rank(M))
     for (j, JJ) in enumerate(conj_classes[Hi])
         L = GAP.Globals.Representative(JJ) ^ inv(g)
         gHi = mc.generator_left_conjugation_matrix[gi, Hi]
         i = findfirst(==(GAP.Globals.ConjugacyClassSubgroups(mc.subgroups[gHi], L)), conj_classes[gHi])::Int
-        m[j, i] += 1
+        m[j, i] = 1
     end
-    ModuleIsomorphism(M, M, matrix(R, m))
+    ModuleIsomorphism(M, M, m)
 end
 
 """
@@ -78,10 +78,10 @@ function burnside_mackey_functor(mc::MackeyContext, R::Ring)
 
     cover_transfers = [burnside_transfer(R, values[i], values[j], conj_classes[i], conj_classes[j], mc.subgroups[j]) for (i, j) in mc.covers]
     cover_restrictions = [burnside_restriction(R, values[i], values[j], conj_classes[i], conj_classes[j], mc.subgroups[i], mc.subgroups[j]) for (i, j) in mc.covers]
-    generator_conjugations = [burnside_conjugation(R,mc, conj_classes, gi, Hi, values[Hi])
+    generator_conjugations = [burnside_conjugation(R, mc, conj_classes, gi, Hi, values[Hi])
         for gi in eachindex(mc.generators), Hi in eachindex(mc.subgroups)]
 
-    MackeyFunctor(mc, values, cover_restrictions, cover_transfers, generator_conjugations)
+    MackeyFunctor(mc, values, cover_restrictions, cover_transfers, generator_conjugations)  # TODO: turn off argument checking
 end
 
 """
