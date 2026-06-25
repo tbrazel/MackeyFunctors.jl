@@ -20,6 +20,7 @@ struct MackeyContext
     covers::Vector{Tuple{SubgroupIndex,SubgroupIndex}}
     paths::Dict{Tuple{SubgroupIndex,SubgroupIndex},Vector{Int}}
     generators::Vector{GroupElement}
+    fp_isomorphism::GapObj
     generator_left_conjugation_matrix::Matrix{SubgroupIndex}
     generator_right_conjugation_matrix::Matrix{SubgroupIndex}
     double_coset_formulae::Dict{
@@ -88,10 +89,17 @@ struct MackeyContext
         end
 
         # Get list of generators
-        generators = Vector{GroupElement}(GAP.Globals.GeneratorsOfGroup(G))
+        generators = Vector{GroupElement}(GAP.Globals.MinimalGeneratingSet(G))
 
-        # Get epimorphism from free group
-        # epi_from_free_group = GAP.Globals.EpimorphismFromFreeGroup(G)
+        # Store a presentation of G on the chosen generators.  GAP's
+        # Factorization uses the group object's GeneratorsOfGroup attribute,
+        # which may differ from the generators stored in this context.  This
+        # isomorphism lets us convert group elements into words in exactly the
+        # generator coordinates used by all context matrices.
+        fp_isomorphism = GAP.Globals.IsomorphismFpGroupByGenerators(
+            G,
+            GapObj(generators; recursive=true),
+        )
 
         # Build conjugation matrices
         num_rows_conj_matrix = length(generators)
@@ -142,7 +150,7 @@ struct MackeyContext
                         x = entry[1]
                         intersection = GAP.Globals.Intersection(J^x, K)
                         (
-                            generator_word(G, x),
+                            generator_word_from_isomorphism(fp_isomorphism, x),
                             subgroup_index(subgroups, intersection),
                         )
                     end
@@ -157,11 +165,20 @@ struct MackeyContext
             covers,
             paths,
             generators,
+            fp_isomorphism,
             left_conj_matx,
             right_conj_matx,
             double_coset_formulae,
         )
     end
+end
+
+function generator_word(ctx::MackeyContext, element::GroupElement)::GeneratorWord
+    return generator_word_from_isomorphism(ctx.fp_isomorphism, element)
+end
+
+function generator_relations(ctx::MackeyContext)::Vector{GeneratorWord}
+    return generator_relations_from_isomorphism(ctx.fp_isomorphism)
 end
 
 """

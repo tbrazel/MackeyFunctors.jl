@@ -158,9 +158,6 @@ end
         A2_conj = Generic.ModuleIsomorphism[ #=
             =# ModuleIsomorphism(A2_1, A2_1,  R[0 1; 1 0]) #=
             =# ModuleIsomorphism(A2_2, A2_2, R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) #=
-            =# MackeyFunctors.identity_isomorphism(A2_4); #=
-            =# MackeyFunctors.identity_isomorphism(A2_1) #=
-            =# MackeyFunctors.identity_isomorphism(A2_2) #=
             =# MackeyFunctors.identity_isomorphism(A2_4)]
 
         A2 = MackeyFunctor(context, A2_val, A2_res, A2_tr, A2_conj)
@@ -179,9 +176,6 @@ end
         A1_conj = Generic.ModuleIsomorphism[ #=
             =# ModuleIsomorphism(A1_1, A1_1, R[0 0 0 1; 1 0 0 0; 0 1 0 0; 0 0 1 0]) #=
             =# ModuleIsomorphism(A1_2, A1_2, R[0 1; 1 0]) #=
-            =# MackeyFunctors.identity_isomorphism(A1_4); #=
-            =# ModuleIsomorphism(A1_1, A1_1,  R[0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) #=
-            =# MackeyFunctors.identity_isomorphism(A1_2) #=
             =# MackeyFunctors.identity_isomorphism(A1_4)]
 
         A1 = MackeyFunctor(context, A1_val, A1_res, A1_tr, A1_conj)
@@ -332,7 +326,10 @@ end
 
     @test ctx.group == G
     @test length(ctx.subgroups) == length(GAP.Globals.AllSubgroups(G))
-    @test length(ctx.generators) == length(GAP.Globals.GeneratorsOfGroup(G))
+    @test length(ctx.generators) == length(GAP.Globals.MinimalGeneratingSet(G))
+    @test all(ctx.generators) do g
+        all(entry -> 1 <= entry[1] <= length(ctx.generators), MackeyFunctors.generator_word(ctx, g))
+    end
 
     for (i, j) in ctx.covers
         H = ctx.subgroups[i]

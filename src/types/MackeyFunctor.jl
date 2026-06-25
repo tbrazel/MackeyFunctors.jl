@@ -92,7 +92,8 @@ struct MackeyFunctor
         end
 
         # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
-        for i in eachindex(subgroups), relation_word in generator_relations(G, generators)
+        relation_words = generator_relations_from_isomorphism(context.fp_isomorphism)
+        for i in eachindex(subgroups), relation_word in relation_words
             # For each subgroup H, and for every relation (viewed as a word in the generators)
             # We build the map which conjugates M(H) by the relation word
             conj_by_relation_word = conjugation(result, relation_word, i)
@@ -313,7 +314,7 @@ end
 Given a Mackey functor `M`, a `GroupElement` ``g\\in G``, and a `SubgroupIndex` `i`, this method returns the conjugation isomorphism ``M(H[i])\\to M(gH[i]g^{-1})`` as an `AbstractAlgebra.Generic.ModuleIsomorphism`.
 """
 function conjugation(mf::MackeyFunctor, g::GroupElement, H_idx::SubgroupIndex)::Generic.ModuleIsomorphism
-    conjugation(mf, generator_word(mf.context.group, g), H_idx)
+    conjugation(mf, generator_word(mf.context, g), H_idx)
 end
 
 function conjugation(mf::MackeyFunctor, word::GeneratorWord, H_idx::SubgroupIndex)::Generic.ModuleIsomorphism
