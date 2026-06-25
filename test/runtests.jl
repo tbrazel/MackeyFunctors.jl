@@ -180,8 +180,8 @@ end
         values,
         restrictions,
         transfers,
-        conjugations,
-        false,
+        conjugations;
+        verify = false,
     )
 
     res = MackeyFunctors.restriction(c4_mackey_functor, trivial, whole)
@@ -207,8 +207,8 @@ end
         [M for _ in s3_context.subgroups],
         s3_restrictions,
         s3_transfers,
-        s3_conjugations,
-        false,
+        s3_conjugations;
+        verify = false,
     )
 
     conjugation_word = [(1, 1), (2, 1)]
