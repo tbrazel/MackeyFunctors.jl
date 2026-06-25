@@ -14,14 +14,14 @@ end
     GModule(context::MackeyContext, M::AbstractAlgebra.FPModule, generator_actions::AbstractVector{<:Generic.ModuleIsomorphism}; verify::Bool = true)
 
 Construct the equivariant module with underlying module `M`.
-The action of the group `context.group` is given on the generators in `context.group.generators` by the isomorphisms in `generator_actions`.
+The action of the group `context.group` is given on the generators in `context.generators` by the isomorphisms in `generator_actions`.
 """
 struct GModule
     context::MackeyContext
     M::AbstractAlgebra.FPModule
     generator_actions::Vector{<:Generic.ModuleIsomorphism}
 
-    function GModule(context::MackeyContext, M::AbstractAlgebra.FPModule, generator_actions::AbstractVector{<:Generic.ModuleIsomorphism}; verify::Bool = true)
+    function GModule(context::MackeyContext, M::AbstractAlgebra.FPModule, generator_actions::AbstractVector{<:Generic.ModuleIsomorphism}; verify::Bool=true)
         if verify
             all(context.generator_relations) do word
                 m = map_extension(identity_homomorphism(M), generator_actions, word)
@@ -46,7 +46,7 @@ end
 
 Return the canonical `GModule` for the permutation group `context.group`.
 """
-function permutation_module(context::MackeyContext, R::Ring = ZZ)
+function permutation_module(context::MackeyContext, R::Ring=ZZ)
     GAP.Globals.IsPermGroup(context.group) || throw(ArgumentError("The given group is not a permutation group"))
     n = GAP.Globals.LargestMovedPoint(context.group)
     M = FreeModule(R, n)
