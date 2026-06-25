@@ -19,9 +19,7 @@ export generator_relations
 
 # Defines our MackeyContext type
 include("types/MackeyContext.jl")
-export MackeyContext,
-    double_coset_representative_data,
-    double_coset_representative_words
+export MackeyContext
 
 # MackeyFunctor type
 include("types/MackeyFunctor.jl")

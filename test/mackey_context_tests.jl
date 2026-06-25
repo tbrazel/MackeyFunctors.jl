@@ -85,21 +85,21 @@ end
     whole = findfirst(H -> Int(GAP.Globals.Size(H)) == Int(GAP.Globals.Size(G)), ctx.subgroups)
 
     @test !haskey(ctx.double_coset_formulae, (trivial, whole, trivial))
-    @test_throws ArgumentError double_coset_representative_data(ctx, trivial, whole, trivial)
-    @test_throws ArgumentError double_coset_representative_words(ctx, trivial, whole, trivial)
+    @test_throws ArgumentError MackeyFunctors.double_coset_representative_data(ctx, trivial, whole, trivial)
+    @test_throws ArgumentError MackeyFunctors.double_coset_representative_words(ctx, trivial, whole, trivial)
 
     j, h = first(ctx.covers)
     @test haskey(ctx.double_coset_formulae, (j, h, j))
 
-    representative_data = double_coset_representative_data(ctx, j, h, j)
-    @test double_coset_representative_data(
+    representative_data = MackeyFunctors.double_coset_representative_data(ctx, j, h, j)
+    @test MackeyFunctors.double_coset_representative_data(
         ctx,
         ctx.subgroups[j],
         ctx.subgroups[h],
         ctx.subgroups[j],
     ) == representative_data
 
-    words = double_coset_representative_words(ctx, j, h, j)
+    words = MackeyFunctors.double_coset_representative_words(ctx, j, h, j)
     @test words == first.(representative_data)
 
     gap_representatives = [

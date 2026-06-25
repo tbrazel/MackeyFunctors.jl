@@ -7,34 +7,27 @@ using GAP
 using AbstractAlgebra
 using MackeyFunctors
 
+# Computes the constant and Burnside C2 Mackey Functor
+M = FreeModule(ZZ, 1)
 C2 = GAP.Globals.CyclicGroup(2)
-subs = Vector{GapObj}(GAP.Globals.AllSubgroups(C2))
-e = subs[1]
-g = GAP.Globals.GeneratorsOfGroup(C2)[1]
+C2_context = MackeyContext(C2)
+C2_Mackey_constant = constant_mackey_functor(C2_context, M)
+C2_Burnside = burnside_mackey_functor(C2_context)
 
-values = IdDict{GapObj, Vector{Int64}}(
-    e => [0],
-    C2 => [0, 0],
-)
+# Computes the constant and Burnside C4 Mackey Functor
+C4 = GAP.Globals.CyclicGroup(4)
+C4_context = MackeyContext(C4)
+C4_Mackey_constant = constant_mackey_functor(C4_context, M)
+C4_Burnside = burnside_mackey_functor(C4_context)
 
-restrictions = IdDict{Tuple{GapObj, GapObj}, Matrix{Int64}}(
-    (e, C2) => [1 2],
-)
+# Computes the constant and Burnside S3 Mackey Functor
+S3 = GAP.Globals.SymmetricGroup(3)
+S3_context = MackeyContext(S3)
+S3_Mackey_constant = constant_mackey_functor(S3_context, M)
+S3_Burnside = burnside_mackey_functor(S3_context)
 
-transfers = IdDict{Tuple{GapObj, GapObj}, Matrix{Int64}}(
-    (e, C2) => [0; 1;;],
-)
+# Constructs a MackeyContext for S5
+S5 = GAP.Globals.SymmetricGroup(5)
+S5_context = MackeyContext(S5)
 
-conjugations = IdDict{Tuple{GapObj, GapObj}, Matrix{Int64}}(
-    (e, g) => [1;;],
-)
-
-M = MackeyFunctor(C2, values, restrictions, transfers, conjugations)
-```
-
-For interactive visualization data, use:
-
-```julia
-visualizer_data(M)
-visualizer_json(M)
 ```
