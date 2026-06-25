@@ -25,6 +25,7 @@ MackeyFunctor
 ```
 
 ## Extracting data from a Mackey functor
+
 Given a Mackey functor, we can access various parts of the data.
 
 ```@docs

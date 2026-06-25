@@ -1,4 +1,4 @@
-## Documentation Build
+# Documentation Build
 
 To build these docs locally:
 

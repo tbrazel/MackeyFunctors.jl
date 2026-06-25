@@ -245,6 +245,11 @@ struct MackeyFunctor
     end
 end
 
+"""
+    value(M,i)
+
+Returns the value of the Mackey functor `M` at the subgroup index `i`.
+"""
 # Returns the value of a Mackey functor at subgroup index H_idx
 function value(mf::MackeyFunctor, H_idx::SubgroupIndex)
     return mf.values[H_idx]
@@ -350,6 +355,6 @@ end
 
 function Base.show(io::IO, obj::MackeyFunctor)
 
-    print(io, "MackeyFunctor for group ", obj.context.group, "over base ring ", coefficient_ring(obj) ," with ", length(obj.context.covers), " covers and ", length(obj.context.generators), " generators supplied.")
+    print(io, "MackeyFunctor for group ", obj.context.group, "over base ring ", coefficient_ring(obj), " with ", length(obj.context.covers), " covers and ", length(obj.context.generators), " generators supplied.")
 
 end
