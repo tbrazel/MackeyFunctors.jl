@@ -92,3 +92,7 @@ function id_homomorphism(mf::MackeyFunctor)::MackeyFunctorHomomorphism
         [identity_homomorphism(M) for M in mf.values]
     )
 end
+
+function is_isomorphism(f::MackeyFunctorHomomorphism)::Bool
+    return all(is_isomorphism, f.components)
+end

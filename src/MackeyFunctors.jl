@@ -32,7 +32,7 @@ export MackeyFunctor,
 
 # MackeyFunctorHomomorphism type
 include("types/Homomorphism.jl")
-export MackeyFunctorHomomorphism, id_homomorphism
+export MackeyFunctorHomomorphism, id_homomorphism, is_isomorphism
 
 # Nice printing for various new types
 include("Show.jl")
