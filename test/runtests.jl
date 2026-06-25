@@ -743,6 +743,69 @@ end
 #     @test occursin("\"covers\"", json)
 # end
 
+@testset "Tensor products of FPModules" begin
+    F1 = free_module(ZZ, 1)
+    F2 = free_module(ZZ, 2)
+    twoF1, = sub(F1, [F1([ZZ(2)])])
+    threeF1, = sub(F1, [F1([ZZ(3)])])
+    fourF1, = sub(F1, [F1([ZZ(4)])])
+    Z2, = quo(F1, twoF1)
+    Z3, = quo(F1, threeF1)
+    Z4, = quo(F1, fourF1)
+
+    # Z^2 * Z
+    free_tensor = TensorProduct(F2, F1)
+    @test underlying_module(free_tensor) isa AbstractAlgebra.FPModule
+    @test ngens(free_tensor) == 2
+    @test isempty(relations(free_tensor))
+    @test tensor_product_element(free_tensor, F2([ZZ(3), ZZ(5)]), gen(F1, 1)) ==
+        underlying_module(free_tensor)([ZZ(3), ZZ(5)])
+
+    #Z/2 * Z/4
+    z2_tensor_z4 = tensor_product(Z2, Z4)
+    @test underlying_module(z2_tensor_z4) isa AbstractAlgebra.FPModule
+    @test ngens(z2_tensor_z4) == 1
+    @test AbstractAlgebra.invariant_factors(underlying_module(z2_tensor_z4)) == BigInt[2]
+    pure_tensor = tensor_product_element(z2_tensor_z4, gen(Z2, 1), gen(Z4, 1))
+    @test 2*pure_tensor == zero(underlying_module(z2_tensor_z4))
+    @test pure_tensor == gen(underlying_module(z2_tensor_z4), 1)
+
+    # Z/2 * Z/3
+    z2_tensor_z3 = TensorProduct(Z2, Z3)
+    @test ngens(z2_tensor_z3) == 0
+    @test tensor_product_element(z2_tensor_z3, gen(Z2, 1), gen(Z3, 1)) ==
+        zero(underlying_module(z2_tensor_z3))
+
+    # Z^2 * Z/4
+    bilinear_tensor = TensorProduct(F2, Z4)
+    @test tensor_product_element(bilinear_tensor, F2([ZZ(2), ZZ(3)]), gen(Z4, 1)) ==
+        2*tensor_product_element(bilinear_tensor, gen(F2, 1), gen(Z4, 1)) +
+        3*tensor_product_element(bilinear_tensor, gen(F2, 2), gen(Z4, 1))
+
+    # Tensor two maps together
+    left_map = ModuleHomomorphism(F2, F2, matrix(ZZ, [1 2; 3 4]))
+    right_map = ModuleHomomorphism(F1, F1, matrix(ZZ, 1, 1, [ZZ(5)]))
+    tensor_map = tensor_product(left_map, right_map)
+    source_tensor = TensorProduct(F2, F1)
+    target_tensor = TensorProduct(F2, F1)
+    @test domain(tensor_map) == underlying_module(source_tensor)
+    @test codomain(tensor_map) == underlying_module(target_tensor)
+    @test tensor_map(gen(domain(tensor_map), 1)) == underlying_module(target_tensor)([ZZ(5), ZZ(10)])
+    @test tensor_map(gen(domain(tensor_map), 2)) == underlying_module(target_tensor)([ZZ(15), ZZ(20)])
+
+    # id_{Z/2} * (Z/2 -> Z/4) gives zero
+    id_Z2 = ModuleHomomorphism(Z2, Z2, matrix(ZZ, 1, 1, [ZZ(1)]))
+    double_into_Z4 = ModuleHomomorphism(Z2, Z4, matrix(ZZ, 1, 1, [ZZ(2)]))
+    torsion_tensor_map = tensor_product(id_Z2, double_into_Z4)
+    @test ngens(domain(torsion_tensor_map)) == 1
+    @test ngens(codomain(torsion_tensor_map)) == 1
+    @test MackeyFunctors.is_zero_module_homomorphism(torsion_tensor_map)
+
+    # Can't tensor modules over different base rings
+    F_QQ_1 = free_module(QQ, 1)
+    @test_throws ArgumentError TensorProduct(F1, F_QQ_1)
+end
+
 @testset "Zero Mackey functors" begin
     @test zero_mackey_functor(MackeyContext(GAP.Globals.CyclicGroup(2)), ZZ) isa MackeyFunctor
 end

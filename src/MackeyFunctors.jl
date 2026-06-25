@@ -11,6 +11,9 @@ include("abstract_algebra/DirectSums.jl")
 include("abstract_algebra/HomModule.jl")
 export HomModule, underlying_module, as_hom_module_element, as_homomorphism
 
+include("abstract_algebra/TensorProduct.jl")
+export TensorProduct,tensor_product,tensor_product_element
+
 include("group_theory/Words.jl")
 export generator_relations
 
@@ -44,5 +47,6 @@ export MackeyFunctorHomomorphism, id_homomorphism
 
 include("DirectSum.jl")
 export direct_sum_mf, direct_sum_homomorphism
+
 
 end
