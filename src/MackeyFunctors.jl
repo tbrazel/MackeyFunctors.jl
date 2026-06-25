@@ -7,8 +7,11 @@ import AbstractAlgebra: coefficient_ring
 
 # We add some additional functionality needed from the abstract algebra world
 include("abstract_algebra/ModuleHomomorphisms.jl")
+include("abstract_algebra/TensorProduct.jl")
 include("abstract_algebra/HomModule.jl")
-export HomModule, underlying_module, as_hom_module_element, as_homomorphism
+export HomModule, TensorProduct, underlying_module,
+    as_hom_module_element, as_homomorphism,
+    tensor_product, tensor_product_element
 
 include("group_theory/Words.jl")
 export generator_relations
