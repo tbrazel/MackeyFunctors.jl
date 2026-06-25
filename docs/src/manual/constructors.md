@@ -1,4 +1,11 @@
-# Constructors
+# `G`-Module Constructors
+
+```@docs
+GModule
+permutation_module
+```
+
+# Mackey Functor Constructors
 
 One of the major methods used in our constructors is the [`shift`](@ref) operation. Given a Mackey functor $M$ and a finite $G$-set $X$, the general shift operation yields a new Mackey functor $M_X$, defined by the formula $M_X(Y):= M(X\times Y)$. This allows us to take existing constructors and turn them into more general ones. For instance:
 
@@ -17,4 +24,5 @@ Other constructors include
 constant_mackey_functor
 burnside_mackey_functor
 free_mackey_functor
+fixedpoint_mackey_functor
 ```

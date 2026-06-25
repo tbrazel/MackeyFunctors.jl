@@ -41,209 +41,267 @@ struct MackeyFunctor
             }(),
         )
 
-        # TODO: sanity check that all the values are modules over the same base ring
-
-        # If the user doesn't want verification, we just return the result. Default setting is to verify
-        if !verify
-            return result
-        end
-
-        # Pull stuff from the Mackey context
-        G = context.group
-        subgroups = context.subgroups
-        covers = context.covers
-        generators = context.generators
-        generator_left_conjugation_matrix = context.generator_left_conjugation_matrix
-        double_coset_formulae = context.double_coset_formulae
-
-
-        # Before the Mackey axioms, we check that the input is well-formed, i.e. that the values, restrictions, transfers, and conjugations have the right domains and codomains (and that there is the right number of each)
-        length(values) == length(subgroups) || throw(ArgumentError("There must be one value for each subgroup."))
-        length(cover_restrictions) == length(covers) || throw(ArgumentError("There must be one restriction for each cover."))
-        length(cover_transfers) == length(covers) || throw(ArgumentError("There must be one transfer for each cover."))
-        size(generator_conjugations) == (length(generators), length(subgroups)) || throw(ArgumentError("There must be one conjugation for each generator and subgroup."))
-
-        for (cover_index, (i, j)) in enumerate(covers)
-            restriction_map = cover_restrictions[cover_index]
-            domain(restriction_map) === values[j] || throw(ArgumentError("Restriction for cover $((i, j)) has the wrong domain."))
-            codomain(restriction_map) === values[i] || throw(ArgumentError("Restriction for cover $((i, j)) has the wrong codomain."))
-
-            transfer_map = cover_transfers[cover_index]
-            domain(transfer_map) === values[i] || throw(ArgumentError("Transfer for cover $((i, j)) has the wrong domain."))
-            codomain(transfer_map) === values[j] || throw(ArgumentError("Transfer for cover $((i, j)) has the wrong codomain."))
-        end
-
-        for i in eachindex(subgroups), n in eachindex(generators)
-            conjugation_map = generator_conjugations[n, i]
-            target_index = generator_left_conjugation_matrix[n, i]
-
-            domain(conjugation_map) === values[i] || throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong domain."))
-            codomain(conjugation_map) === values[target_index] || throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong codomain."))
-        end
-
-        # 1. For h in H, conjugation by h is the identity on M(H)
-        for (i, H) in enumerate(subgroups)
-
-            # It suffices to check on generators of H
-            for h in GAP.Globals.GeneratorsOfGroup(H)
-                conj_h_H = conjugation(result, h, i)
-                is_identity_module_homomorphism(conj_h_H) || throw(ArgumentError("Conjugation by $h at level $H is not the identity"))
-            end
-        end
-
-        # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
-        relation_words = generator_relations_from_isomorphism(context.fp_isomorphism)
-        for i in eachindex(subgroups), relation_word in relation_words
-            # For each subgroup H, and for every relation (viewed as a word in the generators)
-            # We build the map which conjugates M(H) by the relation word
-            conj_by_relation_word = conjugation(result, relation_word, i)
-
-            # We assert this is the identity homomorphism on M(H)
-            is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
-        end
-
-        # 3. Check Webb Axiom 4 and 5 for covers (compatibility of transfers/conjugation and restriction/conjugation)
-        for (cover_index, (i, j)) in enumerate(covers)
-            for (n, g) in enumerate(generators)
-
-                # We have res/tr between M(H) and M(K), and we have a generator g. Now we want to check that conjugation by g commutes with res/tr on M(gHg^{-1}) and M(gKg^{-1})
-
-                # First we get the indices of the subgroups gHg^{-1} and gKg^{-1} in our subgroup list
-                gHginvs_index = generator_left_conjugation_matrix[n, i]
-                gKginvs_index = generator_left_conjugation_matrix[n, j]
-
-                # Since H<K was a cover, we know gHg^{-1}<gKg^{-1} must be a cover, so we get its index
-                index_of_conjugated_cover = first(context.paths[(gHginvs_index, gKginvs_index)])
-
-                # We assert restriction along covers commutes with conjugation by generators
-                map_eq(
-                    cover_restrictions[cover_index] * generator_conjugations[n, i],
-                    generator_conjugations[n, j] * cover_restrictions[index_of_conjugated_cover]
-                ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
-
-                # We assert transfer along covers commutes with conjugation by generators
-                map_eq(
-                    cover_transfers[cover_index] * generator_conjugations[n, j],
-                    generator_conjugations[n, i] * cover_transfers[index_of_conjugated_cover]
-                ) || throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
-            end
-        end
-
-        # 4. For H<K not a cover, check any composite of covers beginning at H and ending at K yields the same well-defined transfer and restriction
-
-        # Strategy: we build the restrictions and transfers along arbitrary subgroup
-        # inclusions by induction on chains of covers in the subgroup lattice.
-        #
-        # The dictionary has one entry for each inclusion H <= K whose composite maps
-        # we have already constructed. Its value is a pair (tr, res), where
-        # tr: M(H) -> M(K) and res: M(K) -> M(H).
-        #
-        # We begin with the cover inclusions, since those maps are part of the input.
-        # Then we keep a queue of the inclusions whose composites have just become
-        # known. When an inclusion H <= K is taken from the queue, we extend it only
-        # across covers K < L. This gives a candidate composite for H <= L.
-        #
-        # If H <= L has not appeared before, we record this candidate and add H <= L
-        # to the queue, so it can itself be extended later. If H <= L has appeared
-        # before, then we have found a second chain of covers from H to L, and we
-        # check that the two resulting transfer maps agree and that the two resulting
-        # restriction maps agree.
-        #
-        # Since the subgroup lattice is finite, this process eventually considers
-        # every composite of cover maps. Thus the input cover maps determine
-        # well-defined restrictions and transfers along all subgroup inclusions
-        # exactly when every repeated inclusion gives the same maps.
-        dictionary_of_paths = Dict{Tuple{SubgroupIndex,SubgroupIndex},Tuple{Generic.ModuleHomomorphism,Generic.ModuleHomomorphism}}()
-
-        # We first initialize the dictionaries with restriction and transfer along covers
-        for (n, cov) in enumerate(context.covers)
-            dictionary_of_paths[cov] = (cover_transfers[n], cover_restrictions[n])
-        end
-
-        outgoing_covers = [Tuple{Int,SubgroupIndex}[] for _ in eachindex(context.subgroups)]
-        for (n, (i, j)) in enumerate(context.covers)
-            push!(outgoing_covers[i], (n, j))
-        end
-
-        queue = collect(keys(dictionary_of_paths))
-        queue_head = 1
-        while queue_head <= length(queue)
-            H_index, K_index = queue[queue_head]
-            queue_head += 1
-
-            tr, res = dictionary_of_paths[(H_index, K_index)]
-            for (n, next_K_index) in outgoing_covers[K_index]
-                # Extend the path H < K by a cover K < next_K.
-                # tr goes M(H) -> M(K)
-                # res goes M(K) -> M(H)
-
-                new_key = (H_index, next_K_index)
-
-                candidate_tr = tr * cover_transfers[n]
-                candidate_res = cover_restrictions[n] * res
-
-                if haskey(dictionary_of_paths, new_key)
-                    existing_tr, existing_res = dictionary_of_paths[new_key]
-                    map_eq(
-                        existing_tr, candidate_tr
-                    ) || throw(ArgumentError("Transfers do not agree along all possible subgroup paths."))
-
-                    map_eq(
-                        existing_res, candidate_res
-                    ) || throw(ArgumentError("Restrictions do not agree along all possible subgroup paths."))
-
-                else
-                    dictionary_of_paths[new_key] = (candidate_tr, candidate_res)
-                    push!(queue, new_key)
-                end
-            end
-        end
-
-        for (key, (tr, res)) in dictionary_of_paths
-            result.transfer_cache[key] = tr
-            result.restriction_cache[key] = res
-        end
-
-        # 5. Check double coset formula for covers
-        for (n1, (j, h)) in enumerate(covers)
-            for (n2, (k, l)) in enumerate(covers)
-                h == l || continue
-
-                # We have J<H and K<H, which are both covers
-                # J = subgroups[j]
-                # H = subgroups[h]
-                # K = subgroups[k]
-
-                # Pull the double coset representatives for J\H/K
-                dc_reps = double_coset_formulae[(j, h, k)]
-
-                # The LHS of the double coset formula is res_J^H tr_K^H
-                dc_lhs = cover_transfers[n2] * cover_restrictions[n1]
-
-                # We start with the RHS being the zero map from M(K) -> M(J)
-                dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
-
-                # For each pair of (g,J^x \cap K), we add the needed term to the RHS of the double coset formula
-                for (w, JxcapK_index) in dc_reps
-                    JcapxK_index = conjugate_subgroup_by_word(context, JxcapK_index, w)
-
-                    dc_restriction = restriction(result, JxcapK_index, k)
-                    dc_transfer = transfer(result, JcapxK_index, j)
-                    dc_conjugation = conjugation(result, w, JxcapK_index)
-
-                    dc_rhs += dc_restriction * dc_conjugation * dc_transfer
-                end
-
-                # Assert that the LHS and RHS of the double coset formula agree
-                map_eq(
-                    dc_lhs,
-                    dc_rhs
-                ) || throw(ArgumentError("Double coset formula failed."))
-            end
+        if verify
+            _verify_mackey_functor(result)
         end
 
         return result
     end
+end
+
+function _verify_mackey_functor(mf::MackeyFunctor)
+    _verify_values(mf.context, mf.values)
+    _verify_cover_maps(
+        mf.context,
+        mf.values,
+        mf.cover_restrictions,
+        mf.cover_transfers,
+    )
+    _verify_generator_conjugations(
+        mf.context,
+        mf.values,
+        mf.generator_conjugations,
+    )
+    _verify_conjugation_relations(mf)
+    _verify_conjugation_cover_compatibility(mf)
+    _verify_subgroup_path_independence!(mf)
+    _verify_mackey_double_cosets(mf)
+    return nothing
+end
+
+function _verify_values(
+    context::MackeyContext,
+    values::AbstractVector{<:AbstractAlgebra.FPModule},
+)
+    length(values) == length(context.subgroups) ||
+        throw(ArgumentError("There must be one value for each subgroup."))
+
+    # A Mackey functor is valued in modules over one fixed coefficient ring.
+    # Several later operations assume this without rechecking it:
+    # coefficient_ring reads the first value, zero_homomorphism builds matrices
+    # over the domain's base ring, and map comparisons evaluate generators
+    # inside common module categories.  Check this before the map-domain checks
+    # below, so mixed-ring input fails with the actual structural problem.
+    coefficient_ring = base_ring(values[begin])
+    for i in eachindex(values)
+        base_ring(values[i]) == coefficient_ring ||
+            throw(ArgumentError("All values of a Mackey functor must be modules over the same base ring. Value $i has base ring $(base_ring(values[i])), but value $(firstindex(values)) has base ring $coefficient_ring."))
+    end
+
+    return nothing
+end
+
+function _verify_cover_maps(
+    context::MackeyContext,
+    values::AbstractVector{<:AbstractAlgebra.FPModule},
+    cover_restrictions::AbstractVector{<:Generic.ModuleHomomorphism},
+    cover_transfers::AbstractVector{<:Generic.ModuleHomomorphism},
+)
+    covers = context.covers
+
+    length(cover_restrictions) == length(covers) ||
+        throw(ArgumentError("There must be one restriction for each cover."))
+    length(cover_transfers) == length(covers) ||
+        throw(ArgumentError("There must be one transfer for each cover."))
+
+    for (cover_index, (i, j)) in enumerate(covers)
+        restriction_map = cover_restrictions[cover_index]
+        domain(restriction_map) === values[j] ||
+            throw(ArgumentError("Restriction for cover $((i, j)) has the wrong domain."))
+        codomain(restriction_map) === values[i] ||
+            throw(ArgumentError("Restriction for cover $((i, j)) has the wrong codomain."))
+
+        transfer_map = cover_transfers[cover_index]
+        domain(transfer_map) === values[i] ||
+            throw(ArgumentError("Transfer for cover $((i, j)) has the wrong domain."))
+        codomain(transfer_map) === values[j] ||
+            throw(ArgumentError("Transfer for cover $((i, j)) has the wrong codomain."))
+    end
+
+    return nothing
+end
+
+function _verify_generator_conjugations(
+    context::MackeyContext,
+    values::AbstractVector{<:AbstractAlgebra.FPModule},
+    generator_conjugations::AbstractMatrix{<:Generic.ModuleIsomorphism},
+)
+    subgroups = context.subgroups
+    generators = context.generators
+    generator_left_conjugation_matrix = context.generator_left_conjugation_matrix
+
+    size(generator_conjugations) == (length(generators), length(subgroups)) ||
+        throw(ArgumentError("There must be one conjugation for each generator and subgroup."))
+
+    for i in eachindex(subgroups), n in eachindex(generators)
+        conjugation_map = generator_conjugations[n, i]
+        target_index = generator_left_conjugation_matrix[n, i]
+
+        domain(conjugation_map) === values[i] ||
+            throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong domain."))
+        codomain(conjugation_map) === values[target_index] ||
+            throw(ArgumentError("Conjugation for generator $n and subgroup $i has the wrong codomain."))
+    end
+
+    return nothing
+end
+
+function _verify_conjugation_relations(mf::MackeyFunctor)
+    context = mf.context
+
+    # If h lies in H, conjugation by h acts trivially on the orbit G/H.  The
+    # Mackey functor data therefore has to make c_h the identity on M(H).  It
+    # is enough to check this on a generating set for each subgroup H.
+    for (i, H) in enumerate(context.subgroups)
+        for h in GAP.Globals.GeneratorsOfGroup(H)
+            conj_h_H = conjugation(mf, h, i)
+            is_identity_module_homomorphism(conj_h_H) ||
+                throw(ArgumentError("Conjugation by $h at level $H is not the identity"))
+        end
+    end
+
+    # The supplied generator conjugations must respect the relators in the
+    # chosen presentation of G.  The context stores those relators as words in
+    # exactly the same generators used to index generator_conjugations.
+    for i in eachindex(context.subgroups), relation_word in context.generator_relations
+        conj_by_relation_word = conjugation(mf, relation_word, i)
+        is_identity_module_homomorphism(conj_by_relation_word) ||
+            throw(ArgumentError("Specified conjugations do not form a valid group action."))
+    end
+
+    return nothing
+end
+
+function _verify_conjugation_cover_compatibility(mf::MackeyFunctor)
+    context = mf.context
+    generator_left_conjugation_matrix = context.generator_left_conjugation_matrix
+
+    # Webb's compatibility axioms say that conjugating a cover H < K by a
+    # generator g commutes with both the restriction and transfer attached to
+    # that cover.  Since conjugation preserves covers, gHg^-1 < gKg^-1 is also
+    # one of the context covers; compare the two routes around each square.
+    for (cover_index, (i, j)) in enumerate(context.covers)
+        for n in eachindex(context.generators)
+            gHginvs_index = generator_left_conjugation_matrix[n, i]
+            gKginvs_index = generator_left_conjugation_matrix[n, j]
+            index_of_conjugated_cover =
+                first(context.paths[(gHginvs_index, gKginvs_index)])
+
+            map_eq(
+                mf.cover_restrictions[cover_index] *
+                    mf.generator_conjugations[n, i],
+                mf.generator_conjugations[n, j] *
+                    mf.cover_restrictions[index_of_conjugated_cover],
+            ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
+
+            map_eq(
+                mf.cover_transfers[cover_index] *
+                    mf.generator_conjugations[n, j],
+                mf.generator_conjugations[n, i] *
+                    mf.cover_transfers[index_of_conjugated_cover],
+            ) || throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
+        end
+    end
+
+    return nothing
+end
+
+function _verify_subgroup_path_independence!(mf::MackeyFunctor)
+    context = mf.context
+
+    # Build restrictions and transfers along arbitrary subgroup inclusions by
+    # induction on chains of covers in the subgroup lattice.
+    #
+    # The dictionary has one entry for each inclusion H <= K whose composite
+    # maps have already been constructed.  Its value is a pair (tr, res), where
+    # tr: M(H) -> M(K) and res: M(K) -> M(H).
+    #
+    # We begin with cover inclusions, since those maps are part of the input.
+    # When an inclusion H <= K is taken from the queue, we extend it only across
+    # covers K < L.  If H <= L has already appeared, then we have found a second
+    # chain of covers from H to L, and we check that the two resulting transfer
+    # maps agree and that the two resulting restriction maps agree.
+    dictionary_of_paths = Dict{
+        Tuple{SubgroupIndex,SubgroupIndex},
+        Tuple{Generic.ModuleHomomorphism,Generic.ModuleHomomorphism},
+    }()
+
+    for (n, cover) in enumerate(context.covers)
+        dictionary_of_paths[cover] = (
+            mf.cover_transfers[n],
+            mf.cover_restrictions[n],
+        )
+    end
+
+    outgoing_covers = [Tuple{Int,SubgroupIndex}[] for _ in eachindex(context.subgroups)]
+    for (n, (i, j)) in enumerate(context.covers)
+        push!(outgoing_covers[i], (n, j))
+    end
+
+    queue = collect(keys(dictionary_of_paths))
+    queue_head = 1
+    while queue_head <= length(queue)
+        H_index, K_index = queue[queue_head]
+        queue_head += 1
+
+        tr, res = dictionary_of_paths[(H_index, K_index)]
+        for (n, next_K_index) in outgoing_covers[K_index]
+            new_key = (H_index, next_K_index)
+            candidate_tr = tr * mf.cover_transfers[n]
+            candidate_res = mf.cover_restrictions[n] * res
+
+            if haskey(dictionary_of_paths, new_key)
+                existing_tr, existing_res = dictionary_of_paths[new_key]
+                map_eq(existing_tr, candidate_tr) ||
+                    throw(ArgumentError("Transfers do not agree along all possible subgroup paths."))
+                map_eq(existing_res, candidate_res) ||
+                    throw(ArgumentError("Restrictions do not agree along all possible subgroup paths."))
+            else
+                dictionary_of_paths[new_key] = (candidate_tr, candidate_res)
+                push!(queue, new_key)
+            end
+        end
+    end
+
+    for (key, (tr, res)) in dictionary_of_paths
+        mf.transfer_cache[key] = tr
+        mf.restriction_cache[key] = res
+    end
+
+    return nothing
+end
+
+function _verify_mackey_double_cosets(mf::MackeyFunctor)
+    context = mf.context
+
+    # It suffices to check the double-coset formula for spans J < H > K where
+    # both inclusions are covers.  The context has already precomputed the
+    # needed representatives and intersections for exactly those triples.
+    for (n1, (j, h)) in enumerate(context.covers)
+        for (n2, (k, l)) in enumerate(context.covers)
+            h == l || continue
+
+            dc_reps = context.double_coset_formulae[(j, h, k)]
+            dc_lhs = mf.cover_transfers[n2] * mf.cover_restrictions[n1]
+            dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
+
+            for (w, JxcapK_index) in dc_reps
+                JcapxK_index =
+                    conjugate_subgroup_by_word(context, JxcapK_index, w)
+
+                dc_restriction = restriction(mf, JxcapK_index, k)
+                dc_transfer = transfer(mf, JcapxK_index, j)
+                dc_conjugation = conjugation(mf, w, JxcapK_index)
+
+                dc_rhs += dc_restriction * dc_conjugation * dc_transfer
+            end
+
+            map_eq(dc_lhs, dc_rhs) ||
+                throw(ArgumentError("Double coset formula failed."))
+        end
+    end
+
+    return nothing
 end
 
 """
@@ -351,18 +409,4 @@ Returns the underlying coefficient ring of the Mackey functor `M`.
 """
 function coefficient_ring(mf::MackeyFunctor)
     return base_ring(mf.values[1])
-end
-
-function Base.show(io::IO, obj::MackeyFunctor)
-    println(io, "MackeyFunctor for group ", String(GAP.Globals.StructureDescription(obj.context.group)), " over base ring ", coefficient_ring(obj))
-    
-    for (i,(h,k)) in enumerate(obj.context.covers)
-        hname = String(GAP.Globals.StructureDescription(obj.context.subgroups[h]))
-        kname = String(GAP.Globals.StructureDescription(obj.context.subgroups[k]))
-        println("Restriction ", kname, " ---> ", hname)
-        display(matrix(obj.cover_restrictions[i]))
-        println("Transfer ", hname, " ---> ", kname)
-        display(matrix(obj.cover_transfers[i]))
-    end
-
 end

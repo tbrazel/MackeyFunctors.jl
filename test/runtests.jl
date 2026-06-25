@@ -11,7 +11,7 @@ using MackeyFunctors
         @test length(context.subgroups) == k+1
         @test length(context.covers) == k
 
-        for R in [ZZ, QQ, GF(2), GF(67)] 
+        for R in [ZZ, QQ, GF(2), GF(67)]
             M = free_module(R, 1)
             #     values = [M for i in context.subgroups]
 
@@ -28,6 +28,38 @@ using MackeyFunctors
             @test coefficient_ring(cmf) == R
         end
     end
+end
+
+@testset "Mackey functor value base rings" begin
+    context = MackeyContext(GAP.Globals.CyclicGroup(2))
+
+    M_ZZ = free_module(ZZ, 1)
+    M_QQ = free_module(QQ, 1)
+    id_ZZ_hom = ModuleHomomorphism(M_ZZ, M_ZZ, identity_matrix(ZZ, 1))
+    id_ZZ_iso = ModuleIsomorphism(M_ZZ, M_ZZ, identity_matrix(ZZ, 1))
+
+    values = AbstractAlgebra.FPModule[M_ZZ, M_QQ]
+    restrictions = Generic.ModuleHomomorphism[id_ZZ_hom for _ in context.covers]
+    transfers = Generic.ModuleHomomorphism[id_ZZ_hom for _ in context.covers]
+    conjugations = Generic.ModuleIsomorphism[
+        id_ZZ_iso for _ in context.generators, _ in context.subgroups
+    ]
+
+    @test_throws ArgumentError MackeyFunctor(
+        context,
+        values,
+        restrictions,
+        transfers,
+        conjugations,
+    )
+    @test MackeyFunctor(
+        context,
+        values,
+        restrictions,
+        transfers,
+        conjugations;
+        verify=false,
+    ) isa MackeyFunctor
 end
 
 @testset "Constant Mackey functors for symmetric groups" begin
@@ -288,6 +320,14 @@ end
     @test homomorphism.codomain === mackey_functor
     @test length(homomorphism.components) == length(context.subgroups)
 
+    identity_homomorphism = MackeyFunctors.id_homomorphism(mackey_functor)
+    @test identity_homomorphism isa MackeyFunctorHomomorphism
+    @test identity_homomorphism.domain === mackey_functor
+    @test identity_homomorphism.codomain === mackey_functor
+    @test all(identity_homomorphism.components) do component
+        MackeyFunctors.is_identity_module_homomorphism(component)
+    end
+
     @test_throws ArgumentError MackeyFunctorHomomorphism(
         mackey_functor,
         mackey_functor,
@@ -341,6 +381,60 @@ end
     ) isa MackeyFunctorHomomorphism
 end
 
+@testset "Hom modules" begin
+    F1 = free_module(ZZ, 1)
+    twoF1, = sub(F1, [F1([ZZ(2)])])
+    fourF1, = sub(F1, [F1([ZZ(4)])])
+    Z2, = quo(F1, twoF1)
+    Z4, = quo(F1, fourF1)
+
+    hom_Z2_Z2 = HomModule(Z2, Z2)
+    @test underlying_module(hom_Z2_Z2) isa AbstractAlgebra.FPModule
+    @test ngens(hom_Z2_Z2) == 1
+    @test length(relations(hom_Z2_Z2)) == 1
+    @test relations(hom_Z2_Z2)[1][1, 1] == ZZ(2)
+
+    id_Z2 = ModuleHomomorphism(Z2, Z2, matrix(ZZ, 1, 1, [ZZ(1)]))
+    id_element = as_hom_module_element(hom_Z2_Z2, id_Z2)
+    @test 2*id_element == zero(underlying_module(hom_Z2_Z2))
+    @test MackeyFunctors.map_eq(as_homomorphism(hom_Z2_Z2, id_element), id_Z2)
+
+    hom_Z2_Z = HomModule(Z2, F1)
+    @test ngens(hom_Z2_Z) == 0
+    zero_element = as_hom_module_element(hom_Z2_Z, MackeyFunctors.zero_homomorphism(Z2, F1))
+    @test zero_element == zero(underlying_module(hom_Z2_Z))
+    invalid_map = ModuleHomomorphism(Z2, F1, matrix(ZZ, 1, 1, [ZZ(1)]))
+    @test_throws ArgumentError as_hom_module_element(hom_Z2_Z, invalid_map)
+
+    F2 = free_module(ZZ, 2)
+    hom_Z2_power = HomModule(F2, Z2)
+    @test ngens(hom_Z2_power) == 2
+    @test length(relations(hom_Z2_power)) == 2
+    @test Set([[relation[1, i] for i in 1:ncols(relation)] for relation in relations(hom_Z2_power)]) ==
+        Set([[ZZ(2), ZZ(0)], [ZZ(0), ZZ(2)]])
+    first_projection = ModuleHomomorphism(F2, Z2, matrix(ZZ, 2, 1, [ZZ(1), ZZ(0)]))
+    @test MackeyFunctors.map_eq(
+        as_homomorphism(hom_Z2_power, as_hom_module_element(hom_Z2_power, first_projection)),
+        first_projection,
+    )
+
+    hom_Z2_Z4 = HomModule(Z2, Z4)
+    @test ngens(hom_Z2_Z4) == 1
+    killed_by_two = ModuleHomomorphism(Z2, Z4, matrix(ZZ, 1, 1, [ZZ(2)]))
+    killed_by_two_element = as_hom_module_element(hom_Z2_Z4, killed_by_two)
+    @test MackeyFunctors.map_eq(
+        as_homomorphism(hom_Z2_Z4, killed_by_two_element),
+        killed_by_two,
+    )
+
+    M = free_module(QQ, 2)
+    N = free_module(QQ, 3)
+    free_hom_module = HomModule(M, N)
+    f = ModuleHomomorphism(M, N, matrix(QQ, [1 2 3; 4 5 6]))
+    f_element = as_hom_module_element(free_hom_module, f)
+    @test matrix(as_homomorphism(free_hom_module, f_element)) == matrix(f)
+end
+
 @testset "Shifts of Mackey functors for C4, S3" begin
     C4 = GAP.Globals.CyclicGroup(4)
     c4_context = MackeyContext(C4)
@@ -359,6 +453,19 @@ end
         expected_rank = Int(GAP.Globals.Index(C4, K))
         @test rank(MackeyFunctors.value(shifted_by_trivial, K_index)) == expected_rank
     end
+
+    C2 = GAP.Globals.CyclicGroup(2)
+    c2_context = MackeyContext(C2)
+    c2_trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, c2_context.subgroups)
+    F1 = free_module(ZZ, 1)
+    twoF1, = sub(F1, [F1([ZZ(2)])])
+    Z2, = quo(F1, twoF1)
+    c2_z2_constant = constant_mackey_functor(c2_context, Z2)
+    shifted_z2 = shift(c2_z2_constant, c2_trivial; verify=false)
+    shifted_z2_at_trivial = MackeyFunctors.value(shifted_z2, c2_trivial)
+    @test AbstractAlgebra.invariant_factors(shifted_z2_at_trivial) == BigInt[2, 2]
+    @test Set([[relation[1, i] for i in 1:ncols(relation)] for relation in relations(shifted_z2_at_trivial)]) ==
+        Set([[ZZ(2), ZZ(0)], [ZZ(0), ZZ(2)]])
 
     shifted_by_whole = shift(c4_constant, c4_whole)
     @test shifted_by_whole isa MackeyFunctor
@@ -396,6 +503,25 @@ end
     @test shift(s3_burnside, subgroup_of_order_two) isa MackeyFunctor
 end
 
+@testset "permutation_module" begin
+    for n in [1, 4], R in [ZZ, GF(5)]
+        G = GAP.Globals.SymmetricGroup(n)
+        mc = MackeyContext(G)
+        gm = permutation_module(mc, R)
+        @test gm isa GModule
+    end
+end
+
+@testset "fixedpoint_mackey_functor" begin
+    for n in [1, 4], R in [ZZ, GF(5)]
+        G = GAP.Globals.SymmetricGroup(n)
+        mc = MackeyContext(G)
+        gm = permutation_module(mc, R)
+        mf = fixedpoint_mackey_functor(gm)
+        @test mf isa MackeyFunctor
+    end
+end
+
 @testset "MackeyContext" begin
     G = GAP.Globals.SymmetricGroup(3)
     ctx = MackeyContext(G)
@@ -413,6 +539,10 @@ end
     @test length(ctx.generators) == length(GAP.Globals.MinimalGeneratingSet(G))
     @test all(ctx.generators) do g
         all(entry -> 1 <= entry[1] <= length(ctx.generators), MackeyFunctors.generator_word(ctx, g))
+    end
+    @test MackeyFunctors.generator_relations(ctx) === ctx.generator_relations
+    @test all(ctx.generator_relations) do word
+        evaluate_word(word) == GAP.Globals.One(G)
     end
 
     for (i, j) in ctx.covers

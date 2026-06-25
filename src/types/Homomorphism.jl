@@ -84,3 +84,11 @@ struct MackeyFunctorHomomorphism
         )
     end
 end
+
+function id_homomorphism(mf::MackeyFunctor)::MackeyFunctorHomomorphism
+    return MackeyFunctorHomomorphism(
+        mf,
+        mf,
+        [identity_homomorphism(M) for M in mf.values]
+    )
+end
