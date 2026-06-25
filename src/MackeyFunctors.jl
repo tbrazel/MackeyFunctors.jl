@@ -36,7 +36,7 @@ export shift
 
 include("Constructors.jl")
 export constant_mackey_functor, burnside_mackey_functor,
-    free_mackey_functor, fixedpoint_mackey_functor
+    free_mackey_functor, fixedpoint_mackey_functor,zero_mackey_functor
 
 include("types/Homomorphism.jl")
 export MackeyFunctorHomomorphism, id_homomorphism

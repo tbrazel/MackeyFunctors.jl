@@ -671,3 +671,7 @@ end
 #     @test occursin("\"nodes\"", json)
 #     @test occursin("\"covers\"", json)
 # end
+
+@testset "Zero Mackey functors" begin
+    @test zero_mackey_functor(MackeyContext(GAP.Globals.CyclicGroup(2)), ZZ) isa MackeyFunctor
+end

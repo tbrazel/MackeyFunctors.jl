@@ -154,3 +154,16 @@ function fixedpoint_mackey_functor(gm::GModule)
 
     MackeyFunctor(gm.context, values, restrictions, transfers, conjugations)
 end
+
+
+function zero_mackey_functor(context::MackeyContext,R::Ring=ZZ)
+    zeromod = free_module(R,0)
+    zeromap = ModuleIsomorphism(zeromod, zeromod, ZZ[;])
+
+    values = fill(zeromod, length(context.subgroups))
+    cover_restrictions = [as_homomorphism(zeromap) for _ in context.covers]
+    cover_transfers = [as_homomorphism(zeromap) for _ in context.covers]
+    generator_conjugations = [zeromap for _ in context.generators, _ in context.subgroups]
+
+    MackeyFunctor(context, values, cover_restrictions, cover_transfers, generator_conjugations)
+end
