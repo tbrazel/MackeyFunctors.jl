@@ -23,7 +23,7 @@ struct GModule
 
     function GModule(context::MackeyContext, M::AbstractAlgebra.FPModule, generator_actions::AbstractVector{<:Generic.ModuleIsomorphism}; verify::Bool = true)
         if verify
-            all(generator_relations_from_isomorphism(context.fp_isomorphism)) do word
+            all(context.generator_relations) do word
                 m = map_extension(identity_homomorphism(M), generator_actions, word)
                 is_identity_module_homomorphism(m)
             end || throw(ArgumentError("The given matrices do not define a group action"))

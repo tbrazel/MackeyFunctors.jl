@@ -30,6 +30,38 @@ using MackeyFunctors
     end
 end
 
+@testset "Mackey functor value base rings" begin
+    context = MackeyContext(GAP.Globals.CyclicGroup(2))
+
+    M_ZZ = free_module(ZZ, 1)
+    M_QQ = free_module(QQ, 1)
+    id_ZZ_hom = ModuleHomomorphism(M_ZZ, M_ZZ, identity_matrix(ZZ, 1))
+    id_ZZ_iso = ModuleIsomorphism(M_ZZ, M_ZZ, identity_matrix(ZZ, 1))
+
+    values = AbstractAlgebra.FPModule[M_ZZ, M_QQ]
+    restrictions = Generic.ModuleHomomorphism[id_ZZ_hom for _ in context.covers]
+    transfers = Generic.ModuleHomomorphism[id_ZZ_hom for _ in context.covers]
+    conjugations = Generic.ModuleIsomorphism[
+        id_ZZ_iso for _ in context.generators, _ in context.subgroups
+    ]
+
+    @test_throws ArgumentError MackeyFunctor(
+        context,
+        values,
+        restrictions,
+        transfers,
+        conjugations,
+    )
+    @test MackeyFunctor(
+        context,
+        values,
+        restrictions,
+        transfers,
+        conjugations;
+        verify=false,
+    ) isa MackeyFunctor
+end
+
 @testset "Constant Mackey functors for symmetric groups" begin
     for n in 2:5
         S_n = GAP.Globals.SymmetricGroup(n)
@@ -440,6 +472,10 @@ end
     @test length(ctx.generators) == length(GAP.Globals.MinimalGeneratingSet(G))
     @test all(ctx.generators) do g
         all(entry -> 1 <= entry[1] <= length(ctx.generators), MackeyFunctors.generator_word(ctx, g))
+    end
+    @test MackeyFunctors.generator_relations(ctx) === ctx.generator_relations
+    @test all(ctx.generator_relations) do word
+        evaluate_word(word) == GAP.Globals.One(G)
     end
 
     for (i, j) in ctx.covers

@@ -6,7 +6,7 @@ const DoubleCosetFormulaTerm = Tuple{GeneratorWord,SubgroupIndex}
 
 Precompute subgroup-lattice and double-coset data for a finite GAP group `G`. This front-loads the computational effort for the group and subgroup-lattice data used when verifying the axioms for any ``G``-Mackey functor.
 
-This method takes a group ``G`` and precomputes its list of subgroups, the list of *covers* (meaning proper subgroups ``H\\le K`` where there are no intermediate subgroups), a list of generators for the group, and matrices for how these generators act via conjugation on the list of all subgroups.
+This method takes a group ``G`` and precomputes its list of subgroups, the list of *covers* (meaning proper subgroups ``H\\le K`` where there are no intermediate subgroups), a list of generators for the group, the relators for those generators, and matrices for how these generators act via conjugation on the list of all subgroups.
 
 Importantly, the `MackeyContext` type also stores all the data needed to verify the double coset formula for an input Mackey functor. An important lemma is that the double coset formula can be checked along subgroups ``J\\le H \\ge K`` where each inclusion is a cover. Given a triple of subgroups as above, we have
 ```math
@@ -21,6 +21,7 @@ struct MackeyContext
     paths::Dict{Tuple{SubgroupIndex,SubgroupIndex},Vector{Int}}
     generators::Vector{GroupElement}
     fp_isomorphism::GapObj
+    generator_relations::Vector{GeneratorWord}
     generator_left_conjugation_matrix::Matrix{SubgroupIndex}
     generator_right_conjugation_matrix::Matrix{SubgroupIndex}
     double_coset_formulae::Dict{
@@ -100,6 +101,7 @@ struct MackeyContext
             G,
             GapObj(generators; recursive=true),
         )
+        relation_words = generator_relations_from_isomorphism(fp_isomorphism)
 
         # Build conjugation matrices
         num_rows_conj_matrix = length(generators)
@@ -166,6 +168,7 @@ struct MackeyContext
             paths,
             generators,
             fp_isomorphism,
+            relation_words,
             left_conj_matx,
             right_conj_matx,
             double_coset_formulae,
@@ -178,7 +181,7 @@ function generator_word(ctx::MackeyContext, element::GroupElement)::GeneratorWor
 end
 
 function generator_relations(ctx::MackeyContext)::Vector{GeneratorWord}
-    return generator_relations_from_isomorphism(ctx.fp_isomorphism)
+    return ctx.generator_relations
 end
 
 """

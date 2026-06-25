@@ -41,8 +41,6 @@ struct MackeyFunctor
             }(),
         )
 
-        # TODO: sanity check that all the values are modules over the same base ring
-
         # If the user doesn't want verification, we just return the result. Default setting is to verify
         if !verify
             return result
@@ -62,6 +60,19 @@ struct MackeyFunctor
         length(cover_restrictions) == length(covers) || throw(ArgumentError("There must be one restriction for each cover."))
         length(cover_transfers) == length(covers) || throw(ArgumentError("There must be one transfer for each cover."))
         size(generator_conjugations) == (length(generators), length(subgroups)) || throw(ArgumentError("There must be one conjugation for each generator and subgroup."))
+
+        # A Mackey functor is valued in modules over one fixed coefficient
+        # ring.  Several later operations assume this without rechecking it:
+        # coefficient_ring reads the first value, zero_homomorphism builds
+        # matrices over the domain's base ring, and map comparisons evaluate
+        # generators inside common module categories.  Check the coefficient
+        # ring here, before the map-domain checks below, so a mixed-ring input
+        # fails with the actual structural problem instead of a secondary map
+        # mismatch.
+        coefficient_ring = base_ring(values[begin])
+        for i in eachindex(values)
+            base_ring(values[i]) == coefficient_ring || throw(ArgumentError("All values of a Mackey functor must be modules over the same base ring. Value $i has base ring $(base_ring(values[i])), but value $(firstindex(values)) has base ring $coefficient_ring."))
+        end
 
         for (cover_index, (i, j)) in enumerate(covers)
             restriction_map = cover_restrictions[cover_index]
@@ -92,8 +103,7 @@ struct MackeyFunctor
         end
 
         # 2. The relations between the generators of G are satisfied by the conjugation automorphisms.
-        relation_words = generator_relations_from_isomorphism(context.fp_isomorphism)
-        for i in eachindex(subgroups), relation_word in relation_words
+        for i in eachindex(subgroups), relation_word in context.generator_relations
             # For each subgroup H, and for every relation (viewed as a word in the generators)
             # We build the map which conjugates M(H) by the relation word
             conj_by_relation_word = conjugation(result, relation_word, i)
