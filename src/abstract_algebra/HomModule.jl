@@ -36,51 +36,20 @@ struct HomModule{T <: RingElement}
     inclusion::Generic.ModuleHomomorphism{T}
 end
 
-function _zero_vector(R::Ring, n::Int)
-    return [zero(R) for _ in 1:n]
-end
-
 # Return M^copies as an FPModule.
 #
-# We build this presentation directly instead of using AbstractAlgebra.direct_sum
-# because HomModule relies on presentation data seen by kernel. In
-# AbstractAlgebra 0.50.1, direct_sum has correct element arithmetic for repeated
-# quotient summands but incorrect stored relation rows.
-#
-# Coordinates are stored blockwise: copy i of M occupies columns
-# (i - 1)*ngens(M) + 1 : i*ngens(M). Relations of M are copied into the
-# corresponding block.
+# HomModule relies on presentation data seen by kernel, so positive powers go
+# through the package-local direct-sum workaround instead of
+# AbstractAlgebra.direct_sum.  The zero-copy case is handled here because an
+# empty direct sum needs the base ring of M to construct the zero-rank free
+# module.
 function _power_module(M::AbstractAlgebra.FPModule{T}, copies::Int) where T <: RingElement
     copies >= 0 || throw(ArgumentError("The number of copies must be nonnegative."))
 
+    copies == 0 && return free_module(base_ring(M), 0)
     copies == 1 && return M
 
-    R = base_ring(M)
-    n = ngens(M)
-    F = free_module(R, copies*n)
-    copies == 0 && return F
-
-    module_relations = relations(M)
-    isempty(module_relations) && return F
-
-    relation_generators = elem_type(F)[]
-    for copy_index in 1:copies
-        offset = (copy_index - 1)*n
-
-        # Relations of a finite direct sum are the relations of each summand,
-        # placed in that summand's coordinate block.
-        for relation in module_relations
-            row = _zero_vector(R, copies*n)
-            for generator_index in 1:n
-                row[offset + generator_index] = relation[1, generator_index]
-            end
-            push!(relation_generators, F(row))
-        end
-    end
-
-    relation_submodule, = sub(F, relation_generators)
-    quotient, = quo(F, relation_submodule)
-    return quotient
+    return _direct_sum_module(AbstractAlgebra.FPModule{T}[M for _ in 1:copies])
 end
 
 function _relation_map(

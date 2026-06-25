@@ -6,114 +6,6 @@ struct ShiftOrbitDecomposition
     projections::Vector{Generic.ModuleHomomorphism}
 end
 
-function _zero_direct_sum_relation_row(R::Ring, n::Int)
-    return [zero(R) for _ in 1:n]
-end
-
-function _homomorphism_from_generator_images(
-    domain::AbstractAlgebra.FPModule{T},
-    codomain::AbstractAlgebra.FPModule{T},
-    images::Vector{<:AbstractAlgebra.FPModuleElem{T}},
-) where T <: RingElement
-    if ngens(domain) == 0
-        return ModuleHomomorphism(
-            domain,
-            codomain,
-            zero_matrix(base_ring(domain), 0, ngens(codomain)),
-        )
-    end
-
-    return ModuleHomomorphism(domain, codomain, images)
-end
-
-function _finite_direct_sum(summands::AbstractVector{<:AbstractAlgebra.FPModule})
-    isempty(summands) && throw(ArgumentError("Cannot take the direct sum of no modules."))
-
-    R = base_ring(first(summands))
-    all(summand -> base_ring(summand) == R, summands) ||
-        throw(ArgumentError("Direct-sum summands must have the same base ring."))
-
-    T = elem_type(R)
-    return _finite_direct_sum(AbstractAlgebra.FPModule{T}[summands...])
-end
-
-function _finite_direct_sum(
-    summands::Vector{<:AbstractAlgebra.FPModule{T}},
-) where T <: RingElement
-    isempty(summands) && throw(ArgumentError("Cannot take the direct sum of no modules."))
-
-    R = base_ring(first(summands))
-    all(summand -> base_ring(summand) == R, summands) ||
-        throw(ArgumentError("Direct-sum summands must have the same base ring."))
-
-    offsets = Int[]
-    total_generators = 0
-    for summand in summands
-        push!(offsets, total_generators)
-        total_generators += ngens(summand)
-    end
-
-    free_sum = free_module(R, total_generators)
-    relation_generators = elem_type(free_sum)[]
-    for (summand_index, summand) in enumerate(summands)
-        offset = offsets[summand_index]
-
-        # The direct-sum presentation is formed by placing each summand's
-        # relations in its own coordinate block.
-        for relation in relations(summand)
-            row = _zero_direct_sum_relation_row(R, total_generators)
-            for generator_index in 1:ngens(summand)
-                row[offset + generator_index] = relation[1, generator_index]
-            end
-            push!(relation_generators, free_sum(row))
-        end
-    end
-
-    if isempty(relation_generators)
-        direct_sum_module = free_sum
-        projection_from_free = identity_homomorphism(free_sum)
-    else
-        relation_submodule, = sub(free_sum, relation_generators)
-        direct_sum_module, projection_from_free = quo(free_sum, relation_submodule)
-    end
-
-    injections = Vector{Generic.ModuleHomomorphism{T}}(undef, length(summands))
-    projections = Vector{Generic.ModuleHomomorphism{T}}(undef, length(summands))
-
-    for (summand_index, summand) in enumerate(summands)
-        offset = offsets[summand_index]
-
-        injection_images = elem_type(direct_sum_module)[
-            projection_from_free(gen(free_sum, offset + generator_index))
-            for generator_index in 1:ngens(summand)
-        ]
-        injections[summand_index] = _homomorphism_from_generator_images(
-            summand,
-            direct_sum_module,
-            injection_images,
-        )
-
-        projection_images = elem_type(summand)[]
-        for direct_sum_generator in gens(direct_sum_module)
-            lift = preimage(projection_from_free, direct_sum_generator)
-            push!(
-                projection_images,
-                summand([
-                    lift[offset + generator_index]
-                    for generator_index in 1:ngens(summand)
-                ]),
-            )
-        end
-        projections[summand_index] = _homomorphism_from_generator_images(
-            direct_sum_module,
-            summand,
-            projection_images,
-        )
-    end
-
-    return direct_sum_module, injections, projections
-end
-
 """
     shift(M::MackeyFunctor, H_index::SubgroupIndex; verify::Bool=true)
 
@@ -262,7 +154,7 @@ function _shift_orbit_decomposition(
         value(mf, stabilizer_index)
         for stabilizer_index in stabilizer_indices
     ]
-    shifted_value, injections, projections = _finite_direct_sum(summands)
+    shifted_value, injections, projections = _direct_sum(summands)
 
     return ShiftOrbitDecomposition(
         representatives,
@@ -291,7 +183,7 @@ function _shift_product_maps(
 
     # Start with zero maps between the two direct sums, then add one summand
     # map at a time using the injections and projections returned by
-    # _finite_direct_sum.
+    # _direct_sum.
     # If f_ij : source_summand_i -> target_summand_j is the map attached to one
     # product-orbit component, then
     #
