@@ -11,7 +11,7 @@ using MackeyFunctors
         @test length(context.subgroups) == k+1
         @test length(context.covers) == k
 
-        for R in [ZZ, QQ, GF(2), GF(67)]
+        for R in [ZZ, QQ, GF(2), GF(67)] 
             M = free_module(R, 1)
             #     values = [M for i in context.subgroups]
 
@@ -121,13 +121,12 @@ end
     end
 end
 
-# eventually we will have a constructor for these,
-# but putting this here for us to compare against
 @testset "Free Mackey functors for C4" begin
     C4 = GAP.Globals.CyclicGroup(4)
     context = MackeyContext(C4)
 
     for R in [ZZ, QQ, GF(2), GF(67)]
+        # Hardcoded free Mackey functors for C4
         # A4 = Burnside Mackey functor
         A4_1 = free_module(R, 1)
         A4_2 = free_module(R, 2)
@@ -181,10 +180,23 @@ end
         A1 = MackeyFunctor(context, A1_val, A1_res, A1_tr, A1_conj)
         @test A1 isa MackeyFunctor
 
-        # TODO: uncomment when free constructor is done
+        # TODO: uncomment when free constructor is done and when == is implemented??
         # check A1 is free_mackey_functor(context, 1)
         # check A2 is free_mackey_functor(context, 2)
         # check A4 is free_mackey_functor(context, 3)
+
+        # checking ranks of Burnside shifts
+        A = burnside_mackey_functor(C4, R)
+
+        A1_sh = shift(A,1)
+        @test rank(A1_sh.values[1]) == 4
+        @test rank(A1_sh.values[2]) == 2
+        @test rank(A1_sh.values[3]) == 1
+
+        A2_sh = shift(A,2)
+        @test rank(A2_sh.values[1]) == 2
+        @test rank(A2_sh.values[2]) == 4
+        @test rank(A2_sh.values[3]) == 2
     end
 end
 
@@ -257,7 +269,7 @@ end
     end
 end
 
-@testset "Shifts of Mackey functors" begin
+@testset "Shifts of Mackey functors for C4, S3" begin
     C4 = GAP.Globals.CyclicGroup(4)
     c4_context = MackeyContext(C4)
     c4_constant = constant_mackey_functor(c4_context, ZZ)
