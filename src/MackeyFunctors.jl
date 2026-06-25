@@ -22,7 +22,7 @@ export MackeyContext,
     double_coset_representative_data,
     double_coset_representative_words
 
-include("GModules.jl")
+include("abstract_algebra/GModules.jl")
 export GModule, permutation_module
 
 include("types/MackeyFunctor.jl")
@@ -35,10 +35,10 @@ export MackeyFunctor,
 
 include("Show.jl")
 
-include("Shift.jl")
+include("constructors/Shift.jl")
 export shift
 
-include("Constructors.jl")
+include("constructors/Constructors.jl")
 export constant_mackey_functor, burnside_mackey_functor,
     free_mackey_functor, fixedpoint_mackey_functor,zero_mackey_functor
 
