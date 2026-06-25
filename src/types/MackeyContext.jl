@@ -4,11 +4,11 @@ const DoubleCosetFormulaTerm = Tuple{GeneratorWord,SubgroupIndex}
 """
     MackeyContext(G)
 
-Precompute subgroup-lattice and double-coset data for a finite GAP group `G`. This front-loads the computational effort of aspects of the group and its subgroup lattice which will be used throughout verifying the axioms for any ``G``-Mackey functor.
+Precompute subgroup-lattice and double-coset data for a finite GAP group `G`. This front-loads the computational effort for the group and subgroup-lattice data used when verifying the axioms for any ``G``-Mackey functor.
 
-This method inputs a group ``G``, and precomputes its list of subgroups, the list of *covers* (meaning proper subgroups ``H\\le K`` where there are no intermediate subgroups), a list of generators for the group, and matrices for how these generators act via conjugation on the list of all subgroups.
+This method takes a group ``G`` and precomputes its list of subgroups, the list of *covers* (meaning proper subgroups ``H\\le K`` where there are no intermediate subgroups), a list of generators for the group, and matrices for how these generators act via conjugation on the list of all subgroups.
 
-Importantly, the `MackeyContext` type also stores all the data needed to verify the double coset formula for an inputted Mackey functor. An important lemma is that the double coset formula can be checked along subgroups ``J\\le H \\ge K`` where each inclusion is a cover. Given a triple of subgroups as above, we have
+Importantly, the `MackeyContext` type also stores all the data needed to verify the double coset formula for an input Mackey functor. An important lemma is that the double coset formula can be checked along subgroups ``J\\le H \\ge K`` where each inclusion is a cover. Given a triple of subgroups as above, we have
 ```math
 H = \\coprod_x JxK
 ```

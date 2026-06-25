@@ -41,7 +41,7 @@ struct MackeyFunctor
             }(),
         )
 
-        # TODO: sanity check that all the values are modules over the same basering
+        # TODO: sanity check that all the values are modules over the same base ring
 
         # If the user doesn't want verification, we just return the result. Default setting is to verify
         if !verify
@@ -102,7 +102,7 @@ struct MackeyFunctor
             is_identity_module_homomorphism(conj_by_relation_word) || throw(ArgumentError("Specified conjugations do not form a valid group action."))
         end
 
-        # 3. Check Webb Axiom 4 and 5 for covers (compatibililty of transfers/conjugation and restriction/conjugation)
+        # 3. Check Webb Axiom 4 and 5 for covers (compatibility of transfers/conjugation and restriction/conjugation)
         for (cover_index, (i, j)) in enumerate(covers)
             for (n, g) in enumerate(generators)
 
@@ -286,7 +286,7 @@ end
 """
     transfer(M,i,j)
 
-Given a Mackey functor `M` and two `SubgroupIndex` values `i` and `j` corresponding to subgroups ``H[i]\\le G`` and ``H[j]\\le M``, this method returns the transfer homomorphism ``M(H[i]) \\to M(H[j])`` as the type `AbstractAlgebra.Generic.ModuleHomomorphism`.
+Given a Mackey functor `M` and two `SubgroupIndex` values `i` and `j` corresponding to subgroups ``H = H[i] \\le H[j] = K \\le G``, this method returns the transfer homomorphism ``M(H) \\to M(K)`` as the type `AbstractAlgebra.Generic.ModuleHomomorphism`.
 """
 function transfer(mf::MackeyFunctor, H_index::SubgroupIndex, K_index::SubgroupIndex)
     key = (H_index, K_index)

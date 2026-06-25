@@ -52,7 +52,7 @@ cover_restrictions = map(context.covers) do (J_idx, K_idx)
 end
 
     
-    # Each J-double cosets should maps into exactly one K-double coset 
+    # Each J-double coset should map into exactly one K-double coset
 
 cover_transfers = map(context.covers) do (J_idx, K_idx)
     K    = subgroups[K_idx]
