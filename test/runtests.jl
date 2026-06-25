@@ -288,6 +288,14 @@ end
     @test homomorphism.codomain === mackey_functor
     @test length(homomorphism.components) == length(context.subgroups)
 
+    identity_homomorphism = MackeyFunctors.id_homomorphism(mackey_functor)
+    @test identity_homomorphism isa MackeyFunctorHomomorphism
+    @test identity_homomorphism.domain === mackey_functor
+    @test identity_homomorphism.codomain === mackey_functor
+    @test all(identity_homomorphism.components) do component
+        MackeyFunctors.is_identity_module_homomorphism(component)
+    end
+
     @test_throws ArgumentError MackeyFunctorHomomorphism(
         mackey_functor,
         mackey_functor,
