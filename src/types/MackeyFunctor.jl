@@ -251,7 +251,6 @@ end
 
 Returns the value of the Mackey functor `M` at the subgroup index `i`.
 """
-# Returns the value of a Mackey functor at subgroup index H_idx
 function value(mf::MackeyFunctor, H_idx::SubgroupIndex)
     return mf.values[H_idx]
 end

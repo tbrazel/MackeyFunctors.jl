@@ -24,7 +24,7 @@ export MackeyFunctor,
     transfer,
     value
 
-value, include("Shift.jl")
+include("Shift.jl")
 export shift
 
 include("Constructors.jl")
