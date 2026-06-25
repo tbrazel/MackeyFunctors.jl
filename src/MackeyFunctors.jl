@@ -5,7 +5,10 @@ using AbstractAlgebra
 # Import is needed so that our version doesn't clash with the one from AbstractAlgebra
 import AbstractAlgebra: coefficient_ring
 
-include("module_methods/Modules.jl")
+# We add some additional functionality needed from the abstract algebra world
+include("abstract_algebra/ModuleHomomorphisms.jl")
+include("abstract_algebra/HomModule.jl")
+export HomModule, underlying_module, as_hom_module_element, as_homomorphism
 
 include("group_theory/Words.jl")
 export generator_relations

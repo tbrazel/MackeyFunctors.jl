@@ -381,6 +381,60 @@ end
     ) isa MackeyFunctorHomomorphism
 end
 
+@testset "Hom modules" begin
+    F1 = free_module(ZZ, 1)
+    twoF1, = sub(F1, [F1([ZZ(2)])])
+    fourF1, = sub(F1, [F1([ZZ(4)])])
+    Z2, = quo(F1, twoF1)
+    Z4, = quo(F1, fourF1)
+
+    hom_Z2_Z2 = HomModule(Z2, Z2)
+    @test underlying_module(hom_Z2_Z2) isa AbstractAlgebra.FPModule
+    @test ngens(hom_Z2_Z2) == 1
+    @test length(relations(hom_Z2_Z2)) == 1
+    @test relations(hom_Z2_Z2)[1][1, 1] == ZZ(2)
+
+    id_Z2 = ModuleHomomorphism(Z2, Z2, matrix(ZZ, 1, 1, [ZZ(1)]))
+    id_element = as_hom_module_element(hom_Z2_Z2, id_Z2)
+    @test 2*id_element == zero(underlying_module(hom_Z2_Z2))
+    @test MackeyFunctors.map_eq(as_homomorphism(hom_Z2_Z2, id_element), id_Z2)
+
+    hom_Z2_Z = HomModule(Z2, F1)
+    @test ngens(hom_Z2_Z) == 0
+    zero_element = as_hom_module_element(hom_Z2_Z, MackeyFunctors.zero_homomorphism(Z2, F1))
+    @test zero_element == zero(underlying_module(hom_Z2_Z))
+    invalid_map = ModuleHomomorphism(Z2, F1, matrix(ZZ, 1, 1, [ZZ(1)]))
+    @test_throws ArgumentError as_hom_module_element(hom_Z2_Z, invalid_map)
+
+    F2 = free_module(ZZ, 2)
+    hom_Z2_power = HomModule(F2, Z2)
+    @test ngens(hom_Z2_power) == 2
+    @test length(relations(hom_Z2_power)) == 2
+    @test Set([[relation[1, i] for i in 1:ncols(relation)] for relation in relations(hom_Z2_power)]) ==
+        Set([[ZZ(2), ZZ(0)], [ZZ(0), ZZ(2)]])
+    first_projection = ModuleHomomorphism(F2, Z2, matrix(ZZ, 2, 1, [ZZ(1), ZZ(0)]))
+    @test MackeyFunctors.map_eq(
+        as_homomorphism(hom_Z2_power, as_hom_module_element(hom_Z2_power, first_projection)),
+        first_projection,
+    )
+
+    hom_Z2_Z4 = HomModule(Z2, Z4)
+    @test ngens(hom_Z2_Z4) == 1
+    killed_by_two = ModuleHomomorphism(Z2, Z4, matrix(ZZ, 1, 1, [ZZ(2)]))
+    killed_by_two_element = as_hom_module_element(hom_Z2_Z4, killed_by_two)
+    @test MackeyFunctors.map_eq(
+        as_homomorphism(hom_Z2_Z4, killed_by_two_element),
+        killed_by_two,
+    )
+
+    M = free_module(QQ, 2)
+    N = free_module(QQ, 3)
+    free_hom_module = HomModule(M, N)
+    f = ModuleHomomorphism(M, N, matrix(QQ, [1 2 3; 4 5 6]))
+    f_element = as_hom_module_element(free_hom_module, f)
+    @test matrix(as_homomorphism(free_hom_module, f_element)) == matrix(f)
+end
+
 @testset "Shifts of Mackey functors for C4, S3" begin
     C4 = GAP.Globals.CyclicGroup(4)
     c4_context = MackeyContext(C4)
