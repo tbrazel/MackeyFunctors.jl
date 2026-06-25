@@ -454,6 +454,19 @@ end
         @test rank(MackeyFunctors.value(shifted_by_trivial, K_index)) == expected_rank
     end
 
+    C2 = GAP.Globals.CyclicGroup(2)
+    c2_context = MackeyContext(C2)
+    c2_trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, c2_context.subgroups)
+    F1 = free_module(ZZ, 1)
+    twoF1, = sub(F1, [F1([ZZ(2)])])
+    Z2, = quo(F1, twoF1)
+    c2_z2_constant = constant_mackey_functor(c2_context, Z2)
+    shifted_z2 = shift(c2_z2_constant, c2_trivial; verify=false)
+    shifted_z2_at_trivial = MackeyFunctors.value(shifted_z2, c2_trivial)
+    @test AbstractAlgebra.invariant_factors(shifted_z2_at_trivial) == BigInt[2, 2]
+    @test Set([[relation[1, i] for i in 1:ncols(relation)] for relation in relations(shifted_z2_at_trivial)]) ==
+        Set([[ZZ(2), ZZ(0)], [ZZ(0), ZZ(2)]])
+
     shifted_by_whole = shift(c4_constant, c4_whole)
     @test shifted_by_whole isa MackeyFunctor
     @test all(eachindex(c4_context.subgroups)) do K_index
