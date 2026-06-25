@@ -21,10 +21,10 @@ struct MackeyFunctor
 
     function MackeyFunctor(
         context::MackeyContext,
-        values::Vector{<:AbstractAlgebra.FPModule},
-        cover_restrictions::Vector{<:Generic.ModuleHomomorphism},
-        cover_transfers::Vector{<:Generic.ModuleHomomorphism},
-        generator_conjugations::Matrix{<:Generic.ModuleIsomorphism},
+        values::AbstractVector{<:AbstractAlgebra.FPModule},
+        cover_restrictions::AbstractVector{<:Generic.ModuleHomomorphism},
+        cover_transfers::AbstractVector{<:Generic.ModuleHomomorphism},
+        generator_conjugations::AbstractMatrix{<:Generic.ModuleIsomorphism};
         verify::Bool=true
     )
         result = new(
