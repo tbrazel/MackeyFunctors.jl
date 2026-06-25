@@ -11,7 +11,7 @@ using MackeyFunctors
         @test length(context.subgroups) == k+1
         @test length(context.covers) == k
 
-        for R in [ZZ, QQ, GF(2), GF(67)] 
+        for R in [ZZ, QQ, GF(2), GF(67)]
             M = free_module(R, 1)
             #     values = [M for i in context.subgroups]
 

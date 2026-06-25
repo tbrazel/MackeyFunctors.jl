@@ -357,7 +357,7 @@ function Base.show(io::IO, obj::MackeyFunctor)
     (n,k) = GAP.Globals.IdGroup(obj.context.group)
     name = GAP.Globals.StructureDescription(obj.context.group)
     println(io, "MackeyFunctor for group ", String(name), " (", n, ",", k, ") over base ring ", coefficient_ring(obj))
-    
+
     length(obj.context.covers) > 5 || return
 
     for (i,(h,k)) in enumerate(obj.context.covers)

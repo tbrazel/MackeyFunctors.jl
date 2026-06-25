@@ -11,7 +11,7 @@ using MackeyFunctors
 
 Construct the free Mackey functor on the underlying subgroup H = context.subgroups[H_idx].
 
-The value at K is the free Z-module on the double cosets. 
+The value at K is the free Z-module on the double cosets.
 
 """
 function cohomological__mackey_functor(context::MackeyContext, H_idx::Int)
@@ -20,18 +20,18 @@ function cohomological__mackey_functor(context::MackeyContext, H_idx::Int)
     generators = context.generators
     H          = subgroups[H_idx]
 
-   
+
     double_cosets = map(subgroups) do K
         gap_list = GAP.Globals.DoubleCosetRepsAndSizes(G, K, H)
     # Convert to a Julia Vector of (element, size) tuples
-        [( gap_list[i][1], gap_list[i][2] ) for i in 1:length(gap_list)] 
+        [( gap_list[i][1], gap_list[i][2] ) for i in 1:length(gap_list)]
     end
 
     values = map(double_cosets) do dc
         free_module(ZZ, length(dc))
     end
 
-    
+
 cover_restrictions = map(context.covers) do (J_idx, K_idx)
     dc_J = double_cosets[J_idx]
     dc_K = double_cosets[K_idx]
@@ -51,7 +51,7 @@ cover_restrictions = map(context.covers) do (J_idx, K_idx)
     ModuleHomomorphism(values[K_idx], values[J_idx], mat)
 end
 
-    
+
     # Each J-double coset should map into exactly one K-double coset
 
 cover_transfers = map(context.covers) do (J_idx, K_idx)
@@ -71,7 +71,7 @@ cover_transfers = map(context.covers) do (J_idx, K_idx)
 end
     # g acts on coset reps by left multiplication: KxH |-> gKg^{-1} · gx · H
     # generator_left_conjugation_matrix[n, K_idx] gives the index of gKg^{-1}
-    
+
     generator_conjugations = Matrix{Generic.ModuleIsomorphism}(
         undef, length(generators), length(subgroups)
     )
@@ -100,12 +100,12 @@ end
     end
 
     return MackeyFunctor(context, values, cover_restrictions, cover_transfers, generator_conjugations)
-end              
+end
 
 
-""" 
-Constructs the zero Mackey functor for the group, 
-which assigns the zero module to every finite G-set. 
+"""
+Constructs the zero Mackey functor for the group,
+which assigns the zero module to every finite G-set.
 """
 
 struct zero_mackey_functor
@@ -124,4 +124,4 @@ struct zero_mackey_functor
 
         res = hom(zero_underlying, zero_fixed, matrix(0))
         tr = hom(zero_fixed, zero_underlying, matrix(0))
-end 
+end
