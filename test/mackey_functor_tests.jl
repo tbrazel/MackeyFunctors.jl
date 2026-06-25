@@ -326,6 +326,30 @@ end
 end
 
 @testset "direct sums of Mackey functors" begin
+    function direct_sum_test_matrix(p, q)
+        R = base_ring(domain(p))
+        result = zero_matrix(
+            R,
+            ngens(domain(p)) + ngens(domain(q)),
+            ngens(codomain(p)) + ngens(codomain(q)),
+        )
+
+        p_matrix = matrix(p)
+        for row in 1:nrows(p_matrix), column in 1:ncols(p_matrix)
+            result[row, column] = p_matrix[row, column]
+        end
+
+        q_matrix = matrix(q)
+        row_offset = ngens(domain(p))
+        column_offset = ngens(codomain(p))
+        for row in 1:nrows(q_matrix), column in 1:ncols(q_matrix)
+            result[row_offset + row, column_offset + column] =
+                q_matrix[row, column]
+        end
+
+        return result
+    end
+
     for k in [1, 4], m in 0:2, n in 0:2
 
         context = MackeyContext(GAP.Globals.SymmetricGroup(k))
@@ -334,65 +358,61 @@ end
 
         zero_plus_nonzero = MackeyFunctors.direct_sum_mf(zero_functor, nonzero_functor)
         @test all(eachindex(context.subgroups)) do subgroup_index
-            value_summands = summands(zero_plus_nonzero.values[subgroup_index])
-            value_summands[1] === zero_functor.values[subgroup_index] &&
-                value_summands[2] === nonzero_functor.values[subgroup_index]
+            ngens(zero_plus_nonzero.values[subgroup_index]) == m + n
         end
 
         nonzero_plus_zero = MackeyFunctors.direct_sum_mf(nonzero_functor, zero_functor)
         @test all(eachindex(context.subgroups)) do subgroup_index
-            value_summands = summands(nonzero_plus_zero.values[subgroup_index])
-            value_summands[1] === nonzero_functor.values[subgroup_index] &&
-                value_summands[2] === zero_functor.values[subgroup_index]
+            ngens(nonzero_plus_zero.values[subgroup_index]) == m + n
         end
 
-        for (sum_functor, component_index) in (
-            (zero_plus_nonzero, 2),
-            (nonzero_plus_zero, 1),
+        for (sum_functor, left_functor, right_functor) in (
+            (zero_plus_nonzero, zero_functor, nonzero_functor),
+            (nonzero_plus_zero, nonzero_functor, zero_functor),
         )
             for (cover_index, (i, j)) in enumerate(context.covers)
                 restriction_map = sum_functor.cover_restrictions[cover_index]
-                source_injections = canonical_injections(sum_functor.values[j])
-                target_projections = canonical_projections(sum_functor.values[i])
-                @test all(gens(nonzero_functor.values[j])) do x
-                    target_projections[component_index](
-                        restriction_map(source_injections[component_index](x)),
-                    ) == nonzero_functor.cover_restrictions[cover_index](x)
-                end
+                @test matrix(restriction_map) == direct_sum_test_matrix(
+                    left_functor.cover_restrictions[cover_index],
+                    right_functor.cover_restrictions[cover_index],
+                )
 
                 transfer_map = sum_functor.cover_transfers[cover_index]
-                source_injections = canonical_injections(sum_functor.values[i])
-                target_projections = canonical_projections(sum_functor.values[j])
-                @test all(gens(nonzero_functor.values[i])) do x
-                    target_projections[component_index](
-                        transfer_map(source_injections[component_index](x)),
-                    ) == nonzero_functor.cover_transfers[cover_index](x)
-                end
+                @test matrix(transfer_map) == direct_sum_test_matrix(
+                    left_functor.cover_transfers[cover_index],
+                    right_functor.cover_transfers[cover_index],
+                )
             end
 
             for generator_index in eachindex(context.generators)
                 for subgroup_index in eachindex(context.subgroups)
-                    target_index =
-                        context.generator_left_conjugation_matrix[
-                            generator_index,
-                            subgroup_index,
-                        ]
                     conjugation_map =
                         sum_functor.generator_conjugations[generator_index, subgroup_index]
-                    source_injections = canonical_injections(sum_functor.values[subgroup_index])
-                    target_projections = canonical_projections(sum_functor.values[target_index])
-
-                    @test all(gens(nonzero_functor.values[subgroup_index])) do x
-                        target_projections[component_index](
-                            conjugation_map(source_injections[component_index](x)),
-                        ) == nonzero_functor.generator_conjugations[
+                    @test matrix(conjugation_map) == direct_sum_test_matrix(
+                        left_functor.generator_conjugations[
                             generator_index,
                             subgroup_index,
-                        ](x)
-                    end
+                        ],
+                        right_functor.generator_conjugations[
+                            generator_index,
+                            subgroup_index,
+                        ],
+                    )
                 end
             end
         end
+    end
+
+    context = MackeyContext(GAP.Globals.CyclicGroup(2))
+    F1 = free_module(ZZ, 1)
+    twoF1, = sub(F1, [F1([ZZ(2)])])
+    Z2, = quo(F1, twoF1)
+
+    z2_functor = constant_mackey_functor(context, Z2)
+    z2_plus_z2 = MackeyFunctors.direct_sum_mf(z2_functor, z2_functor)
+    @test all(eachindex(context.subgroups)) do subgroup_index
+        AbstractAlgebra.invariant_factors(z2_plus_z2.values[subgroup_index]) ==
+            BigInt[2, 2]
     end
 end
 
