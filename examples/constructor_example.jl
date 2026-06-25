@@ -7,6 +7,7 @@ using MackeyFunctors
 
 
 
+
 """
 
 Construct the free Mackey functor on the underlying subgroup H = context.subgroups[H_idx].
@@ -23,7 +24,7 @@ function cohomological__mackey_functor(context::MackeyContext, H_idx::Int)
    
     double_cosets = map(subgroups) do K
         gap_list = GAP.Globals.DoubleCosetRepsAndSizes(G, K, H)
-    # Convert to a Julia Vector of (element, size) tuples
+    # Convert to a Julia Vector
         [( gap_list[i][1], gap_list[i][2] ) for i in 1:length(gap_list)] 
     end
 
@@ -104,24 +105,35 @@ end
 
 
 """ 
-Constructs the zero Mackey functor for the group, 
-which assigns the zero module to every finite G-set. 
+Constructs the zero Mackey functor for the group, which assigns the zero module to every finite G-set. 
 """
 
-struct zero_mackey_functor
-    context::MackeyContext
-    values::Vector{AbstractAlgebra.FPModule}
-    cover_restrictions:: Generic.ModuleHomomorphism
-    cover_transfers:: Generic.ModuleHomomorphism
-    generator_conjugations:: Generic.ModuleIsomorphism
 
-    function zero_mackey_functor(group::Group)
+function zero_module_isomorphism(m::AbstractAlgebra.FPModule)
+    # Explicitly construct a ModuleIsomorphism for a zero (rank-0) module
+    return Generic.ModuleIsomorphism(m, m, ZZ[;])
+end
 
-        context = MackeyContext(group)
+function zero_mackey_functor(context::MackeyContext)
 
-        zero_underlying = free_module(ZZ, 0)
-        zero_fixed = free_module(ZZ, 0)
+    zero_underlying = free_module(ZZ, 0)
+    zero_fixed      = free_module(ZZ, 0)
+    values = [zero_underlying, zero_fixed]
 
-        res = hom(zero_underlying, zero_fixed, matrix(0))
-        tr = hom(zero_fixed, zero_underlying, matrix(0))
-end 
+    cover_restrictions = [hom(zero_underlying, zero_fixed,     zero_matrix(ZZ, 0, 0))]
+    cover_transfers    = [hom(zero_fixed,      zero_underlying, zero_matrix(ZZ, 0, 0))]
+
+    generators = context.generators
+    subgroups  = context.subgroups
+
+    ###generator_conjugations = Matrix{Generic.ModuleIsomorphism}(undef, length(generators), length(subgroups))
+
+    generator_conjugations = [zero_module_isomorphism(zero_underlying) zero_module_isomorphism(zero_fixed);]  # Use the zero module isomorphism for all entries
+    
+
+    return MackeyFunctor(context, values, cover_restrictions, cover_transfers, generator_conjugations)
+end
+
+G = MackeyContext(GAP.Globals.CyclicGroup(2))
+zero_mackey_functor(G)
+
