@@ -99,3 +99,47 @@ Given a Mackey functor `M` and a subgroup index `i` corresponding to a subgroup 
 function free_mackey_functor(mf::MackeyFunctor, i::SubgroupIndex;verify :: Bool=true)
     shift(mf, i, verify)
 end
+
+# fixedpoints Mackey functor
+
+function fixedpoint_with_inclusion(gm::GModule, H)
+    idM = identity_homomorphism(gm.M)
+    subM = sub(gm.M, generators(gm.M))  # TODO: more efficient way?
+    foldl(GAP.Globals.GeneratorsOfGroup(H); init = subM) do (N, f), g
+        word = generator_word(gm.context, g)
+        K, _ = kernel(map_extension(idM, gm.generator_actions, word) - idM)
+        N1, f1 = intersect(N, K)
+        N1, f1 * f
+    end
+end
+
+function fixedpoint_transfer(gm, i, j, sub_incl)
+    idM = identity_homomorphism(gm.M)
+    f = sum(GAP.Globals.RightCosets(gm.context.subgroups[j], gm.context.subgroups[i])) do rc
+        h = inv(GAP.Globals.Representative(rc))
+        map_extension(idM, gm.generator_actions, generator_word(gm.context, h))
+    end
+    ModuleHomomorphism(first(sub_incl[i]), first(sub_incl[j]), submodules_matrix(f, sub_incl[i], sub_incl[j]))
+end
+
+function fixedpoint_conjugation(gm, gi, Hi, sub_incl)
+    j = gm.context.generator_left_conjugation_matrix[gi, Hi]
+    ModuleIsomorphism(first(sub_incl[Hi]), first(sub_incl[j]), submodules_matrix(gm.generator_actions[gi], sub_incl[Hi], sub_incl[j]))
+end
+
+"""
+    fixedpoint_mackey_functor(gm::GModule) -> MackeyFunctor
+
+Return the Mackey functor whose levels are the invariant submodules of `gm` under the subgroups of `gm.context.group`.
+"""
+function fixedpoint_mackey_functor(gm::GModule)
+    sub_incl = [fixedpoint_with_inclusion(gm, H) for H in gm.context.subgroups]
+
+    values = map(first, sub_incl)
+    restrictions = [ModuleHomomorphism(values[j], values[i], submodules_matrix(sub_incl[j], sub_incl[i])) for (i, j) in gm.context.covers]
+    transfers = [fixedpoint_transfer(gm, i, j, sub_incl) for (i, j) in gm.context.covers]
+    conjugations = [fixedpoint_conjugation(gm, gi, Hi, sub_incl)
+        for gi in eachindex(gm.context.generators), Hi in eachindex(gm.context.subgroups)]
+
+    MackeyFunctor(gm.context, values, restrictions, transfers, conjugations)
+end

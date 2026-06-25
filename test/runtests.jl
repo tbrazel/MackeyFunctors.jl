@@ -404,6 +404,25 @@ end
     @test shift(s3_burnside, subgroup_of_order_two) isa MackeyFunctor
 end
 
+@testset "permutation_module" begin
+    for n in [1, 4], R in [ZZ, GF(5)]
+        G = GAP.Globals.SymmetricGroup(n)
+        mc = MackeyContext(G)
+        gm = permutation_module(mc, R)
+        @test gm isa GModule
+    end
+end
+
+@testset "fixedpoint_mackey_functor" begin
+    for n in [1, 4], R in [ZZ, GF(5)]
+        G = GAP.Globals.SymmetricGroup(n)
+        mc = MackeyContext(G)
+        gm = permutation_module(mc, R)
+        mf = fixedpoint_mackey_functor(gm)
+        @test mf isa MackeyFunctor
+    end
+end
+
 @testset "MackeyContext" begin
     G = GAP.Globals.SymmetricGroup(3)
     ctx = MackeyContext(G)

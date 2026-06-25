@@ -31,3 +31,22 @@ end
 function is_identity_module_homomorphism(phi::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism))::Bool
     return domain(phi) === codomain(phi) && all(phi(x) == x for x in gens(domain(phi)))
 end
+
+"""
+    $(@__MODULE__).submodules_matrix([f], (M1, f1), (M2, f2))
+
+Let `f1` and `f2` be morphisms with domains `M1` and `M2`, where `f2` is assumed to be injective.
+Also, let `f` be a morphism from `codomain(M1)` to `codomain(M2)`. This function returns a morphism
+`g` from `M1` to `M2` such that `f2(g(m))` equals `f(f1(m))` for all `m` in `M1`.
+
+If `f` is not given, it is assumed to be the identity map.
+"""
+submodules_matrix
+
+submodules_matrix((M1, f1), (M2, f2)) = submodules_matrix(identity_map(codomain(f1)), (M1, f1), (M2, f2))
+
+function submodules_matrix(f, (M1, f1), (M2, f2))
+    @assert codomain(f1) === domain(f) && codomain(f) === codomain(f2)
+    imgs = [preimage(f2, f(f1(v))) for v in generators(M1)]
+    matrix([imgs[i][j] for i in eachindex(generators(M1)), j in eachindex(generators(M2))])
+end

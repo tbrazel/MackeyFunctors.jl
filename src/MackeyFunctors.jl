@@ -16,6 +16,9 @@ export MackeyContext,
     double_coset_representative_data,
     double_coset_representative_words
 
+include("GModules.jl")
+export GModule, permutation_module
+
 include("types/MackeyFunctor.jl")
 export MackeyFunctor,
     coefficient_ring,
@@ -28,7 +31,8 @@ include("Shift.jl")
 export shift
 
 include("Constructors.jl")
-export constant_mackey_functor, burnside_mackey_functor, cohomological__mackey_functor, free_mackey_functor
+export constant_mackey_functor, burnside_mackey_functor, cohomological__mackey_functor,
+    free_mackey_functor, fixedpoint_mackey_functor
 
 include("types/Homomorphism.jl")
 export MackeyFunctorHomomorphism, id_homomorphism
