@@ -355,7 +355,15 @@ function coefficient_ring(mf::MackeyFunctor)
 end
 
 function Base.show(io::IO, obj::MackeyFunctor)
-
-    print(io, "MackeyFunctor for group ", obj.context.group, "over base ring ", coefficient_ring(obj), " with ", length(obj.context.covers), " covers and ", length(obj.context.generators), " generators supplied.")
+    println(io, "MackeyFunctor for group ", String(GAP.Globals.StructureDescription(obj.context.group)), " over base ring ", coefficient_ring(obj))
+    
+    for (i,(h,k)) in enumerate(obj.context.covers)
+        hname = String(GAP.Globals.StructureDescription(obj.context.subgroups[h]))
+        kname = String(GAP.Globals.StructureDescription(obj.context.subgroups[k]))
+        println("Restriction ", kname, " ---> ", hname)
+        display(matrix(obj.cover_restrictions[i]))
+        println("Transfer ", hname, " ---> ", kname)
+        display(matrix(obj.cover_transfers[i]))
+    end
 
 end
