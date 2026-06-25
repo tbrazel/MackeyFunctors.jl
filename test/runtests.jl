@@ -45,10 +45,55 @@ end
 end
 
 @testset "Burnside Mackey functors" begin
+    # Test that the constructor works
     for n in 3:4, R in [ZZ, GF(2)]
         G = GAP.Globals.SymmetricGroup(n)
         @test burnside_mackey_functor(G, R) isa MackeyFunctor
     end
+
+    # Test that the conjugation action is nontrivial in some cases.
+    # GAP search over SmallGroup(order, id) finds the first example at
+    # SmallGroup(8, 3), the dihedral group D8.  It has a V4 subgroup H whose
+    # normalizer is all of D8, and conjugation by an element of N_G(H) moves two
+    # subgroups of H that are not conjugate inside H.
+    G = GAP.Globals.SmallGroup(8, 3)
+    @test string(GAP.Globals.StructureDescription(G)) == "D8"
+
+    context = MackeyContext(G)
+    H_index = findfirst(eachindex(context.subgroups)) do i
+        H = context.subgroups[i]
+        Int(GAP.Globals.Size(H)) == 4 &&
+            string(GAP.Globals.StructureDescription(H)) == "C2 x C2" &&
+            Int(GAP.Globals.Size(GAP.Globals.Normalizer(G, H))) == 8
+    end
+    @test H_index !== nothing
+
+    H = context.subgroups[H_index]
+    normalizer = GAP.Globals.Normalizer(G, H)
+    conjugacy_classes = collect(GAP.Globals.ConjugacyClassesSubgroups(H))
+    witness = nothing
+    for g in GAP.Globals.Elements(normalizer), (source_index, conjugacy_class) in enumerate(conjugacy_classes)
+        K = GAP.Globals.Representative(conjugacy_class)
+        conjugated_K = K^(g^-1)
+        target_index = findfirst(
+            ==(GAP.Globals.ConjugacyClassSubgroups(H, conjugated_K)),
+            conjugacy_classes,
+        )
+
+        if target_index !== nothing && target_index != source_index
+            witness = (g, source_index, target_index)
+            break
+        end
+    end
+    @test witness !== nothing
+
+    g, source_index, target_index = witness
+    burnside = burnside_mackey_functor(context, ZZ)
+    conjugation_action = MackeyFunctors.conjugation(burnside, g, H_index)
+    AH = MackeyFunctors.value(burnside, H_index)
+
+    @test conjugation_action(gens(AH)[source_index]) == gens(AH)[target_index]
+    @test matrix(conjugation_action) != identity_matrix(ZZ, rank(AH))
 end
 
 @testset "Burnside Mackey functors for Cp" begin
