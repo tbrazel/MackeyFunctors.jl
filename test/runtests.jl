@@ -653,39 +653,10 @@ end
     end
 end
 
-# @testset "Zero direct sums of Mackey functors" begin
-#     for k in 1:2
-#         context = MackeyContext(GAP.Globals.CyclicGroup(k))
-#         zero_functor = constant_mackey_functor(context, free_module(ZZ, 0))
-#         zero_plus_zero = MackeyFunctors.direct_sum_mf(zero_functor, zero_functor)
+@testset "direct sums of Mackey functors" begin
+    for k in [1, 4], m in 0:2, n in 0:2
 
-#         @test zero_plus_zero isa MackeyFunctor
-#         @test zero_plus_zero.context === context
-#         @test all(eachindex(context.subgroups)) do subgroup_index
-#             ngens(zero_plus_zero.values[subgroup_index]) == 0
-#         end
-#         @test all(zero_plus_zero.cover_restrictions) do restriction_map
-#             ngens(domain(restriction_map)) == 0 &&
-#                 ngens(codomain(restriction_map)) == 0 &&
-#                 all(x -> restriction_map(x) == zero(codomain(restriction_map)), gens(domain(restriction_map)))
-#         end
-#         @test all(zero_plus_zero.cover_transfers) do transfer_map
-#             ngens(domain(transfer_map)) == 0 &&
-#                 ngens(codomain(transfer_map)) == 0 &&
-#                 all(x -> transfer_map(x) == zero(codomain(transfer_map)), gens(domain(transfer_map)))
-#         end
-#         @test all(vec(zero_plus_zero.generator_conjugations)) do conjugation_map
-#             ngens(domain(conjugation_map)) == 0 &&
-#                 ngens(codomain(conjugation_map)) == 0 &&
-#                 all(x -> conjugation_map(x) == zero(codomain(conjugation_map)), gens(domain(conjugation_map)))
-#         end
-#     end
-# end
-
-@testset "Zero summands in direct sums of Mackey functors" begin
-    for k in 2:3, m in 0:2, n in 0:2
-
-        context = MackeyContext(GAP.Globals.CyclicGroup(k))
+        context = MackeyContext(GAP.Globals.SymmetricGroup(k))
         zero_functor = constant_mackey_functor(context, free_module(ZZ, m))
         nonzero_functor = constant_mackey_functor(context, free_module(ZZ, n))
 
