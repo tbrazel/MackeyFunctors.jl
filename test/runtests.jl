@@ -269,6 +269,78 @@ end
     end
 end
 
+@testset "Mackey functor homomorphisms" begin
+    context = MackeyContext(GAP.Globals.CyclicGroup(2))
+    M = free_module(ZZ, 1)
+    mackey_functor = constant_mackey_functor(context, M)
+    id_component = ModuleHomomorphism(M, M, identity_matrix(ZZ, 1))
+    components = [id_component for _ in context.subgroups]
+
+    homomorphism = MackeyFunctorHomomorphism(
+        mackey_functor,
+        mackey_functor,
+        components,
+    )
+
+    @test homomorphism isa MackeyFunctorHomomorphism
+    @test homomorphism.context == context
+    @test homomorphism.domain === mackey_functor
+    @test homomorphism.codomain === mackey_functor
+    @test length(homomorphism.components) == length(context.subgroups)
+
+    @test_throws ArgumentError MackeyFunctorHomomorphism(
+        mackey_functor,
+        mackey_functor,
+        components[1:end-1],
+    )
+
+    wrong_domain = free_module(ZZ, 1)
+    wrong_domain_component =
+        ModuleHomomorphism(wrong_domain, M, zero_matrix(ZZ, 1, 1))
+    wrong_domain_components = Generic.ModuleHomomorphism[components...]
+    wrong_domain_components[1] = wrong_domain_component
+    @test_throws ArgumentError MackeyFunctorHomomorphism(
+        mackey_functor,
+        mackey_functor,
+        wrong_domain_components,
+    )
+
+    wrong_codomain = free_module(ZZ, 1)
+    wrong_codomain_component =
+        ModuleHomomorphism(M, wrong_codomain, zero_matrix(ZZ, 1, 1))
+    wrong_codomain_components = Generic.ModuleHomomorphism[components...]
+    wrong_codomain_components[1] = wrong_codomain_component
+    @test_throws ArgumentError MackeyFunctorHomomorphism(
+        mackey_functor,
+        mackey_functor,
+        wrong_codomain_components,
+    )
+
+    N = free_module(ZZ, 2)
+    id_hom = ModuleHomomorphism(N, N, identity_matrix(ZZ, 2))
+    id_iso = ModuleIsomorphism(N, N, identity_matrix(ZZ, 2))
+    A_iso = ModuleIsomorphism(N, N, matrix(ZZ, [1 1; 0 1]))
+    B_iso = ModuleIsomorphism(N, N, matrix(ZZ, [1 0; 1 1]))
+
+    s3_context = MackeyContext(GAP.Globals.SymmetricGroup(3))
+    s3_functor = MackeyFunctor(
+        s3_context,
+        [N for _ in s3_context.subgroups],
+        [id_hom for _ in s3_context.covers],
+        [id_hom for _ in s3_context.covers],
+        [
+            subgroup_index == 1 ? A_iso : subgroup_index == 2 ? B_iso : id_iso
+            for _ in eachindex(s3_context.generators), subgroup_index in eachindex(s3_context.subgroups)
+        ];
+        verify = false,
+    )
+    @test MackeyFunctorHomomorphism(
+        s3_functor,
+        s3_functor,
+        [id_hom for _ in s3_context.subgroups],
+    ) isa MackeyFunctorHomomorphism
+end
+
 @testset "Shifts of Mackey functors for C4, S3" begin
     C4 = GAP.Globals.CyclicGroup(4)
     c4_context = MackeyContext(C4)

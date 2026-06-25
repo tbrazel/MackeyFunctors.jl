@@ -30,4 +30,7 @@ export shift
 include("Constructors.jl")
 export constant_mackey_functor, burnside_mackey_functor, cohomological__mackey_functor, free_mackey_functor
 
+include("types/Homomorphism.jl")
+export MackeyFunctorHomomorphism
+
 end
