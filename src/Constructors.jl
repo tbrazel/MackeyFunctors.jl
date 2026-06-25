@@ -16,7 +16,7 @@ function constant_mackey_functor(context::MackeyContext, M::AbstractAlgebra.FPMo
     restrictions = fill(id_hom, length(context.covers))
 
     # A transfer M(H)->M(K) is multiplication by [K:H]
-    transfers = Generic.ModuleHomomorphism[
+    transfers = eltype(restrictions)[
         R(subgroup_inclusion_index(context, cover_index)) * id_hom
         for cover_index in context.covers
     ]
