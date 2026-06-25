@@ -1,5 +1,14 @@
 # attempt at pretty printing for Mackey functors
 
+# produces string of group description with SmallGroup ID #
+function _desc_id(G::Group)
+    GAP.Globals.Size(G) == 1 && return "e"
+
+    (n,k) = GAP.Globals.IdGroup(G)
+    name = string(GAP.Globals.StructureDescription(G))
+    return join([name, " (", string(n), ",", string(k), ")"])
+end
+
 # produces a string of length w which contains s as a substring in the middle 
 function _center(s::AbstractString, w::Int; spacer = " ")
     pad = max(w - length(s), 0)
@@ -17,14 +26,14 @@ function _matrix_lines_textplain(A)
 end
 
 function Base.show(io::IO, obj::MackeyFunctor)
-    (n,k) = GAP.Globals.IdGroup(obj.context.group)
-    name = GAP.Globals.StructureDescription(obj.context.group)
-    println(io, "MackeyFunctor for group ", String(name), " (", n, ",", k, ") over base ring ", coefficient_ring(obj))
+    println(io, "MackeyFunctor for group ", _desc_id(obj.context.group), " over base ring ", coefficient_ring(obj))
     
-    length(obj.context.covers) <= 10 || return
+    # TODO: find way to toggle this limit?
+    # length(obj.context.covers) <= 10 || return
 
     for (i,(h,k)) in enumerate(obj.context.covers)
-        hname = String(GAP.Globals.StructureDescription(obj.context.subgroups[h]))
+        H = obj.context.subgroups[h]
+        K = obj.context.subgroups[k]
         kname = String(GAP.Globals.StructureDescription(obj.context.subgroups[k]))
         
         # restriction and transfer matrices
@@ -41,7 +50,7 @@ function Base.show(io::IO, obj::MackeyFunctor)
         gap = 4
         spacer = repeat(" ", gap)
 
-        println("\n", _center(join([" ", hname, " < ", kname, " "]), wR + wT + gap; spacer = "-"))
+        println("\n", _center(join([" ", _desc_id(H), " < ", _desc_id(K), " "]), wR + wT + gap; spacer = "-"))
         println(io, _center("res", wR), spacer, _center("tr", wT))
 
         # print lines of matrices one by one, padding if one matrix runs out of lines
