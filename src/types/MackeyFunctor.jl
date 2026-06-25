@@ -352,21 +352,3 @@ Returns the underlying coefficient ring of the Mackey functor `M`.
 function coefficient_ring(mf::MackeyFunctor)
     return base_ring(mf.values[1])
 end
-
-function Base.show(io::IO, obj::MackeyFunctor)
-    (n,k) = GAP.Globals.IdGroup(obj.context.group)
-    name = GAP.Globals.StructureDescription(obj.context.group)
-    println(io, "MackeyFunctor for group ", String(name), " (", n, ",", k, ") over base ring ", coefficient_ring(obj))
-
-    length(obj.context.covers) > 5 || return
-
-    for (i,(h,k)) in enumerate(obj.context.covers)
-        hname = String(GAP.Globals.StructureDescription(obj.context.subgroups[h]))
-        kname = String(GAP.Globals.StructureDescription(obj.context.subgroups[k]))
-        println("Restriction ", kname, " ---> ", hname)
-        display(matrix(obj.cover_restrictions[i]))
-        println("Transfer ", hname, " ---> ", kname)
-        display(matrix(obj.cover_transfers[i]))
-    end
-
-end

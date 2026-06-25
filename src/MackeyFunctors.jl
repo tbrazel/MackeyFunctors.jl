@@ -7,7 +7,6 @@ import AbstractAlgebra: coefficient_ring
 
 include("module_methods/Modules.jl")
 
-
 include("group_theory/Words.jl")
 export generator_relations
 
@@ -26,6 +25,8 @@ export MackeyFunctor,
     restriction,
     transfer,
     value
+
+include("Show.jl")
 
 include("Shift.jl")
 export shift
