@@ -1,13 +1,6 @@
 # misc
 
 ```@docs
-HomModule
-underlying_module
-as_homomorphism
-as_hom_module_element
-TensorProduct
-tensor_product
-tensor_product_element
 double_coset_representative_data
 double_coset_representative_words
 MackeyFunctors.submodules_matrix
