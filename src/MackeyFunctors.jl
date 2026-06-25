@@ -41,4 +41,7 @@ export constant_mackey_functor, burnside_mackey_functor,
 include("types/Homomorphism.jl")
 export MackeyFunctorHomomorphism, id_homomorphism
 
+include("DirectSum.jl")
+export direct_sum_mf, direct_sum_homomorphism
+
 end

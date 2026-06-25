@@ -653,6 +653,106 @@ end
     end
 end
 
+# @testset "Zero direct sums of Mackey functors" begin
+#     for k in 1:2
+#         context = MackeyContext(GAP.Globals.CyclicGroup(k))
+#         zero_functor = constant_mackey_functor(context, free_module(ZZ, 0))
+#         zero_plus_zero = MackeyFunctors.direct_sum_mf(zero_functor, zero_functor)
+
+#         @test zero_plus_zero isa MackeyFunctor
+#         @test zero_plus_zero.context === context
+#         @test all(eachindex(context.subgroups)) do subgroup_index
+#             ngens(zero_plus_zero.values[subgroup_index]) == 0
+#         end
+#         @test all(zero_plus_zero.cover_restrictions) do restriction_map
+#             ngens(domain(restriction_map)) == 0 &&
+#                 ngens(codomain(restriction_map)) == 0 &&
+#                 all(x -> restriction_map(x) == zero(codomain(restriction_map)), gens(domain(restriction_map)))
+#         end
+#         @test all(zero_plus_zero.cover_transfers) do transfer_map
+#             ngens(domain(transfer_map)) == 0 &&
+#                 ngens(codomain(transfer_map)) == 0 &&
+#                 all(x -> transfer_map(x) == zero(codomain(transfer_map)), gens(domain(transfer_map)))
+#         end
+#         @test all(vec(zero_plus_zero.generator_conjugations)) do conjugation_map
+#             ngens(domain(conjugation_map)) == 0 &&
+#                 ngens(codomain(conjugation_map)) == 0 &&
+#                 all(x -> conjugation_map(x) == zero(codomain(conjugation_map)), gens(domain(conjugation_map)))
+#         end
+#     end
+# end
+
+@testset "Zero summands in direct sums of Mackey functors" begin
+    for k in 2:3, m in 0:2, n in 0:2
+
+        context = MackeyContext(GAP.Globals.CyclicGroup(k))
+        zero_functor = constant_mackey_functor(context, free_module(ZZ, m))
+        nonzero_functor = constant_mackey_functor(context, free_module(ZZ, n))
+
+        zero_plus_nonzero = MackeyFunctors.direct_sum_mf(zero_functor, nonzero_functor)
+        @test all(eachindex(context.subgroups)) do subgroup_index
+            value_summands = summands(zero_plus_nonzero.values[subgroup_index])
+            value_summands[1] === zero_functor.values[subgroup_index] &&
+                value_summands[2] === nonzero_functor.values[subgroup_index]
+        end
+
+        nonzero_plus_zero = MackeyFunctors.direct_sum_mf(nonzero_functor, zero_functor)
+        @test all(eachindex(context.subgroups)) do subgroup_index
+            value_summands = summands(nonzero_plus_zero.values[subgroup_index])
+            value_summands[1] === nonzero_functor.values[subgroup_index] &&
+                value_summands[2] === zero_functor.values[subgroup_index]
+        end
+
+        for (sum_functor, component_index) in (
+            (zero_plus_nonzero, 2),
+            (nonzero_plus_zero, 1),
+        )
+            for (cover_index, (i, j)) in enumerate(context.covers)
+                restriction_map = sum_functor.cover_restrictions[cover_index]
+                source_injections = canonical_injections(sum_functor.values[j])
+                target_projections = canonical_projections(sum_functor.values[i])
+                @test all(gens(nonzero_functor.values[j])) do x
+                    target_projections[component_index](
+                        restriction_map(source_injections[component_index](x)),
+                    ) == nonzero_functor.cover_restrictions[cover_index](x)
+                end
+
+                transfer_map = sum_functor.cover_transfers[cover_index]
+                source_injections = canonical_injections(sum_functor.values[i])
+                target_projections = canonical_projections(sum_functor.values[j])
+                @test all(gens(nonzero_functor.values[i])) do x
+                    target_projections[component_index](
+                        transfer_map(source_injections[component_index](x)),
+                    ) == nonzero_functor.cover_transfers[cover_index](x)
+                end
+            end
+
+            for generator_index in eachindex(context.generators)
+                for subgroup_index in eachindex(context.subgroups)
+                    target_index =
+                        context.generator_left_conjugation_matrix[
+                            generator_index,
+                            subgroup_index,
+                        ]
+                    conjugation_map =
+                        sum_functor.generator_conjugations[generator_index, subgroup_index]
+                    source_injections = canonical_injections(sum_functor.values[subgroup_index])
+                    target_projections = canonical_projections(sum_functor.values[target_index])
+
+                    @test all(gens(nonzero_functor.values[subgroup_index])) do x
+                        target_projections[component_index](
+                            conjugation_map(source_injections[component_index](x)),
+                        ) == nonzero_functor.generator_conjugations[
+                            generator_index,
+                            subgroup_index,
+                        ](x)
+                    end
+                end
+            end
+        end
+    end
+end
+
 # @testset "Visualizer data" begin
 #     C2, _, _, values, restrictions, transfers, conjugations = c2_burnside_data()
 #     M = MackeyFunctor(C2, values, restrictions, transfers, conjugations)
