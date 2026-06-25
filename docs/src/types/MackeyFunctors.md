@@ -1,6 +1,7 @@
 # Mackey functors
 
 When asking a user to construct a Mackey functor for a group $G$, it seems reasonable to ask them to supply the values $M(H)$ for each subgroup $H\le G$, but asking for restriction/transfer along *every* subgroup inclusion and conjugation for *every* group element feels a bit excessive. A more concise collection of data is to ask them to supply is:
+
 - the values $M(H)$ for each $H\le G$
 - restriction and transfer along covers
 - conjugation by generators of $G$
@@ -30,4 +31,6 @@ Given a Mackey functor, we can access various parts of the data.
 coefficient_ring
 transfer
 restriction
+conjugation
+value
 ```

@@ -20,7 +20,9 @@ export MackeyContext,
 
 include("types/MackeyFunctor.jl")
 export MackeyFunctor,
-    coefficient_ring
+    coefficient_ring,
+    conjugation,
+    value
 
 include("Shift.jl")
 export shift

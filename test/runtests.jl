@@ -89,8 +89,8 @@ end
 
     g, source_index, target_index = witness
     burnside = burnside_mackey_functor(context, ZZ)
-    conjugation_action = MackeyFunctors.conjugation(burnside, g, H_index)
-    AH = MackeyFunctors.value(burnside, H_index)
+    conjugation_action = conjugation(burnside, g, H_index)
+    AH = value(burnside, H_index)
 
     @test conjugation_action(gens(AH)[source_index]) == gens(AH)[target_index]
     @test matrix(conjugation_action) != identity_matrix(ZZ, rank(AH))
