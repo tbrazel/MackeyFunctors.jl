@@ -50,7 +50,7 @@ function Base.show(io::IO, obj::MackeyFunctor)
         gap = 4
         spacer = repeat(" ", gap)
 
-        println("\n", _center(join([" ", _desc_id(H), " < ", _desc_id(K), " "]), wR + wT + gap; spacer = "-"))
+        println(io, "\n", _center(join([" ", _desc_id(H), " < ", _desc_id(K), " "]), wR + wT + gap; spacer = "-"))
         println(io, _center("res", wR), spacer, _center("tr", wT))
 
         # print lines of matrices one by one, padding if one matrix runs out of lines
@@ -61,4 +61,8 @@ function Base.show(io::IO, obj::MackeyFunctor)
             println(io, rpad(r, wR), spacer, rpad(t, wT))
         end
     end
+end
+
+function Base.show(io::IO, obj::MackeyContext) 
+    println(io, "MackeyContext for group ", _desc_id(obj.group))
 end
