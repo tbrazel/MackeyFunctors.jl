@@ -44,6 +44,13 @@ end
     end
 end
 
+@testset "Burnside Mackey functors" begin
+    for n in 3:4, R in [ZZ, GF(2)]
+        G = GAP.Globals.SymmetricGroup(n)
+        @test burnside_mackey_functor(G, R) isa MackeyFunctor
+    end
+end
+
 @testset "Burnside Mackey functors for Cp" begin
     for p in [2, 3, 5, 7, 11, 67]
         Cp = GAP.Globals.CyclicGroup(p)
