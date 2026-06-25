@@ -64,5 +64,13 @@ function Base.show(io::IO, obj::MackeyFunctor)
 end
 
 function Base.show(io::IO, obj::MackeyContext) 
-    println(io, "MackeyContext for group ", _desc_id(obj.group))
+    ngens = length(obj.generators)
+    nsubs = length(obj.subgroups)
+    ncovs = length(obj.covers)
+    ndcfs = length(obj.double_coset_formulae)
+    println(io, "MackeyContext for group ", _desc_id(obj.group), " with ", 
+        ngens, " generator", ngens == 1 ? "" : "s", ", ", 
+        nsubs, " subgroup", nsubs == 1 ? "" : "s", ", ", 
+        ncovs, " cover", ncovs == 1 ? "" : "s", ", ",  
+        ndcfs, " double coset formula", ndcfs == 1 ? "" : "s")
 end
