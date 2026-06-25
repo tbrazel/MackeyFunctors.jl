@@ -4,7 +4,7 @@ using AbstractAlgebra
 using MackeyFunctors
 
 @testset "Constant Mackey functors for cyclic 2-groups" begin
-    for k in 1:5
+    for k in 0:5
         C2k = GAP.Globals.CyclicGroup(2^k)
         context = MackeyContext(C2k)
 
@@ -63,7 +63,7 @@ end
 end
 
 @testset "Constant Mackey functors for symmetric groups" begin
-    for n in 2:5
+    for n in 1:5
         S_n = GAP.Globals.SymmetricGroup(n)
         context = MackeyContext(S_n)
 
@@ -78,7 +78,7 @@ end
 
 @testset "Burnside Mackey functors" begin
     # Test that the constructor works
-    for n in 3:4, R in [ZZ, GF(2)]
+    for n in 1:4, R in [ZZ, GF(2)]
         G = GAP.Globals.SymmetricGroup(n)
         @test burnside_mackey_functor(G, R) isa MackeyFunctor
     end
@@ -436,6 +436,17 @@ end
 end
 
 @testset "Shifts of Mackey functors for C4, S3" begin
+    C1 = GAP.Globals.CyclicGroup(1)
+    c1_context = MackeyContext(C1)
+    c1_constant = constant_mackey_functor(c1_context, ZZ)
+    shifted_c1 = shift(c1_constant, 1)
+
+    @test shifted_c1 isa MackeyFunctor
+    @test length(c1_context.covers) == 0
+    @test length(shifted_c1.cover_restrictions) == 0
+    @test length(shifted_c1.cover_transfers) == 0
+    @test rank(MackeyFunctors.value(shifted_c1, 1)) == 1
+
     C4 = GAP.Globals.CyclicGroup(4)
     c4_context = MackeyContext(C4)
     c4_constant = constant_mackey_functor(c4_context, ZZ)
@@ -519,6 +530,20 @@ end
         gm = permutation_module(mc, R)
         mf = fixedpoint_mackey_functor(gm)
         @test mf isa MackeyFunctor
+    end
+end
+
+@testset "MackeyContext for the trivial group" begin
+    G = GAP.Globals.CyclicGroup(1)
+    ctx = MackeyContext(G)
+
+    @test ctx.group == G
+    @test length(ctx.subgroups) == 1
+    @test isempty(ctx.covers)
+    @test ctx.paths == Dict((1, 1) => Int[])
+    @test isempty(ctx.double_coset_formulae)
+    @test all(ctx.generator_relations) do word
+        isempty(word)
     end
 end
 
