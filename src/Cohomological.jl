@@ -3,27 +3,27 @@ using AbstractAlgebra
 using MackeyFunctors
 
 
-##Implement is_cohomological Boolean method
-#25
-
-#check each cover_index
-#use map_equal 
-#compose res then transfer in julia (as matrices?)
-"""
-A Mackey functor M is cohomological if the composition of the transfer and restriction maps between any cover relation K < H
-and K is equal to the index [K : H].
 
 """
-##function is_cohomological(context::MackeyContext, H_idx::Int)
-        ##subgroups  = context.subgroups
-        ##H   = subgroups[H_idx]
+The following method is a boolean to check if a Mackey functor is cohomological.  
+A Mackey functor M is cohomological if for every cover relation K ≤ H,
+the composition of transfer followed by restriction equals multiplication
+by the index [H : K] on M(K).  
+"""
+function is_cohomological(mf::MackeyFunctor)
+    subgroups = mf.context.subgroups
 
-        #now define cover restrictions and cover transfers over all indexes of H
-        ##cover_restrictions = map(context.covers) do (J_idx, K_idx)
-        ##K  = subgroups[K_idx]
-        ##end
+    for (K_idx, H_idx) in mf.context.covers
+        K = subgroups[K_idx]
+        H = subgroups[H_idx] 
 
-        ##for (H, (i, j)) in enumerate(context.covers)
-            ##cover_restrictions 
+        lhs = mf.cover_restrictions[(H_idx, K_idx)] * mf.cover_transfers[(K_idx, H_idx)]  # ✅ use mf
+        rhs = index(H, K) * identity_map(mf.modules[K_idx])
 
-##end 
+        if lhs != rhs
+            return false
+        end
+    end
+
+    return true
+end

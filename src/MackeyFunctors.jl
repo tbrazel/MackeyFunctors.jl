@@ -50,5 +50,8 @@ export constant_mackey_functor, burnside_mackey_functor,
 include("constructors/DirectSum.jl")
 export direct_sum, direct_sum_homomorphism
 
+# Cohomological Mackey functors
+include("cohomological.jl")
+export is_cohomological
 
 end
