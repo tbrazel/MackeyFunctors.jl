@@ -1,3 +1,8 @@
+using MackeyFunctors.AbstractAlgebraLocal: HomModule,
+    as_hom_module_element,
+    as_homomorphism,
+    underlying_module
+
 @testset "Module map composition order" begin
     M = free_module(ZZ, 2)
     A_hom = ModuleHomomorphism(M, M, matrix(ZZ, [1 1; 0 1]))

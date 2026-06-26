@@ -45,7 +45,7 @@ function _hom_module_precomposition_map(
     p,
 ) where T <: RingElement
     _check_hom_module_map_rings(source, target)
-    p = _as_homomorphism(p)
+    p = as_homomorphism(p)
 
     domain(p) === target.domain_module ||
         throw(ArgumentError("The precomposition map has the wrong domain."))
@@ -59,7 +59,7 @@ function _hom_module_precomposition_map(
         for x in gens(source)
     ]
 
-    return _homomorphism_from_generator_images(
+    return AbstractAlgebraLocal._homomorphism_from_generator_images(
         underlying_module(source),
         underlying_module(target),
         images,
@@ -72,7 +72,7 @@ function _hom_module_postcomposition_map(
     q,
 ) where T <: RingElement
     _check_hom_module_map_rings(source, target)
-    q = _as_homomorphism(q)
+    q = as_homomorphism(q)
 
     domain(q) === source.codomain_module ||
         throw(ArgumentError("The postcomposition map has the wrong domain."))
@@ -86,7 +86,7 @@ function _hom_module_postcomposition_map(
         for x in gens(source)
     ]
 
-    return _homomorphism_from_generator_images(
+    return AbstractAlgebraLocal._homomorphism_from_generator_images(
         underlying_module(source),
         underlying_module(target),
         images,
@@ -273,7 +273,7 @@ function _mackey_functor_hom_compatibility_map(
         push!(images, compatibility_value)
     end
 
-    return _homomorphism_from_generator_images(
+    return AbstractAlgebraLocal._homomorphism_from_generator_images(
         ambient_module,
         compatibility_module,
         images,

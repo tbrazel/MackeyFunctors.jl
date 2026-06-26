@@ -1,3 +1,5 @@
+using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_module_element, as_homomorphism, TensorProduct, tensor_product, tensor_product_element, submodules_matrix
+
 @testset "Hom modules" begin
     F1 = free_module(ZZ, 1)
     twoF1, = sub(F1, [F1([ZZ(2)])])

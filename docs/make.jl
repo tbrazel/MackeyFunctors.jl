@@ -17,13 +17,13 @@ makedocs(;
             "Mackey Functors" => "types/MackeyFunctors.md"
         ],
         "Manual" => [
-            "Abstract algebra" => "manual/alg.md",
             "Constructors" => "manual/constructors.md",
             "misc" => "manual/misc.md",
             "Examples" => "examples.md"
         ]
     ],
     checkdocs=:exports,
+    checkdocs_ignored_modules=[MackeyFunctors.AbstractAlgebraLocal],
 )
 
 deploydocs(;

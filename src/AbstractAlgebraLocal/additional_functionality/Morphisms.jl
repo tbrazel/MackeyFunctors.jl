@@ -1,18 +1,7 @@
-# Checks if two module maps are identical (mathematically)
-function map_eq(f::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism), g::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism))::Bool
-    domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
-end
+as_homomorphism(f::Generic.ModuleHomomorphism) = f
 
 function as_homomorphism(f::Generic.ModuleIsomorphism)::Generic.ModuleHomomorphism
     return ModuleHomomorphism(domain(f), codomain(f), matrix(f))
-end
-
-function _as_homomorphism(f::Generic.ModuleHomomorphism)::Generic.ModuleHomomorphism
-    return f
-end
-
-function _as_homomorphism(f::Generic.ModuleIsomorphism)::Generic.ModuleHomomorphism
-    return as_homomorphism(f)
 end
 
 function _preserves_domain_relations(f::Generic.ModuleHomomorphism)::Bool
@@ -37,8 +26,8 @@ function _has_two_sided_inverse(
     f::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism),
     f_inv::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism),
 )::Bool
-    f = _as_homomorphism(f)
-    f_inv = _as_homomorphism(f_inv)
+    f = as_homomorphism(f)
+    f_inv = as_homomorphism(f_inv)
 
     # First verify that both matrices define honest maps on the presented
     # quotient modules.  Once that is true, checking equality on the source
@@ -58,7 +47,7 @@ function is_isomorphism(f::Generic.ModuleIsomorphism)::Bool
     end
 end
 
-function is_isomorphism(f::Generic.ModuleHomomorphism{T})::Bool where T <: RingElement
+function is_isomorphism(f::Generic.ModuleHomomorphism)
     try
         f_iso = ModuleIsomorphism(domain(f), codomain(f), matrix(f))
         return _has_two_sided_inverse(f, inv(f_iso))
@@ -89,17 +78,15 @@ end
 
 # Given modules M and N, returns the zero map from M to N
 function zero_homomorphism(M::AbstractAlgebra.FPModule, N::AbstractAlgebra.FPModule)::Generic.ModuleHomomorphism
-    ModuleHomomorphism(
-        M, N, zero_matrix(
-            base_ring(M), ngens(M), ngens(N)))
+    ModuleHomomorphism(M, N, zero_matrix(base_ring(M), ngens(M), ngens(N)))
 end
 
-function is_zero_module_homomorphism(phi::Generic.ModuleHomomorphism)::Bool
-    return all(x -> phi(x) == zero(codomain(phi)), gens(domain(phi)))
+function is_zero_module_homomorphism(phi::Generic.ModuleHomomorphism)
+    return all(iszero ∘ phi, gens(domain(phi)))
 end
 
-function is_identity_module_homomorphism(phi::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism))::Bool
-    return domain(phi) === codomain(phi) && all(phi(x) == x for x in gens(domain(phi)))
+function is_identity_module_homomorphism(phi::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism))
+    return domain(phi) === codomain(phi) && all(x -> phi(x) == x, gens(domain(phi)))
 end
 
 """
@@ -119,4 +106,13 @@ function submodules_matrix(f, (M1, f1), (M2, f2))
     @assert codomain(f1) === domain(f) && codomain(f) === codomain(f2)
     imgs = [preimage(f2, f(f1(v))) for v in generators(M1)]
     matrix([imgs[i][j] for i in eachindex(generators(M1)), j in eachindex(generators(M2))])
+end
+
+function _copy_matrix_block!(target_matrix, source_matrix, row_offset::Int, column_offset::Int)
+    for row in 1:nrows(source_matrix), column in 1:ncols(source_matrix)
+        target_matrix[row_offset + row, column_offset + column] =
+            source_matrix[row, column]
+    end
+
+    return target_matrix
 end
