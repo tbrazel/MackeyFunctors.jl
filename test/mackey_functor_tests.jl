@@ -306,7 +306,7 @@ end
     @test shift(s3_burnside, subgroup_of_order_two) isa MackeyFunctor
 end
 
-@testset "permutation_module" begin
+@testset "Permutation modules give G-modules" begin
     for n in [1, 4], R in [ZZ, GF(5)]
         G = GAP.Globals.SymmetricGroup(n)
         mc = MackeyContext(G)
@@ -315,7 +315,7 @@ end
     end
 end
 
-@testset "GModule validation" begin
+@testset "G-module validation" begin
     context = MackeyContext(GAP.Globals.CyclicGroup(2))
     M = free_module(ZZ, 1)
     N = free_module(ZZ, 2)
@@ -342,7 +342,7 @@ end
     )
 end
 
-@testset "fixedpoint_mackey_functor" begin
+@testset "Fixed point Mackey functor for S_n acting on R^n" begin
     for n in [1, 4], R in [ZZ, GF(5)]
         G = GAP.Globals.SymmetricGroup(n)
         mc = MackeyContext(G)
@@ -352,7 +352,7 @@ end
     end
 end
 
-@testset "direct sums of Mackey functors" begin
+@testset "Direct sums of Mackey functors" begin
     function direct_sum_test_matrix(p, q)
         R = base_ring(domain(p))
         result = zero_matrix(

@@ -187,19 +187,13 @@ function _verify_conjugation_cover_compatibility(mf::MackeyFunctor)
             index_of_conjugated_cover =
                 first(context.paths[(gHginvs_index, gKginvs_index)])
 
-            map_eq(
-                mf.cover_restrictions[cover_index] *
-                    mf.generator_conjugations[n, i],
-                mf.generator_conjugations[n, j] *
-                    mf.cover_restrictions[index_of_conjugated_cover],
-            ) || throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
+            mf.cover_restrictions[cover_index] * mf.generator_conjugations[n, i] ==
+                mf.generator_conjugations[n, j] * mf.cover_restrictions[index_of_conjugated_cover] ||
+                throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
 
-            map_eq(
-                mf.cover_transfers[cover_index] *
-                    mf.generator_conjugations[n, j],
-                mf.generator_conjugations[n, i] *
-                    mf.cover_transfers[index_of_conjugated_cover],
-            ) || throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
+            mf.cover_transfers[cover_index] * mf.generator_conjugations[n, j] ==
+                mf.generator_conjugations[n, i] * mf.cover_transfers[index_of_conjugated_cover] ||
+                throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
         end
     end
 
@@ -252,9 +246,9 @@ function _verify_subgroup_path_independence!(mf::MackeyFunctor)
 
             if haskey(dictionary_of_paths, new_key)
                 existing_tr, existing_res = dictionary_of_paths[new_key]
-                map_eq(existing_tr, candidate_tr) ||
+                existing_tr == candidate_tr ||
                     throw(ArgumentError("Transfers do not agree along all possible subgroup paths."))
-                map_eq(existing_res, candidate_res) ||
+                existing_res == candidate_res ||
                     throw(ArgumentError("Restrictions do not agree along all possible subgroup paths."))
             else
                 dictionary_of_paths[new_key] = (candidate_tr, candidate_res)
@@ -296,8 +290,7 @@ function _verify_mackey_double_cosets(mf::MackeyFunctor)
                 dc_rhs += dc_restriction * dc_conjugation * dc_transfer
             end
 
-            map_eq(dc_lhs, dc_rhs) ||
-                throw(ArgumentError("Double coset formula failed."))
+            dc_lhs == dc_rhs || throw(ArgumentError("Double coset formula failed."))
         end
     end
 
