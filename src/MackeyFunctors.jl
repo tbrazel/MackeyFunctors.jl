@@ -51,7 +51,7 @@ include("constructors/DirectSum.jl")
 export direct_sum, direct_sum_homomorphism
 
 # Cohomological Mackey functors
-include("cohomological.jl")
+include("Cohomological.jl")
 export is_cohomological
 
 end
