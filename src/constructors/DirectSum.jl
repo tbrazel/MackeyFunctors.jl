@@ -8,7 +8,7 @@ function direct_sum(
     N::MackeyFunctor
 )
 
-    same_context(M.context, N.context) || throw(ArgumentError("Mackey functors are not defined over the same context."))
+    M.context === N.context || throw(ArgumentError("Mackey functors are not defined over the same context."))
 
     context = M.context
 
@@ -55,8 +55,4 @@ function direct_sum(
         generator_conjugations,
         #verify=false,
     )
-end
-
-function same_context(a::MackeyContext, b::MackeyContext)
-    return a === b
 end
