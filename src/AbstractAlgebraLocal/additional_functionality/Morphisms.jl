@@ -2,6 +2,24 @@ function as_homomorphism(f::Generic.ModuleIsomorphism)::Generic.ModuleHomomorphi
     return ModuleHomomorphism(domain(f), codomain(f), matrix(f))
 end
 
+function _preserves_domain_relations(f::Generic.ModuleHomomorphism)::Bool
+    # An FPModule is presented by generators modulo the rows returned by
+    # `relations(domain(f))`.  A matrix gives a genuine map out of the quotient
+    # only when each source relation is sent to zero in the target quotient.
+    #
+    # This check matters for isomorphism testing because AbstractAlgebra's
+    # `ModuleIsomorphism` constructor solves for a matrix inverse in a larger
+    # presentation matrix.  That inverse matrix can fail to respect the source
+    # relations of the proposed inverse.  For example, the reduction map
+    # Z/4 -> Z/2 admits the matrix [1] as a one-sided solution, but the candidate
+    # inverse Z/2 -> Z/4 sends the relation 2 = 0 in Z/2 to 2 != 0 in Z/4.
+    for relation in relations(domain(f))
+        image_relation = relation * matrix(f)
+        codomain(f)(image_relation) == zero(codomain(f)) || return false
+    end
+    return true
+end
+
 function _has_two_sided_inverse(
     f::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism),
     f_inv::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism),
