@@ -1,5 +1,6 @@
 ```@docs
 HomModule
+MackeyFunctorHomModule
 underlying_module
 as_homomorphism
 as_hom_module_element

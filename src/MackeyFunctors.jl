@@ -34,6 +34,10 @@ export MackeyFunctor,
 include("types/Homomorphism.jl")
 export MackeyFunctorHomomorphism, id_homomorphism, is_isomorphism
 
+# FPModule of Mackey functor homomorphisms
+include("types/MackeyFunctorHomModule.jl")
+export MackeyFunctorHomModule
+
 # Nice printing for various new types
 include("Show.jl")
 
