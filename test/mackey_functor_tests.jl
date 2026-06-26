@@ -143,7 +143,8 @@ end
             conj_Cp = ModuleIsomorphism(ACp, ACp, identity_matrix(R, 2))
             conj = Generic.ModuleIsomorphism[conj_e conj_Cp;]
 
-            @test MackeyFunctor(context, val, res, tr, conj) isa MackeyFunctor
+            A = MackeyFunctor(context, val, res, tr, conj)
+            @test A isa MackeyFunctor
         end
     end
 end
@@ -207,27 +208,22 @@ end
         A1 = MackeyFunctor(context, A1_val, A1_res, A1_tr, A1_conj)
         @test A1 isa MackeyFunctor
 
-        # TODO: uncomment when free constructor is done and when == is implemented??
-        # check A1 is free_mackey_functor(context, 1)
-        # check A2 is free_mackey_functor(context, 2)
-        # check A4 is free_mackey_functor(context, 3)
-
         # checking ranks of Burnside shifts
         A = burnside_mackey_functor(C4, R)
-        A1_free = free_mackey_functor(context, 1, R)
-
         A1_sh = shift(A,1)
-        @test rank(A1_sh.values[1]) == 4
-        @test rank(A1_sh.values[2]) == 2
-        @test rank(A1_sh.values[3]) == 1
-        @test all(eachindex(context.subgroups)) do i
-            rank(A1_free.values[i]) == rank(A1_sh.values[i])
-        end
-
         A2_sh = shift(A,2)
-        @test rank(A2_sh.values[1]) == 2
-        @test rank(A2_sh.values[2]) == 4
-        @test rank(A2_sh.values[3]) == 2
+
+        A1_free = free_mackey_functor(context, 1, R)
+        A2_free = free_mackey_functor(context, 2, R)
+
+        # comparing ranks against hardcoded examples
+        for i in eachindex(context.subgroups)
+            @test rank(A1_sh.values[i]) == rank(A1.values[i])
+            @test rank(A1_free.values[i]) == rank(A1.values[i])
+
+            @test rank(A2_sh.values[i]) == rank(A2.values[i])
+            @test rank(A2_free.values[i]) == rank(A2.values[i])
+        end
     end
 end
 
