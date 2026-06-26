@@ -58,5 +58,5 @@ function direct_sum(
 end
 
 function same_context(a::MackeyContext, b::MackeyContext)
-    return a == b
+    return a === b
 end
