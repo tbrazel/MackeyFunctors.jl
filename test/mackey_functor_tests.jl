@@ -214,11 +214,15 @@ end
 
         # checking ranks of Burnside shifts
         A = burnside_mackey_functor(C4, R)
+        A1_free = free_mackey_functor(context, 1, R)
 
         A1_sh = shift(A,1)
         @test rank(A1_sh.values[1]) == 4
         @test rank(A1_sh.values[2]) == 2
         @test rank(A1_sh.values[3]) == 1
+        @test all(eachindex(context.subgroups)) do i
+            rank(A1_free.values[i]) == rank(A1_sh.values[i])
+        end
 
         A2_sh = shift(A,2)
         @test rank(A2_sh.values[1]) == 2
