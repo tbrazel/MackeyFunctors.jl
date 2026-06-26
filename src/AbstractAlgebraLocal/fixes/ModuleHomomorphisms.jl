@@ -1,6 +1,14 @@
-# Checks if two module maps are identical (mathematically)
-function map_eq(f::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism), g::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism))::Bool
-    domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
+# work around a bug in AbstractAlgebra for non-free modules
+for S in (Generic.ModuleHomomorphism, Generic.ModuleIsomorphism), T in (Generic.ModuleHomomorphism, Generic.ModuleIsomorphism)
+    function Base.:(==)(f::S, g::T)
+        (domain(f) === domain(g) && codomain(f) === codomain(g)) || return false
+        if domain(f) isa Generic.FreeModule
+            matrix(f) == matrix(g)
+        else
+            all(x -> f(x) == g(x), gens(domain(f)))
+        end
+
+    end
 end
 
 function direct_sum_homomorphism(
