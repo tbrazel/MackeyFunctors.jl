@@ -121,6 +121,15 @@ function submodules_matrix(f, (M1, f1), (M2, f2))
     matrix([imgs[i][j] for i in eachindex(generators(M1)), j in eachindex(generators(M2))])
 end
 
+function _copy_matrix_block!(target_matrix, source_matrix, row_offset::Int, column_offset::Int)
+    for row in 1:nrows(source_matrix), column in 1:ncols(source_matrix)
+        target_matrix[row_offset + row, column_offset + column] =
+            source_matrix[row, column]
+    end
+
+    return target_matrix
+end
+
 function direct_sum_homomorphism(
     source,
     target,

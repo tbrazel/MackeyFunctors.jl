@@ -57,15 +57,6 @@ function direct_sum(
     )
 end
 
-function _copy_matrix_block!(target_matrix, source_matrix, row_offset::Int, column_offset::Int)
-    for row in 1:nrows(source_matrix), column in 1:ncols(source_matrix)
-        target_matrix[row_offset + row, column_offset + column] =
-            source_matrix[row, column]
-    end
-
-    return target_matrix
-end
-
 function same_context(a::MackeyContext, b::MackeyContext)
     return a == b
 end
