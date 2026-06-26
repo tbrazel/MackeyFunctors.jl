@@ -25,6 +25,8 @@ end
     end
 
     @test ctx.group == G
+    @test ctx == MackeyContext(G)
+    @test ctx != MackeyContext(GAP.Globals.CyclicGroup(2))
     @test length(ctx.subgroups) == length(GAP.Globals.AllSubgroups(G))
     @test length(ctx.generators) == length(GAP.Globals.MinimalGeneratingSet(G))
     @test all(ctx.generators) do g

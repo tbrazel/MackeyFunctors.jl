@@ -107,5 +107,5 @@ function _copy_matrix_block!(target_matrix, source_matrix, row_offset::Int, colu
 end
 
 function same_context(a::MackeyContext, b::MackeyContext)
-    return all(f -> getfield(a, f) == getfield(b, f), fieldnames(MackeyContext))
+    return a == b
 end

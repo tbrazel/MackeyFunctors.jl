@@ -408,6 +408,12 @@ end
     end
 
     context = MackeyContext(GAP.Globals.CyclicGroup(2))
+    same_group_context = MackeyContext(context.group)
+    @test MackeyFunctors.direct_sum_mf(
+        constant_mackey_functor(context, ZZ),
+        constant_mackey_functor(same_group_context, ZZ),
+    ) isa MackeyFunctor
+
     F1 = free_module(ZZ, 1)
     twoF1, = sub(F1, [F1([ZZ(2)])])
     Z2, = quo(F1, twoF1)

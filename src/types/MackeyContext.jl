@@ -176,6 +176,18 @@ struct MackeyContext
     end
 end
 
+function Base.:(==)(a::MackeyContext, b::MackeyContext)
+    return a.group == b.group &&
+        a.subgroups == b.subgroups &&
+        a.covers == b.covers &&
+        a.paths == b.paths &&
+        a.generators == b.generators &&
+        a.generator_relations == b.generator_relations &&
+        a.generator_left_conjugation_matrix == b.generator_left_conjugation_matrix &&
+        a.generator_right_conjugation_matrix == b.generator_right_conjugation_matrix &&
+        a.double_coset_formulae == b.double_coset_formulae
+end
+
 function generator_word(ctx::MackeyContext, element::GroupElement)::GeneratorWord
     return generator_word_from_isomorphism(ctx.fp_isomorphism, element)
 end
