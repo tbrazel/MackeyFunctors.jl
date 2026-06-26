@@ -9,19 +9,7 @@ struct ShiftedMackeyFunctor <: AbstractShiftedMackeyFunctor
     decompositions::Vector{ShiftOrbitDecomposition}
 end
 
-"""
-    shift(M::MackeyFunctor, H_index::SubgroupIndex; verify::Bool=true)
 
-Return the ``G/H``-shift of `M`.
-
-At a subgroup ``K`` this Mackey functor has value
-```math
-M_{G/H}(G/K) = M((G/H) \\times (G/K)).
-```
-The implementation decomposes the product into transitive ``G``-orbits and
-then uses the existing restriction, transfer, and conjugation maps of `M` on
-each orbit summand.
-"""
 function _shift(
     mf::MackeyFunctor,
     H_index::SubgroupIndex;
@@ -374,6 +362,19 @@ function _find_left_transporter(
     )
 end
 
+"""
+    shift(M::MackeyFunctor, H_index::SubgroupIndex; verify::Bool=true)
+
+Return the ``G/H``-shift of `M`.
+
+At a subgroup ``K`` this Mackey functor has value
+```math
+M_{G/H}(G/K) = M((G/H) \\times (G/K)).
+```
+The implementation decomposes the product into transitive ``G``-orbits and
+then uses the existing restriction, transfer, and conjugation maps of `M` on
+each orbit summand.
+"""
 function shift(phi::MackeyFunctorHomomorphism,H_index::SubgroupIndex)::MackeyFunctorHomomorphism
     ctx = phi.context
     

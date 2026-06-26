@@ -14,7 +14,8 @@ makedocs(;
         "Contributing" => "contributing.md",
         "Types and design" => [
             "Mackey Contexts" => "types/MackeyContexts.md",
-            "Mackey Functors" => "types/MackeyFunctors.md"
+            "Mackey Functors" => "types/MackeyFunctors.md",
+            "Mackey Functor homomorphisms" => "types/MackeyFunctorHomomorphisms.md"
         ],
         "Manual" => [
             "Constructors" => "manual/constructors.md",

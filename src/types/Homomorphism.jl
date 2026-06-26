@@ -1,3 +1,8 @@
+"""
+    MackeyFunctorHomomorphism(ctx,D,C,comps)
+
+todo
+"""
 struct MackeyFunctorHomomorphism
     context::MackeyContext
     domain::MackeyFunctor
