@@ -319,6 +319,33 @@ end
     end
 end
 
+@testset "GModule validation" begin
+    context = MackeyContext(GAP.Globals.CyclicGroup(2))
+    M = free_module(ZZ, 1)
+    N = free_module(ZZ, 2)
+    id_M = ModuleIsomorphism(M, M, identity_matrix(ZZ, 1))
+    id_N = ModuleIsomorphism(N, N, identity_matrix(ZZ, 2))
+
+    @test_throws ArgumentError GModule(
+        context,
+        M,
+        Generic.ModuleIsomorphism[];
+        verify=false,
+    )
+    @test_throws ArgumentError GModule(
+        context,
+        M,
+        [id_M, id_M];
+        verify=false,
+    )
+    @test_throws ArgumentError GModule(
+        context,
+        M,
+        [id_N];
+        verify=false,
+    )
+end
+
 @testset "fixedpoint_mackey_functor" begin
     for n in [1, 4], R in [ZZ, GF(5)]
         G = GAP.Globals.SymmetricGroup(n)
