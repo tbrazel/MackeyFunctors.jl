@@ -2,7 +2,7 @@
 for S in (Generic.ModuleHomomorphism, Generic.ModuleIsomorphism), T in (Generic.ModuleHomomorphism, Generic.ModuleIsomorphism)
     function Base.:(==)(f::S, g::T)
         (domain(f) === domain(g) && codomain(f) === codomain(g)) || return false
-        if domain(f) isa Generic.FreeModule
+        if domain(f) isa Generic.FreeModule && codomain(f) isa Generic.FreeModule
             matrix(f) == matrix(g)
         else
             all(x -> f(x) == g(x), gens(domain(f)))
