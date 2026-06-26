@@ -11,4 +11,4 @@ Planned future functionality includes:
 - ext and tor computations
 - support for cohomological Mackey functors
 
-This project was first developed by a handful of people including a subset of the developers of the [`CpMackeyFunctors.m2`]() package for Macaulay2. Version 0.0 was developed at the [ICERM Machine Computation in Homotopy Theory](https://icerm.brown.edu/program/topical_workshop/tw-26-mch) conference in summer of 2026. We are grateful to ICERM and the organizers of this conference for the opportunity to work on this package.
+This project was first developed by a handful of people including a subset of the developers of the [`CpMackeyFunctors.m2`](https://macaulay2.com/doc/Macaulay2/share/doc/Macaulay2/CpMackeyFunctors/html/index.html) package for Macaulay2. Version 0.0 was developed at the [ICERM Machine Computation in Homotopy Theory](https://icerm.brown.edu/program/topical_workshop/tw-26-mch) conference in summer of 2026. We are grateful to ICERM and the organizers of this conference for the opportunity to work on this package.
