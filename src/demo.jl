@@ -1,7 +1,5 @@
 using Pkg; Pkg.activate("Documents/GitHub/MackeyFunctors.jl")
-using MackeyFunctors
-using GAP
-using AbstractAlgebra
+using GAP, AbstractAlgebra, MackeyFunctors
 
 M = FreeModule(ZZ, 1)
 C2 = GAP.Globals.CyclicGroup(2)

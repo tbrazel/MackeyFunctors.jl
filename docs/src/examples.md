@@ -1,11 +1,10 @@
 # Examples
 
-This example constructs the Burnside Mackey functor for the cyclic group `C2`.
+This example constructs constant $\mathbb{Z}$-Mackey functors and Burnside Mackey functors for a few common groups:
 
 ```julia
-using GAP
-using AbstractAlgebra
-using MackeyFunctors
+using Pkg;Pkg.activate(".") # if you haven't already
+using GAP, AbstractAlgebra, MackeyFunctors
 
 # Computes the constant and Burnside C2 Mackey Functor
 M = FreeModule(ZZ, 1)
