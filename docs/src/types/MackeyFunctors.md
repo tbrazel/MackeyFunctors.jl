@@ -24,6 +24,10 @@ This is a compression of the data of a Mackey functor available in [Webb](https:
 MackeyFunctor
 ```
 
+### Notes
+- When a Mackey functor is constructed by hand, all the axioms are verified. This can be disabled if needed by passing an optional Boolean `verify`.
+- A Mackey functor can be valued in finitely presented $R$-modules for any commutative ring $R$ available from `AbstractAlgebra.jl`. If a coefficient ring is not specified (e.g. in [constructors](../manual/constructors.md)), then it will be assumed we are working over $\mathbb{Z}$.
+
 ## Extracting data from a Mackey functor
 
 Given a Mackey functor, we can access various parts of the data.
