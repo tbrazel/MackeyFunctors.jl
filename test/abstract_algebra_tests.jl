@@ -16,7 +16,7 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
     id_Z2 = ModuleHomomorphism(Z2, Z2, matrix(ZZ, 1, 1, [ZZ(1)]))
     id_element = as_hom_module_element(hom_Z2_Z2, id_Z2)
     @test 2*id_element == zero(underlying_module(hom_Z2_Z2))
-    @test MackeyFunctors.map_eq(as_homomorphism(hom_Z2_Z2, id_element), id_Z2)
+    @test as_homomorphism(hom_Z2_Z2, id_element) == id_Z2
 
     hom_Z2_Z = HomModule(Z2, F1)
     @test ngens(hom_Z2_Z) == 0
@@ -32,19 +32,13 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
     @test Set([[relation[1, i] for i in 1:ncols(relation)] for relation in relations(hom_Z2_power)]) ==
         Set([[ZZ(2), ZZ(0)], [ZZ(0), ZZ(2)]])
     first_projection = ModuleHomomorphism(F2, Z2, matrix(ZZ, 2, 1, [ZZ(1), ZZ(0)]))
-    @test MackeyFunctors.map_eq(
-        as_homomorphism(hom_Z2_power, as_hom_module_element(hom_Z2_power, first_projection)),
-        first_projection,
-    )
+    @test as_homomorphism(hom_Z2_power, as_hom_module_element(hom_Z2_power, first_projection)) == first_projection
 
     hom_Z2_Z4 = HomModule(Z2, Z4)
     @test ngens(hom_Z2_Z4) == 1
     killed_by_two = ModuleHomomorphism(Z2, Z4, matrix(ZZ, 1, 1, [ZZ(2)]))
     killed_by_two_element = as_hom_module_element(hom_Z2_Z4, killed_by_two)
-    @test MackeyFunctors.map_eq(
-        as_homomorphism(hom_Z2_Z4, killed_by_two_element),
-        killed_by_two,
-    )
+    @test as_homomorphism(hom_Z2_Z4, killed_by_two_element) == killed_by_two
 
     M = free_module(QQ, 2)
     N = free_module(QQ, 3)

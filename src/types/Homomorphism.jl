@@ -33,10 +33,8 @@ struct MackeyFunctorHomomorphism
                 M_dom(H[j]) ----> M_codom(H[j])
                          components[j]
             =#
-            map_eq(
-                components[i] * codomain_mf.cover_transfers[n],
-                domain_mf.cover_transfers[n] * components[j],
-            ) || throw(ArgumentError("Cover transfers don't commute with the component maps."))
+            components[i] * codomain_mf.cover_transfers[n] == domain_mf.cover_transfers[n] * components[j] ||
+                throw(ArgumentError("Cover transfers don't commute with the component maps."))
 
             #=
                          components[i]
@@ -47,10 +45,8 @@ struct MackeyFunctorHomomorphism
                 M_dom(H[j]) ----> M_codom(H[j])
                          components[j]
             =#
-            map_eq(
-                domain_mf.cover_restrictions[n] * components[i],
-                components[j] * codomain_mf.cover_restrictions[n],
-            ) || throw(ArgumentError("Cover restrictions don't commute with the component maps."))
+            domain_mf.cover_restrictions[n] * components[i] == components[j] * codomain_mf.cover_restrictions[n] ||
+                throw(ArgumentError("Cover restrictions don't commute with the component maps."))
         end
 
         # Check generator conjugation commutes with component maps
@@ -68,10 +64,9 @@ struct MackeyFunctorHomomorphism
 
             gHginvs_index = ctx.generator_left_conjugation_matrix[generator_index,subgp_index]
 
-            map_eq(
-                domain_mf.generator_conjugations[generator_index,subgp_index] * components[gHginvs_index],
-                components[subgp_index] * codomain_mf.generator_conjugations[generator_index,subgp_index],
-            ) || throw(ArgumentError("Generator conjugations don't commute with component maps"))
+            (domain_mf.generator_conjugations[generator_index,subgp_index] * components[gHginvs_index] ==
+                components[subgp_index] * codomain_mf.generator_conjugations[generator_index,subgp_index]) ||
+                throw(ArgumentError("Generator conjugations don't commute with component maps"))
         end
 
         component_maps = Generic.ModuleHomomorphism[components...]

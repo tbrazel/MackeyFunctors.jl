@@ -35,8 +35,7 @@ function _has_two_sided_inverse(
     _preserves_domain_relations(f) || return false
     _preserves_domain_relations(f_inv) || return false
 
-    return map_eq(f * f_inv, identity_homomorphism(domain(f))) &&
-        map_eq(f_inv * f, identity_homomorphism(codomain(f)))
+    return f * f_inv == identity_homomorphism(domain(f)) && f_inv * f == identity_homomorphism(codomain(f))
 end
 
 function is_isomorphism(f::Generic.ModuleIsomorphism)::Bool
