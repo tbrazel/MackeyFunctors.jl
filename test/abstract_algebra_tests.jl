@@ -1,5 +1,29 @@
 using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_module_element, as_homomorphism, TensorProduct, tensor_product, tensor_product_element, submodules_matrix
 
+@testset "module morphisms" begin
+    M = FreeModule(ZZ, 1)
+    m1, m2, m3 = M([ZZ(1)]), M([ZZ(2)]), M([ZZ(3)])
+    N2, _ = sub(M, [m2])
+    N3, _ = sub(M, [m3])
+    L2, g2 = quo(M, N2)
+    L3, g3 = quo(M, N3)
+    id = identity_matrix(ZZ, 1)
+
+    @test_throws ArgumentError ModuleHomomorphism(L2, M, id)
+    @test_throws ArgumentError ModuleHomomorphism(L2, L3, id)
+    @test_throws ArgumentError ModuleIsomorphism(L2, L3, id)
+    @test ModuleHomomorphism(L2, L3, ZZ(3)*id) == AbstractAlgebra.ModuleHomomorphism(L2, L3, ZZ(3)*id)
+    @test ModuleHomomorphism(M, L3, id) == AbstractAlgebra.ModuleHomomorphism(M, L3, id)
+    @test ModuleHomomorphism(L3, L3, ZZ(2)*id) == AbstractAlgebra.ModuleHomomorphism(L3, L3, ZZ(2)*id)
+
+    @test_throws ArgumentError ModuleHomomorphism(L2, M, [m1])
+    @test_throws ArgumentError ModuleHomomorphism(L2, L3, [g3(m1)])
+    @test_throws ArgumentError ModuleIsomorphism(L2, L3, [g3(m1)])
+    @test ModuleHomomorphism(L2, L3, [g3(m3)]) == AbstractAlgebra.ModuleHomomorphism(L2, L3, [g3(m3)])
+    @test ModuleHomomorphism(M, L3, [g3(m1)]) == AbstractAlgebra.ModuleHomomorphism(M, L3, [g3(m1)])
+    @test ModuleHomomorphism(L3, L3, [g3(m2)]) == AbstractAlgebra.ModuleHomomorphism(L3, L3, [g3(m2)])
+end
+
 @testset "Hom modules" begin
     F1 = free_module(ZZ, 1)
     twoF1, = sub(F1, [F1([ZZ(2)])])
@@ -17,13 +41,6 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
     id_element = as_hom_module_element(hom_Z2_Z2, id_Z2)
     @test 2*id_element == zero(underlying_module(hom_Z2_Z2))
     @test as_homomorphism(hom_Z2_Z2, id_element) == id_Z2
-
-    hom_Z2_Z = HomModule(Z2, F1)
-    @test ngens(hom_Z2_Z) == 0
-    zero_element = as_hom_module_element(hom_Z2_Z, MackeyFunctors.zero_homomorphism(Z2, F1))
-    @test zero_element == zero(underlying_module(hom_Z2_Z))
-    invalid_map = ModuleHomomorphism(Z2, F1, matrix(ZZ, 1, 1, [ZZ(1)]))
-    @test_throws ArgumentError as_hom_module_element(hom_Z2_Z, invalid_map)
 
     F2 = free_module(ZZ, 2)
     hom_Z2_power = HomModule(F2, Z2)

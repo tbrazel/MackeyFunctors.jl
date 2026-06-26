@@ -4,6 +4,7 @@ using AbstractAlgebra
 
 include("AbstractAlgebraLocal/AbstractAlgebraLocal.jl")
 using .AbstractAlgebraLocal
+using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism
 
 # Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra
 import AbstractAlgebra: coefficient_ring

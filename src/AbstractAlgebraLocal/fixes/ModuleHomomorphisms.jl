@@ -11,6 +11,21 @@ for S in (Generic.ModuleHomomorphism, Generic.ModuleIsomorphism), T in (Generic.
     end
 end
 
+# make sure that morphisms are well-defined
+for mor in (:ModuleHomomorphism, :ModuleIsomorphism)
+    @eval function $mor(M1::AbstractAlgebra.FPModule{T}, M2::AbstractAlgebra.FPModule{T}, m::MatElem{T}) where T <: RingElement
+        all(rel -> iszero(M2(rel * m)), relations(M1)) ||
+            throw(ArgumentError("The given assignments for generators do not preserve relations"))
+        AbstractAlgebra.$mor(M1, M2, m)
+    end
+
+    @eval function $mor(M1::AbstractAlgebra.FPModule{T}, M2::AbstractAlgebra.FPModule{T}, v::Vector{S}) where {T <: RingElement, S <: AbstractAlgebra.FPModuleElem{T}}
+        all(rel -> iszero(sum(splat(*), zip(rel, v))), relations(M1)) ||
+            throw(ArgumentError("The given assignments for generators do not preserve relations"))
+        AbstractAlgebra.$mor(M1, M2, v)
+    end
+end
+
 function direct_sum_homomorphism(
     source,
     target,
