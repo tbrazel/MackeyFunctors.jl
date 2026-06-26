@@ -373,3 +373,31 @@ function _find_left_transporter(
         GAP.Globals.Intersection(H, transporter_coset),
     )
 end
+
+function shift(phi::MackeyFunctorHomomorphism,H_index::SubgroupIndex)::MackeyFunctorHomomorphism
+    ctx = phi.context
+    
+    # Domain/codomain as ShiftedMackeyFunctor types - will be pulled from cache if they were already built
+    new_domain = _shift(phi.domain,H_index)
+    new_codomain = _shift(phi.codomain,H_index)
+
+    values = Vector{Generic.ModuleHomomorphism}()
+
+    # Build the values of phi_H
+    for k in eachindex(ctx.subgroups)
+        # Start with the zero map
+        value = zero_homomorphism(new_domain.underlying_mackey_functor.values[k], new_codomain.underlying_mackey_functor.values[k])
+
+        # We write G = \cup_x HxK, where H\cap ^xK has index n:
+        for (i,(_,HcapxKxinvs_index)) in enumerate(_shift_decomposition_double_coset(ctx,H_index,k))
+            value+= new_domain.decompositions[k].projections[i] *phi.components[HcapxKxinvs_index]*new_codomain.decompositions[k].injections[i]
+        end
+        push!(values,value)
+    end
+
+    return MackeyFunctorHomomorphism(
+        new_domain.underlying_mackey_functor,
+        new_codomain.underlying_mackey_functor,
+        values
+    )
+end
