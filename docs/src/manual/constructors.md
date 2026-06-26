@@ -33,6 +33,10 @@ For any module $M$, we define the *constant Mackey functor valued at $M$*, denot
 ```@docs
 constant_mackey_functor
 ```
+As an example we can compute the *zero Mackey functor*:
+```@docs
+zero_mackey_functor
+```
 
 ### The Burnside Mackey functor
 For a group $G$, the *Burnside ring* $A(G)$ is the ring of isomorphism classes of virtual finite $G$-sets. For any $G$, this promotes to a $G$-Mackey functor, defined by the data $H\mapsto A(H)$, with natural restrictions. Transfers are obtained by induction of finite $G$-sets.

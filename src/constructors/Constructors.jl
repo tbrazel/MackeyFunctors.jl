@@ -160,7 +160,11 @@ function fixedpoint_mackey_functor(gm::GModule)
     MackeyFunctor(gm.context, values, restrictions, transfers, conjugations)
 end
 
+"""
+    zero_mackey_functor(ctx::MackeyContext, R::Ring=ZZ) -> MackeyFunctor
 
+This is the constant Mackey functor valued at the zero abelian group (or zero ``R``-module if a different coefficient ring is specified).
+"""
 function zero_mackey_functor(context::MackeyContext, R::Ring=ZZ)
     zeromod = free_module(R, 0)
     zeromap = ModuleIsomorphism(zeromod, zeromod, zero_matrix(R, 0, 0))
