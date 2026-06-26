@@ -3,6 +3,7 @@ HomModule
 underlying_module
 as_homomorphism
 as_hom_module_element
+direct_sum_homomorphism
 TensorProduct
 tensor_product
 tensor_product_element

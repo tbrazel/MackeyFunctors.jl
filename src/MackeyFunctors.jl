@@ -52,7 +52,7 @@ export constant_mackey_functor, burnside_mackey_functor,
 
 # Direct sum of Mackey functors and homomorphisms
 include("constructors/DirectSum.jl")
-export direct_sum_mf, direct_sum_homomorphism
+export direct_sum, direct_sum_homomorphism
 
 
 end
