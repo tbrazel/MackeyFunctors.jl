@@ -383,12 +383,12 @@ end
         zero_functor = constant_mackey_functor(context, free_module(ZZ, m))
         nonzero_functor = constant_mackey_functor(context, free_module(ZZ, n))
 
-        zero_plus_nonzero = MackeyFunctors.direct_sum_mf(zero_functor, nonzero_functor)
+        zero_plus_nonzero = MackeyFunctors.direct_sum(zero_functor, nonzero_functor)
         @test all(eachindex(context.subgroups)) do subgroup_index
             ngens(zero_plus_nonzero.values[subgroup_index]) == m + n
         end
 
-        nonzero_plus_zero = MackeyFunctors.direct_sum_mf(nonzero_functor, zero_functor)
+        nonzero_plus_zero = MackeyFunctors.direct_sum(nonzero_functor, zero_functor)
         @test all(eachindex(context.subgroups)) do subgroup_index
             ngens(nonzero_plus_zero.values[subgroup_index]) == m + n
         end
@@ -432,7 +432,7 @@ end
 
     context = MackeyContext(GAP.Globals.CyclicGroup(2))
     same_group_context = MackeyContext(context.group)
-    @test MackeyFunctors.direct_sum_mf(
+    @test MackeyFunctors.direct_sum(
         constant_mackey_functor(context, ZZ),
         constant_mackey_functor(same_group_context, ZZ),
     ) isa MackeyFunctor
@@ -442,7 +442,7 @@ end
     Z2, = quo(F1, twoF1)
 
     z2_functor = constant_mackey_functor(context, Z2)
-    z2_plus_z2 = MackeyFunctors.direct_sum_mf(z2_functor, z2_functor)
+    z2_plus_z2 = MackeyFunctors.direct_sum(z2_functor, z2_functor)
     @test all(eachindex(context.subgroups)) do subgroup_index
         AbstractAlgebra.invariant_factors(z2_plus_z2.values[subgroup_index]) ==
             BigInt[2, 2]

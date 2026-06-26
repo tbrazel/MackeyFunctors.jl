@@ -120,3 +120,48 @@ function submodules_matrix(f, (M1, f1), (M2, f2))
     imgs = [preimage(f2, f(f1(v))) for v in generators(M1)]
     matrix([imgs[i][j] for i in eachindex(generators(M1)), j in eachindex(generators(M2))])
 end
+
+function direct_sum_homomorphism(
+    source,
+    target,
+    p::Generic.ModuleIsomorphism,
+    q::Generic.ModuleIsomorphism,
+)
+    return direct_sum_homomorphism(source, target, as_homomorphism(p), as_homomorphism(q))
+end
+
+"""
+    direct_sum_homomorphism(source, target, p::Generic.ModuleHomomorphism, q::Generic.ModuleHomomorphism)
+
+Return the direct sum of `p` and `q`. `source` and `target` are the domain and codomain of the direct sum morphism.
+"""
+function direct_sum_homomorphism(
+    source,
+    target,
+    p::Generic.ModuleHomomorphism,
+    q::Generic.ModuleHomomorphism,
+)
+    R = base_ring(source)
+    all(
+        mod -> base_ring(mod) == R,
+        (target, domain(p), codomain(p), domain(q), codomain(q)),
+    ) || throw(ArgumentError("All direct-sum homomorphism modules must have the same base ring."))
+
+    source_generators = ngens(domain(p)) + ngens(domain(q))
+    target_generators = ngens(codomain(p)) + ngens(codomain(q))
+    ngens(source) == source_generators ||
+        throw(ArgumentError("The source does not have the expected direct-sum presentation."))
+    ngens(target) == target_generators ||
+        throw(ArgumentError("The target does not have the expected direct-sum presentation."))
+
+    block_matrix = zero_matrix(R, ngens(source), ngens(target))
+    _copy_matrix_block!(block_matrix, matrix(p), 0, 0)
+    _copy_matrix_block!(
+        block_matrix,
+        matrix(q),
+        ngens(domain(p)),
+        ngens(codomain(p)),
+    )
+
+    return ModuleHomomorphism(source, target, block_matrix)
+end

@@ -1,9 +1,9 @@
-using AbstractAlgebra
-
 """
+    direct_sum(M::MackeyFunctor, N::MackeyFunctor) -> MackeyFunctor
+
 Direct sum of two Mackey functors defined over the same Mackey context.
 """
-function direct_sum_mf(
+function direct_sum(
     M::MackeyFunctor,
     N::MackeyFunctor
 )
@@ -55,46 +55,6 @@ function direct_sum_mf(
         generator_conjugations,
         #verify=false,
     )
-end
-
-function direct_sum_homomorphism(
-    source,
-    target,
-    p::Generic.ModuleIsomorphism,
-    q::Generic.ModuleIsomorphism,
-)
-    return direct_sum_homomorphism(source, target, as_homomorphism(p), as_homomorphism(q))
-end
-
-function direct_sum_homomorphism(
-    source,
-    target,
-    p::Generic.ModuleHomomorphism,
-    q::Generic.ModuleHomomorphism,
-)
-    R = base_ring(source)
-    all(
-        mod -> base_ring(mod) == R,
-        (target, domain(p), codomain(p), domain(q), codomain(q)),
-    ) || throw(ArgumentError("All direct-sum homomorphism modules must have the same base ring."))
-
-    source_generators = ngens(domain(p)) + ngens(domain(q))
-    target_generators = ngens(codomain(p)) + ngens(codomain(q))
-    ngens(source) == source_generators ||
-        throw(ArgumentError("The source does not have the expected direct-sum presentation."))
-    ngens(target) == target_generators ||
-        throw(ArgumentError("The target does not have the expected direct-sum presentation."))
-
-    block_matrix = zero_matrix(R, ngens(source), ngens(target))
-    _copy_matrix_block!(block_matrix, matrix(p), 0, 0)
-    _copy_matrix_block!(
-        block_matrix,
-        matrix(q),
-        ngens(domain(p)),
-        ngens(codomain(p)),
-    )
-
-    return ModuleHomomorphism(source, target, block_matrix)
 end
 
 function _copy_matrix_block!(target_matrix, source_matrix, row_offset::Int, column_offset::Int)

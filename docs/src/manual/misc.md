@@ -1,5 +1,5 @@
 # misc
 
 ```@docs
-direct_sum_mf
+direct_sum
 ```
