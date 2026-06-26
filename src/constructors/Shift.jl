@@ -6,6 +6,11 @@ struct ShiftOrbitDecomposition
     projections::Vector{Generic.ModuleHomomorphism}
 end
 
+struct ShiftedMackeyFunctor <: AbstractShiftedMackeyFunctor
+    underlying_mackey_functor::MackeyFunctor
+    decompositions::Vector{ShiftOrbitDecomposition}
+end
+
 """
     shift(M::MackeyFunctor, H_index::SubgroupIndex; verify::Bool=true)
 
@@ -19,11 +24,15 @@ The implementation decomposes the product into transitive ``G``-orbits and
 then uses the existing restriction, transfer, and conjugation maps of `M` on
 each orbit summand.
 """
-function shift(
+function _shift(
     mf::MackeyFunctor,
     H_index::SubgroupIndex;
     verify::Bool=true,
-)::MackeyFunctor
+)::ShiftedMackeyFunctor
+    # Return the ShiftedMackeyFunctor if it is cached
+    if haskey(mf.shift_cache,H_index)
+        return mf.shift_cache[H_index]
+    end
     ctx = mf.context
     !verify || checkbounds(ctx.subgroups, H_index)
 
@@ -110,15 +119,17 @@ function shift(
         )
     end
 
-    return MackeyFunctor(
+    return ShiftedMackeyFunctor(MackeyFunctor(
         ctx,
         values,
         cover_restrictions,
         cover_transfers,
         generator_conjugations;
         verify=verify,
-    )
+    ),decompositions)
 end
+
+
 
 function _shift_orbit_decomposition(
     mf::MackeyFunctor,
@@ -376,3 +387,27 @@ function _find_left_transporter(
         GAP.Globals.Intersection(H, transporter_coset),
     )
 end
+
+
+# function shift(phi::MackeyFunctorHomomorphism,H_index::SubgroupIndex)::MackeyFunctorHomomorphism
+#     ctx = phi.context
+    
+#     new_domain = _shift(phi.domain,H_index).underlying_mackey_functor
+#     dom_decompositions = _shift(phi.domain,H_index).decompositions
+
+#     new_codomain = _shift(phi.codomain,H_index).underlying_mackey_functor
+#     codom_decompositions = _shift(phi.codomain,H_index).decompositions
+
+#     # Build the values of phi_H
+#     for k in eachindex(ctx.subgroups)
+
+#     end
+
+#     values = ??
+
+#     return MackeyFunctorHomomorphism(
+#         new_domain,
+#         new_codomain,
+#         values
+#     )
+# end
