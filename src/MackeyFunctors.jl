@@ -4,10 +4,13 @@ using AbstractAlgebra
 
 include("AbstractAlgebraLocal/AbstractAlgebraLocal.jl")
 using .AbstractAlgebraLocal
-import .AbstractAlgebraLocal: HomModule,
+import .AbstractAlgebraLocal: Hom,
+    HomModule,
     as_hom_module_element,
     as_homomorphism,
     is_isomorphism,
+    postcomposition_map,
+    precomposition_map,
     underlying_module
 
 # Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra
@@ -36,7 +39,7 @@ export MackeyFunctorHomomorphism, id_homomorphism, is_isomorphism
 
 # FPModule of Mackey functor homomorphisms
 include("types/MackeyFunctorHomModule.jl")
-export MackeyFunctorHomModule
+export Hom, MackeyFunctorHomModule
 
 # Nice printing for various new types
 include("Show.jl")

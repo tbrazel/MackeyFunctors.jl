@@ -22,6 +22,7 @@ This is a compression of the data of a Mackey functor available in [Webb](https:
 
 ```@docs
 MackeyFunctor
+Hom
 MackeyFunctorHomModule
 ```
 

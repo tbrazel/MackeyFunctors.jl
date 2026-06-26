@@ -19,7 +19,12 @@ export as_homomorphism,
     is_zero_module_homomorphism
 
 include("additional_functionality/HomModule.jl")
-export HomModule, as_hom_module_element, underlying_module
+export Hom,
+    HomModule,
+    as_hom_module_element,
+    postcomposition_map,
+    precomposition_map,
+    underlying_module
 
 include("additional_functionality/TensorProduct.jl")
 export TensorProduct, tensor_product, tensor_product_element

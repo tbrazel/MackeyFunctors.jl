@@ -1,4 +1,4 @@
-using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_module_element, as_homomorphism, TensorProduct, tensor_product, tensor_product_element, submodules_matrix
+using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as_hom_module_element, as_homomorphism, postcomposition_map, precomposition_map, TensorProduct, tensor_product, tensor_product_element, submodules_matrix
 
 @testset "Hom modules" begin
     F1 = free_module(ZZ, 1)
@@ -7,7 +7,8 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
     Z2, = quo(F1, twoF1)
     Z4, = quo(F1, fourF1)
 
-    hom_Z2_Z2 = HomModule(Z2, Z2)
+    hom_Z2_Z2 = Hom(Z2, Z2)
+    @test hom_Z2_Z2 isa HomModule
     @test underlying_module(hom_Z2_Z2) isa AbstractAlgebra.FPModule
     @test ngens(hom_Z2_Z2) == 1
     @test length(relations(hom_Z2_Z2)) == 1
@@ -18,7 +19,7 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
     @test 2*id_element == zero(underlying_module(hom_Z2_Z2))
     @test MackeyFunctors.map_eq(as_homomorphism(hom_Z2_Z2, id_element), id_Z2)
 
-    hom_Z2_Z = HomModule(Z2, F1)
+    hom_Z2_Z = Hom(Z2, F1)
     @test ngens(hom_Z2_Z) == 0
     zero_element = as_hom_module_element(hom_Z2_Z, MackeyFunctors.zero_homomorphism(Z2, F1))
     @test zero_element == zero(underlying_module(hom_Z2_Z))
@@ -26,7 +27,7 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
     @test_throws ArgumentError as_hom_module_element(hom_Z2_Z, invalid_map)
 
     F2 = free_module(ZZ, 2)
-    hom_Z2_power = HomModule(F2, Z2)
+    hom_Z2_power = Hom(F2, Z2)
     @test ngens(hom_Z2_power) == 2
     @test length(relations(hom_Z2_power)) == 2
     @test Set([[relation[1, i] for i in 1:ncols(relation)] for relation in relations(hom_Z2_power)]) ==
@@ -37,7 +38,7 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
         first_projection,
     )
 
-    hom_Z2_Z4 = HomModule(Z2, Z4)
+    hom_Z2_Z4 = Hom(Z2, Z4)
     @test ngens(hom_Z2_Z4) == 1
     killed_by_two = ModuleHomomorphism(Z2, Z4, matrix(ZZ, 1, 1, [ZZ(2)]))
     killed_by_two_element = as_hom_module_element(hom_Z2_Z4, killed_by_two)
@@ -48,10 +49,20 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
 
     M = free_module(QQ, 2)
     N = free_module(QQ, 3)
-    free_hom_module = HomModule(M, N)
+    free_hom_module = Hom(M, N)
     f = ModuleHomomorphism(M, N, matrix(QQ, [1 2 3; 4 5 6]))
     f_element = as_hom_module_element(free_hom_module, f)
     @test matrix(as_homomorphism(free_hom_module, f_element)) == matrix(f)
+
+    double_F1 = ModuleHomomorphism(F1, F1, matrix(ZZ, 1, 1, [ZZ(2)]))
+    hom_F1_F1 = Hom(F1, F1)
+    postcompose_by_double = postcomposition_map(hom_F1_F1, hom_F1_F1, double_F1)
+    @test postcompose_by_double(gen(domain(postcompose_by_double), 1)) ==
+        2*gen(codomain(postcompose_by_double), 1)
+
+    precompose_by_double = precomposition_map(hom_F1_F1, hom_F1_F1, double_F1)
+    @test precompose_by_double(gen(domain(precompose_by_double), 1)) ==
+        2*gen(codomain(precompose_by_double), 1)
 end
 
 @testset "Tensor products of FPModules" begin

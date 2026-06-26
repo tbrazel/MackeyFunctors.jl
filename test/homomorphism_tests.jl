@@ -1,4 +1,4 @@
-using MackeyFunctors.AbstractAlgebraLocal: HomModule,
+using MackeyFunctors.AbstractAlgebraLocal: Hom,
     as_hom_module_element,
     as_homomorphism,
     underlying_module
@@ -156,7 +156,7 @@ end
     context = MackeyContext(GAP.Globals.CyclicGroup(2))
     M = free_module(ZZ, 1)
     constant_Z = constant_mackey_functor(context, M)
-    endomorphism_module = HomModule(constant_Z, constant_Z)
+    endomorphism_module = Hom(constant_Z, constant_Z)
 
     @test endomorphism_module isa MackeyFunctorHomModule
     @test underlying_module(endomorphism_module) isa AbstractAlgebra.FPModule
@@ -178,7 +178,7 @@ end
     twoF1, = sub(F1, [F1([ZZ(2)])])
     Z2, = quo(F1, twoF1)
     constant_Z2 = constant_mackey_functor(context, Z2)
-    hom_Z2_Z = HomModule(constant_Z2, constant_Z)
+    hom_Z2_Z = Hom(constant_Z2, constant_Z)
     @test ngens(hom_Z2_Z) == 0
 
     id_component = ModuleHomomorphism(M, M, identity_matrix(ZZ, 1))
@@ -213,7 +213,7 @@ end
         ];
         verify = false,
     )
-    s3_endomorphism_module = HomModule(s3_functor, s3_functor)
+    s3_endomorphism_module = Hom(s3_functor, s3_functor)
     s3_identity_element = as_hom_module_element(
         s3_endomorphism_module,
         MackeyFunctors.id_homomorphism(s3_functor),

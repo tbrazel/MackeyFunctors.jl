@@ -1,6 +1,6 @@
 """
     MackeyFunctorHomModule(M::MackeyFunctor, N::MackeyFunctor)
-    HomModule(M::MackeyFunctor, N::MackeyFunctor)
+    Hom(M::MackeyFunctor, N::MackeyFunctor)
 
 Represent the module of Mackey functor homomorphisms ``M -> N`` as a
 finitely presented module over the common coefficient ring.
@@ -10,7 +10,7 @@ of that module can be converted to [`MackeyFunctorHomomorphism`](@ref)s with
 [`as_homomorphism`](@ref), and Mackey functor homomorphisms can be converted
 back with [`as_hom_module_element`](@ref).
 """
-struct MackeyFunctorHomModule{T <: RingElement}
+struct MackeyFunctorHomModule{T<:RingElement}
     # The actual finitely presented module representing Hom(M, N).
     H::AbstractAlgebra.FPModule{T}
 
@@ -33,66 +33,6 @@ struct MackeyFunctorHomModule{T <: RingElement}
     inclusion::Generic.ModuleHomomorphism{T}
 end
 
-function _check_hom_module_map_rings(source::HomModule{T}, target::HomModule{T}) where T <: RingElement
-    base_ring(source) == base_ring(target) ||
-        throw(ArgumentError("Hom modules must be defined over the same base ring."))
-    return nothing
-end
-
-function _hom_module_precomposition_map(
-    source::HomModule{T},
-    target::HomModule{T},
-    p,
-) where T <: RingElement
-    _check_hom_module_map_rings(source, target)
-    p = as_homomorphism(p)
-
-    domain(p) === target.domain_module ||
-        throw(ArgumentError("The precomposition map has the wrong domain."))
-    codomain(p) === source.domain_module ||
-        throw(ArgumentError("The precomposition map has the wrong codomain."))
-    source.codomain_module === target.codomain_module ||
-        throw(ArgumentError("Precomposition target Hom module has the wrong codomain."))
-
-    images = elem_type(underlying_module(target))[
-        as_hom_module_element(target, p * as_homomorphism(source, x))
-        for x in gens(source)
-    ]
-
-    return AbstractAlgebraLocal._homomorphism_from_generator_images(
-        underlying_module(source),
-        underlying_module(target),
-        images,
-    )
-end
-
-function _hom_module_postcomposition_map(
-    source::HomModule{T},
-    target::HomModule{T},
-    q,
-) where T <: RingElement
-    _check_hom_module_map_rings(source, target)
-    q = as_homomorphism(q)
-
-    domain(q) === source.codomain_module ||
-        throw(ArgumentError("The postcomposition map has the wrong domain."))
-    codomain(q) === target.codomain_module ||
-        throw(ArgumentError("The postcomposition map has the wrong codomain."))
-    source.domain_module === target.domain_module ||
-        throw(ArgumentError("Postcomposition target Hom module has the wrong domain."))
-
-    images = elem_type(underlying_module(target))[
-        as_hom_module_element(target, as_homomorphism(source, x) * q)
-        for x in gens(source)
-    ]
-
-    return AbstractAlgebraLocal._homomorphism_from_generator_images(
-        underlying_module(source),
-        underlying_module(target),
-        images,
-    )
-end
-
 function _push_compatibility_equation!(
     compatibility_hom_modules::Vector{HomModule{T}},
     left_component_indices::Vector{Int},
@@ -104,7 +44,7 @@ function _push_compatibility_equation!(
     left_map::Generic.ModuleHomomorphism{T},
     right_component_index::Int,
     right_map::Generic.ModuleHomomorphism{T},
-) where T <: RingElement
+) where T<:RingElement
     push!(compatibility_hom_modules, equation_hom_module)
     push!(left_component_indices, left_component_index)
     push!(left_maps, left_map)
@@ -117,7 +57,7 @@ function _mackey_functor_hom_compatibility_data(
     domain_mf::MackeyFunctor,
     codomain_mf::MackeyFunctor,
     component_hom_modules::Vector{HomModule{T}},
-) where T <: RingElement
+) where T<:RingElement
     context = domain_mf.context
 
     compatibility_hom_modules = HomModule{T}[]
@@ -127,13 +67,13 @@ function _mackey_functor_hom_compatibility_data(
     right_maps = Generic.ModuleHomomorphism{T}[]
 
     for (cover_index, (i, j)) in enumerate(context.covers)
-        transfer_hom = HomModule(domain_mf.values[i], codomain_mf.values[j])
-        transfer_left_map = _hom_module_postcomposition_map(
+        transfer_hom = Hom(domain_mf.values[i], codomain_mf.values[j])
+        transfer_left_map = postcomposition_map(
             component_hom_modules[i],
             transfer_hom,
             codomain_mf.cover_transfers[cover_index],
         )
-        transfer_right_map = _hom_module_precomposition_map(
+        transfer_right_map = precomposition_map(
             component_hom_modules[j],
             transfer_hom,
             domain_mf.cover_transfers[cover_index],
@@ -151,13 +91,13 @@ function _mackey_functor_hom_compatibility_data(
             transfer_right_map,
         )
 
-        restriction_hom = HomModule(domain_mf.values[j], codomain_mf.values[i])
-        restriction_left_map = _hom_module_precomposition_map(
+        restriction_hom = Hom(domain_mf.values[j], codomain_mf.values[i])
+        restriction_left_map = precomposition_map(
             component_hom_modules[i],
             restriction_hom,
             domain_mf.cover_restrictions[cover_index],
         )
-        restriction_right_map = _hom_module_postcomposition_map(
+        restriction_right_map = postcomposition_map(
             component_hom_modules[j],
             restriction_hom,
             codomain_mf.cover_restrictions[cover_index],
@@ -180,16 +120,16 @@ function _mackey_functor_hom_compatibility_data(
         target_subgroup_index =
             context.generator_left_conjugation_matrix[generator_index, subgroup_index]
 
-        conjugation_hom = HomModule(
+        conjugation_hom = Hom(
             domain_mf.values[subgroup_index],
             codomain_mf.values[target_subgroup_index],
         )
-        conjugation_left_map = _hom_module_precomposition_map(
+        conjugation_left_map = precomposition_map(
             component_hom_modules[target_subgroup_index],
             conjugation_hom,
             domain_mf.generator_conjugations[generator_index, subgroup_index],
         )
-        conjugation_right_map = _hom_module_postcomposition_map(
+        conjugation_right_map = postcomposition_map(
             component_hom_modules[subgroup_index],
             conjugation_hom,
             codomain_mf.generator_conjugations[generator_index, subgroup_index],
@@ -220,7 +160,7 @@ end
 function _compatibility_module_and_injections(
     R::Ring,
     compatibility_hom_modules::Vector{HomModule{T}},
-) where T <: RingElement
+) where T<:RingElement
     if isempty(compatibility_hom_modules)
         return (
             free_module(R, 0),
@@ -247,7 +187,7 @@ function _mackey_functor_hom_compatibility_map(
     left_maps::Vector{Generic.ModuleHomomorphism{T}},
     right_component_indices::Vector{Int},
     right_maps::Vector{Generic.ModuleHomomorphism{T}},
-) where T <: RingElement
+) where T<:RingElement
     images = elem_type(compatibility_module)[]
 
     for ambient_generator in gens(ambient_module)
@@ -273,11 +213,15 @@ function _mackey_functor_hom_compatibility_map(
         push!(images, compatibility_value)
     end
 
-    return AbstractAlgebraLocal._homomorphism_from_generator_images(
-        ambient_module,
-        compatibility_module,
-        images,
-    )
+    if ngens(ambient_module) == 0
+        return ModuleHomomorphism(
+            ambient_module,
+            compatibility_module,
+            zero_matrix(base_ring(ambient_module), 0, ngens(compatibility_module)),
+        )
+    end
+
+    return ModuleHomomorphism(ambient_module, compatibility_module, images)
 end
 
 function MackeyFunctorHomModule(
@@ -292,7 +236,7 @@ function MackeyFunctorHomModule(
     R = coefficient_ring(domain_mf)
     T = elem_type(R)
     component_hom_modules = HomModule{T}[
-        HomModule(domain_mf.values[i], codomain_mf.values[i])
+        Hom(domain_mf.values[i], codomain_mf.values[i])
         for i in eachindex(domain_mf.context.subgroups)
     ]
     component_modules = AbstractAlgebra.FPModule{T}[
@@ -344,8 +288,12 @@ function MackeyFunctorHomModule(
     )
 end
 
-function HomModule(domain_mf::MackeyFunctor, codomain_mf::MackeyFunctor)
+function Hom(domain_mf::MackeyFunctor, codomain_mf::MackeyFunctor)
     return MackeyFunctorHomModule(domain_mf, codomain_mf)
+end
+
+function HomModule(domain_mf::MackeyFunctor, codomain_mf::MackeyFunctor)
+    return Hom(domain_mf, codomain_mf)
 end
 
 """
@@ -371,7 +319,7 @@ functor homomorphism.
 function as_homomorphism(
     H::MackeyFunctorHomModule{T},
     x::AbstractAlgebra.FPModuleElem{T},
-) where T <: RingElement
+) where T<:RingElement
     parent(x) === underlying_module(H) ||
         throw(ArgumentError("Element does not belong to this Mackey functor Hom module."))
 
@@ -396,7 +344,7 @@ the underlying Hom module.
 function as_hom_module_element(
     H::MackeyFunctorHomModule{T},
     f::MackeyFunctorHomomorphism,
-) where T <: RingElement
+) where T<:RingElement
     f.domain === H.domain_mf ||
         throw(ArgumentError("The Mackey functor homomorphism has the wrong domain."))
     f.codomain === H.codomain_mf ||

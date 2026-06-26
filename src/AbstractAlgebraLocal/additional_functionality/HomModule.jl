@@ -1,5 +1,8 @@
 """
+    Hom(M::FPModule, N::FPModule)
     HomModule(M::FPModule, N::FPModule)
+    precomposition_map(source::HomModule, target::HomModule, f)
+    postcomposition_map(source::HomModule, target::HomModule, f)
 
 Represent ``Hom_R(M, N)`` as a finitely presented module over the common
 base ring of `M` and `N`.
@@ -8,6 +11,10 @@ The underlying module is available as [`underlying_module`](@ref).  Elements
 of that module can be converted to module homomorphisms with
 [`as_homomorphism`](@ref), and module homomorphisms can be converted back with
 [`as_hom_module_element`](@ref).
+
+The `precomposition_map` and `postcomposition_map` methods implement the usual
+contravariant and covariant functoriality of Hom using the supplied HomModule
+wrappers as the source and target of the induced map.
 """
 struct HomModule{T <: RingElement}
     # The actual finitely presented module representing Hom_R(M, N).
@@ -121,6 +128,73 @@ function HomModule(
         relation_module,
         relation_map,
         inclusion,
+    )
+end
+
+function Hom(
+    domain_module::AbstractAlgebra.FPModule,
+    codomain_module::AbstractAlgebra.FPModule,
+)
+    return HomModule(domain_module, codomain_module)
+end
+
+function _check_hom_module_map_rings(source::HomModule{T}, target::HomModule{T}) where T <: RingElement
+    base_ring(source) == base_ring(target) ||
+        throw(ArgumentError("Hom modules must be defined over the same base ring."))
+    return nothing
+end
+
+function precomposition_map(
+    source::HomModule{T},
+    target::HomModule{T},
+    p,
+) where T <: RingElement
+    _check_hom_module_map_rings(source, target)
+    p = as_homomorphism(p)
+
+    domain(p) === target.domain_module ||
+        throw(ArgumentError("The precomposition map has the wrong domain."))
+    codomain(p) === source.domain_module ||
+        throw(ArgumentError("The precomposition map has the wrong codomain."))
+    source.codomain_module === target.codomain_module ||
+        throw(ArgumentError("Precomposition target Hom module has the wrong codomain."))
+
+    images = elem_type(underlying_module(target))[
+        as_hom_module_element(target, p * as_homomorphism(source, x))
+        for x in gens(source)
+    ]
+
+    return _homomorphism_from_generator_images(
+        underlying_module(source),
+        underlying_module(target),
+        images,
+    )
+end
+
+function postcomposition_map(
+    source::HomModule{T},
+    target::HomModule{T},
+    q,
+) where T <: RingElement
+    _check_hom_module_map_rings(source, target)
+    q = as_homomorphism(q)
+
+    domain(q) === source.codomain_module ||
+        throw(ArgumentError("The postcomposition map has the wrong domain."))
+    codomain(q) === target.codomain_module ||
+        throw(ArgumentError("The postcomposition map has the wrong codomain."))
+    source.domain_module === target.domain_module ||
+        throw(ArgumentError("Postcomposition target Hom module has the wrong domain."))
+
+    images = elem_type(underlying_module(target))[
+        as_hom_module_element(target, as_homomorphism(source, x) * q)
+        for x in gens(source)
+    ]
+
+    return _homomorphism_from_generator_images(
+        underlying_module(source),
+        underlying_module(target),
+        images,
     )
 end
 
