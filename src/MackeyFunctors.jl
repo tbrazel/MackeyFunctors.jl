@@ -4,13 +4,9 @@ using AbstractAlgebra
 
 include("AbstractAlgebraLocal/AbstractAlgebraLocal.jl")
 using .AbstractAlgebraLocal
-export HomModule, underlying_module, as_hom_module_element, as_homomorphism
-export TensorProduct, tensor_product, tensor_product_element
-export submodules_matrix
 
 # Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra
 import AbstractAlgebra: coefficient_ring
-
 
 # Some methods for manipulating words in generators of a group
 include("group_theory/Words.jl")
