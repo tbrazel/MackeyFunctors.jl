@@ -1,3 +1,5 @@
+as_homomorphism(f::Generic.ModuleHomomorphism) = f
+
 function as_homomorphism(f::Generic.ModuleIsomorphism)::Generic.ModuleHomomorphism
     return ModuleHomomorphism(domain(f), codomain(f), matrix(f))
 end
