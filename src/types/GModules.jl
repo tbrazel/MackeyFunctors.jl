@@ -22,6 +22,17 @@ struct GModule
     generator_actions::Vector{<:Generic.ModuleIsomorphism}
 
     function GModule(context::MackeyContext, M::AbstractAlgebra.FPModule, generator_actions::AbstractVector{<:Generic.ModuleIsomorphism}; verify::Bool=true)
+        length(generator_actions) == length(context.generators) ||
+            throw(ArgumentError("There must be one generator action for each group generator."))
+
+        for i in eachindex(generator_actions)
+            action = generator_actions[i]
+            domain(action) === M ||
+                throw(ArgumentError("Generator action $i has the wrong domain."))
+            codomain(action) === M ||
+                throw(ArgumentError("Generator action $i has the wrong codomain."))
+        end
+
         if verify
             all(context.generator_relations) do word
                 m = map_extension(identity_homomorphism(M), generator_actions, word)

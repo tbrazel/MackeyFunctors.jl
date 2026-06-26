@@ -2,26 +2,25 @@ module MackeyFunctors
 using GAP
 using AbstractAlgebra
 
-# Import is needed so that our version doesn't clash with the one from AbstractAlgebra
+include("AbstractAlgebraLocal/AbstractAlgebraLocal.jl")
+using .AbstractAlgebraLocal
+export HomModule, underlying_module, as_hom_module_element, as_homomorphism
+export TensorProduct, tensor_product, tensor_product_element
+export submodules_matrix
+
+# Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra
 import AbstractAlgebra: coefficient_ring
 
-# We add some additional functionality needed from the abstract algebra world
-include("abstract_algebra/ModuleHomomorphisms.jl")
-include("abstract_algebra/DirectSums.jl")
-include("abstract_algebra/HomModule.jl")
-export HomModule, underlying_module, as_hom_module_element, as_homomorphism
 
+# Some methods for manipulating words in generators of a group
 include("group_theory/Words.jl")
 export generator_relations
 
+# Defines our MackeyContext type
 include("types/MackeyContext.jl")
-export MackeyContext,
-    double_coset_representative_data,
-    double_coset_representative_words
+export MackeyContext
 
-include("GModules.jl")
-export GModule, permutation_module
-
+# MackeyFunctor type
 include("types/MackeyFunctor.jl")
 export MackeyFunctor,
     coefficient_ring,
@@ -30,19 +29,29 @@ export MackeyFunctor,
     transfer,
     value
 
+# MackeyFunctorHomomorphism type
+include("types/Homomorphism.jl")
+export MackeyFunctorHomomorphism, id_homomorphism, is_isomorphism
+
+# Nice printing for various new types
 include("Show.jl")
 
-include("Shift.jl")
+# Provides the "shift" operation which helps us construct new Mackey functors out of old ones
+include("constructors/Shift.jl")
 export shift
 
-include("Constructors.jl")
+# Basic theory of G-modules
+include("types/GModules.jl")
+export GModule, permutation_module
+
+# Various constructor methods
+include("constructors/Constructors.jl")
 export constant_mackey_functor, burnside_mackey_functor,
     free_mackey_functor, fixedpoint_mackey_functor,zero_mackey_functor
 
-include("types/Homomorphism.jl")
-export MackeyFunctorHomomorphism, id_homomorphism
+# Direct sum of Mackey functors and homomorphisms
+include("constructors/DirectSum.jl")
+export direct_sum, direct_sum_homomorphism
 
-include("DirectSum.jl")
-export direct_sum_mf, direct_sum_homomorphism
 
 end

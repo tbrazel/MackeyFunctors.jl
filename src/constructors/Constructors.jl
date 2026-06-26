@@ -103,12 +103,17 @@ Return the Burnside Mackey functor for the group `G` and the coefficient ring `R
 burnside_mackey_functor(G::GapObj, R::Ring=ZZ) = burnside_mackey_functor(MackeyContext(G), R)
 
 """
-    free_mackey_functor(mf::MackeyFunctor, i::SubgroupIndex) -> MackeyFunctor
+    free_mackey_functor(ctx::MackeyContext, i::SubgroupIndex, R::Ring = ZZ) -> MackeyFunctor
 
-Given a Mackey functor `M` and a subgroup index `i` corresponding to a subgroup ``H\\le G``, this returns the shifted Mackey functor ``M_H``.
+Return the free Mackey functor at the subgroup indexed by `i`.
 """
-function free_mackey_functor(mf::MackeyFunctor, i::SubgroupIndex; verify::Bool=true)
-    shift(mf, i, verify)
+function free_mackey_functor(
+    context::MackeyContext,
+    i::SubgroupIndex,
+    R::Ring=ZZ;
+    verify::Bool=true,
+)
+    return shift(burnside_mackey_functor(context, R), i; verify=verify)
 end
 
 # fixedpoints Mackey functor
@@ -156,9 +161,9 @@ function fixedpoint_mackey_functor(gm::GModule)
 end
 
 
-function zero_mackey_functor(context::MackeyContext,R::Ring=ZZ)
-    zeromod = free_module(R,0)
-    zeromap = ModuleIsomorphism(zeromod, zeromod, ZZ[;])
+function zero_mackey_functor(context::MackeyContext, R::Ring=ZZ)
+    zeromod = free_module(R, 0)
+    zeromap = ModuleIsomorphism(zeromod, zeromod, zero_matrix(R, 0, 0))
 
     values = fill(zeromod, length(context.subgroups))
     cover_restrictions = [as_homomorphism(zeromap) for _ in context.covers]

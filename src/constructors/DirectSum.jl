@@ -1,11 +1,9 @@
-using AbstractAlgebra
-
-using AbstractAlgebra: direct_sum as direct_sum_module
-
 """
+    direct_sum(M::MackeyFunctor, N::MackeyFunctor) -> MackeyFunctor
+
 Direct sum of two Mackey functors defined over the same Mackey context.
 """
-function direct_sum_mf(
+function direct_sum(
     M::MackeyFunctor,
     N::MackeyFunctor
 )
@@ -14,7 +12,13 @@ function direct_sum_mf(
 
     context = M.context
 
-    values = [first(direct_sum_module(M.values[subgp_idx], N.values[subgp_idx])) for subgp_idx in eachindex(M.values)]
+    values = [
+        _direct_sum_module(AbstractAlgebra.FPModule[
+            M.values[subgp_idx],
+            N.values[subgp_idx],
+        ])
+        for subgp_idx in eachindex(M.values)
+    ]
 
     cover_restrictions = similar(M.cover_restrictions)
     cover_transfers = similar(M.cover_transfers)
@@ -53,34 +57,6 @@ function direct_sum_mf(
     )
 end
 
-function direct_sum_homomorphism(
-    source,
-    target,
-    p::Generic.ModuleIsomorphism,
-    q::Generic.ModuleIsomorphism,
-)
-    return direct_sum_homomorphism(source, target, as_homomorphism(p), as_homomorphism(q))
-end
-
-function direct_sum_homomorphism(
-    source,
-    target,
-    p::Generic.ModuleHomomorphism,
-    q::Generic.ModuleHomomorphism,
-)
-    source_summands = summands(source)
-    target_summands = summands(target)
-
-    return ModuleHomomorphism(
-        source,
-        target,
-        Any[
-            p zero_homomorphism(source_summands[1], target_summands[2]);
-            zero_homomorphism(source_summands[2], target_summands[1]) q
-        ],
-    )
-end
-
 function same_context(a::MackeyContext, b::MackeyContext)
-    return all(f -> getfield(a, f) == getfield(b, f), fieldnames(MackeyContext))
+    return a == b
 end
