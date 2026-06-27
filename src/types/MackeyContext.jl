@@ -28,6 +28,12 @@ struct MackeyContext
         Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
         Vector{DoubleCosetFormulaTerm},
     }
+    # Double cosets for (H,K)s in the group
+    # (H,K) gives [(g_1,n_1),..] where G = \amalg_i Hg_i K, and n_i is the subgroup index of H\cap ^{g_i}K
+    shift_decomposition_double_coset_cache::Dict{
+        Tuple{SubgroupIndex,SubgroupIndex},
+        Vector{Tuple{GroupElement,SubgroupIndex}}
+    }
 
 
     # Build a MackeyContext from a group G
@@ -172,6 +178,10 @@ struct MackeyContext
             left_conj_matx,
             right_conj_matx,
             double_coset_formulae,
+            Dict{
+                Tuple{SubgroupIndex,SubgroupIndex},
+                Vector{Tuple{GroupElement,SubgroupIndex}}
+            }()
         )
     end
 end
@@ -308,4 +318,40 @@ function conjugate_subgroup_by_word(context::MackeyContext, i::SubgroupIndex, w:
         end
     end
     return result
+end
+
+# Build a list of double coset reps for H\G/K
+function _shift_decomposition_double_coset(ctx::MackeyContext,H_index::SubgroupIndex,K_index::SubgroupIndex)
+    if haskey(ctx.shift_decomposition_double_coset_cache,(H_index,K_index))
+        return ctx.shift_decomposition_double_coset_cache[(H_index,K_index)]
+    end
+    
+    H = ctx.subgroups[H_index]
+    K = ctx.subgroups[K_index]
+
+    # A point of (G/H) x (G/K) can be moved into the form (H, xK).
+    # Two such points (H, xK) and (H, yK) are in the same orbit exactly
+    # when x and y represent the same double coset in H \ G / K.
+    representatives = GroupElement[
+        entry[1]
+        for entry in GAP.Globals.DoubleCosetRepsAndSizes(ctx.group, H,K)
+    ]
+
+    # The stabilizer of (H, xK) is
+    #
+    #     H cap xKx^-1.
+    #
+    # GAP writes K^a for a^-1 K a, so xKx^-1 is K^(x^-1).
+    stabilizer_indices = SubgroupIndex[
+        subgroup_index(
+            ctx,
+            GAP.Globals.Intersection(H, K^(x^-1)),
+        )
+        for x in representatives
+    ]
+    
+    ctx.shift_decomposition_double_coset_cache[(H_index,K_index)] = [(representatives[i],stabilizer_indices[i]) for i in eachindex(representatives)]
+
+    return ctx.shift_decomposition_double_coset_cache[(H_index,K_index)]
+    
 end

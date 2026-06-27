@@ -1,5 +1,36 @@
 using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as_hom_module_element, as_homomorphism, postcomposition_map, precomposition_map, TensorProduct, tensor_product, tensor_product_element, submodules_matrix
 
+@testset "module morphisms" begin
+    M = FreeModule(ZZ, 1)
+    m1, m2, m3 = M([ZZ(1)]), M([ZZ(2)]), M([ZZ(3)])
+    N2, _ = sub(M, [m2])
+    N3, _ = sub(M, [m3])
+    L2, g2 = quo(M, N2)
+    L3, g3 = quo(M, N3)
+    id = identity_matrix(ZZ, 1)
+
+    @test_throws ArgumentError ModuleHomomorphism(L2, M, id)
+    @test_throws ArgumentError ModuleHomomorphism(L2, L3, id)
+    @test_throws ArgumentError ModuleIsomorphism(L2, L3, id)
+    @test ModuleHomomorphism(L2, L3, ZZ(3)*id) == AbstractAlgebra.ModuleHomomorphism(L2, L3, ZZ(3)*id)
+    @test ModuleHomomorphism(M, L3, id) == AbstractAlgebra.ModuleHomomorphism(M, L3, id)
+    @test ModuleHomomorphism(L3, L3, ZZ(2)*id) == AbstractAlgebra.ModuleHomomorphism(L3, L3, ZZ(2)*id)
+
+    @test_throws ArgumentError ModuleHomomorphism(L2, M, [m1])
+    @test_throws ArgumentError ModuleHomomorphism(L2, L3, [g3(m1)])
+    @test_throws ArgumentError ModuleIsomorphism(L2, L3, [g3(m1)])
+    @test ModuleHomomorphism(L2, L3, [g3(m3)]) == AbstractAlgebra.ModuleHomomorphism(L2, L3, [g3(m3)])
+    @test ModuleHomomorphism(M, L3, [g3(m1)]) == AbstractAlgebra.ModuleHomomorphism(M, L3, [g3(m1)])
+    @test ModuleHomomorphism(L3, L3, [g3(m2)]) == AbstractAlgebra.ModuleHomomorphism(L3, L3, [g3(m2)])
+
+    @test ModuleHomomorphism(M, M, [m2]) == ModuleHomomorphism(M, M, [m2])
+    @test ModuleHomomorphism(M, M, [m2]) != ModuleHomomorphism(M, M, [m3])
+    @test ModuleHomomorphism(M, L2, [g2(m1)]) == ModuleHomomorphism(M, L2, [g2(m3)])
+    @test ModuleHomomorphism(M, L2, [g2(m1)]) != ModuleHomomorphism(M, L2, [g2(m2)])
+    @test ModuleHomomorphism(L2, L2, [g2(m1)]) == ModuleHomomorphism(L2, L2, [g2(m3)])
+    @test ModuleHomomorphism(L2, L2, [g2(m1)]) != ModuleHomomorphism(L2, L2, [g2(m2)])
+end
+
 @testset "Hom modules" begin
     F1 = free_module(ZZ, 1)
     twoF1, = sub(F1, [F1([ZZ(2)])])
@@ -19,19 +50,12 @@ using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as
     @test 2*id_element == zero(underlying_module(hom_Z2_Z2))
     @test as_homomorphism(hom_Z2_Z2, id_element) == id_Z2
 
-    hom_Z2_Z = Hom(Z2, F1)
-    @test ngens(hom_Z2_Z) == 0
-    zero_element = as_hom_module_element(hom_Z2_Z, MackeyFunctors.zero_homomorphism(Z2, F1))
-    @test zero_element == zero(underlying_module(hom_Z2_Z))
-    invalid_map = ModuleHomomorphism(Z2, F1, matrix(ZZ, 1, 1, [ZZ(1)]))
-    @test_throws ArgumentError as_hom_module_element(hom_Z2_Z, invalid_map)
-
     F2 = free_module(ZZ, 2)
     hom_Z2_power = Hom(F2, Z2)
     @test ngens(hom_Z2_power) == 2
     @test length(relations(hom_Z2_power)) == 2
     @test Set([[relation[1, i] for i in 1:ncols(relation)] for relation in relations(hom_Z2_power)]) ==
-        Set([[ZZ(2), ZZ(0)], [ZZ(0), ZZ(2)]])
+          Set([[ZZ(2), ZZ(0)], [ZZ(0), ZZ(2)]])
     first_projection = ModuleHomomorphism(F2, Z2, matrix(ZZ, 2, 1, [ZZ(1), ZZ(0)]))
     @test as_homomorphism(hom_Z2_power, as_hom_module_element(hom_Z2_power, first_projection)) == first_projection
 
@@ -52,11 +76,11 @@ using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as
     hom_F1_F1 = Hom(F1, F1)
     postcompose_by_double = postcomposition_map(hom_F1_F1, hom_F1_F1, double_F1)
     @test postcompose_by_double(gen(domain(postcompose_by_double), 1)) ==
-        2*gen(codomain(postcompose_by_double), 1)
+          2*gen(codomain(postcompose_by_double), 1)
 
     precompose_by_double = precomposition_map(hom_F1_F1, hom_F1_F1, double_F1)
     @test precompose_by_double(gen(domain(precompose_by_double), 1)) ==
-        2*gen(codomain(precompose_by_double), 1)
+          2*gen(codomain(precompose_by_double), 1)
 end
 
 @testset "Tensor products of FPModules" begin
@@ -75,7 +99,7 @@ end
     @test ngens(free_tensor) == 2
     @test isempty(relations(free_tensor))
     @test tensor_product_element(free_tensor, F2([ZZ(3), ZZ(5)]), gen(F1, 1)) ==
-        underlying_module(free_tensor)([ZZ(3), ZZ(5)])
+          underlying_module(free_tensor)([ZZ(3), ZZ(5)])
 
     #Z/2 * Z/4
     z2_tensor_z4 = tensor_product(Z2, Z4)
@@ -90,13 +114,13 @@ end
     z2_tensor_z3 = TensorProduct(Z2, Z3)
     @test ngens(z2_tensor_z3) == 0
     @test tensor_product_element(z2_tensor_z3, gen(Z2, 1), gen(Z3, 1)) ==
-        zero(underlying_module(z2_tensor_z3))
+          zero(underlying_module(z2_tensor_z3))
 
     # Z^2 * Z/4
     bilinear_tensor = TensorProduct(F2, Z4)
     @test tensor_product_element(bilinear_tensor, F2([ZZ(2), ZZ(3)]), gen(Z4, 1)) ==
-        2*tensor_product_element(bilinear_tensor, gen(F2, 1), gen(Z4, 1)) +
-        3*tensor_product_element(bilinear_tensor, gen(F2, 2), gen(Z4, 1))
+          2*tensor_product_element(bilinear_tensor, gen(F2, 1), gen(Z4, 1)) +
+          3*tensor_product_element(bilinear_tensor, gen(F2, 2), gen(Z4, 1))
 
     # Tensor two maps together
     left_map = ModuleHomomorphism(F2, F2, matrix(ZZ, [1 2; 3 4]))
@@ -115,7 +139,7 @@ end
     torsion_tensor_map = tensor_product(id_Z2, double_into_Z4)
     @test ngens(domain(torsion_tensor_map)) == 1
     @test ngens(codomain(torsion_tensor_map)) == 1
-    @test MackeyFunctors.is_zero_module_homomorphism(torsion_tensor_map)
+    @test iszero(torsion_tensor_map)
 
     # Can't tensor modules over different base rings
     F_QQ_1 = free_module(QQ, 1)

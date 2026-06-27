@@ -1,3 +1,5 @@
+abstract type AbstractShiftedMackeyFunctor end
+
 const ImmutableGeneratorWord = Tuple{Vararg{Tuple{GeneratorIndex,Int}}}
 
 """
@@ -18,6 +20,7 @@ struct MackeyFunctor
         Tuple{SubgroupIndex,ImmutableGeneratorWord},
         Generic.ModuleIsomorphism,
     }
+    shift_cache::Dict{SubgroupIndex,AbstractShiftedMackeyFunctor}
 
     function MackeyFunctor(
         context::MackeyContext,
@@ -39,6 +42,10 @@ struct MackeyFunctor
                 Tuple{SubgroupIndex,ImmutableGeneratorWord},
                 Generic.ModuleIsomorphism,
             }(),
+            Dict{
+                SubgroupIndex,
+                AbstractShiftedMackeyFunctor
+            }()
         )
 
         if verify
@@ -402,4 +409,16 @@ Returns the underlying coefficient ring of the Mackey functor `M`.
 """
 function coefficient_ring(mf::MackeyFunctor)
     return base_ring(mf.values[1])
+end
+
+function shift(mf::MackeyFunctor,
+    H_index::SubgroupIndex;
+    verify::Bool=true,
+)::MackeyFunctor
+    if haskey(mf.shift_cache,H_index)
+        return mf.shift_cache[H_index].underlying_mackey_functor
+    end
+    # TODO: shifting by G/G should return mf again, but as a *shifted Mackey functor*
+    mf.shift_cache[H_index] = _shift(mf,H_index;verify)
+    return mf.shift_cache[H_index].underlying_mackey_functor
 end

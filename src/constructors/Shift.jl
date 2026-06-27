@@ -1,29 +1,24 @@
 struct ShiftOrbitDecomposition
-    representatives::Vector{GroupElement}
-    stabilizer_indices::Vector{SubgroupIndex}
     value::AbstractAlgebra.FPModule
     injections::Vector{Generic.ModuleHomomorphism}
     projections::Vector{Generic.ModuleHomomorphism}
 end
 
-"""
-    shift(M::MackeyFunctor, H_index::SubgroupIndex; verify::Bool=true)
+struct ShiftedMackeyFunctor <: AbstractShiftedMackeyFunctor
+    underlying_mackey_functor::MackeyFunctor
+    decompositions::Vector{ShiftOrbitDecomposition}
+end
 
-Return the ``G/H``-shift of `M`.
 
-At a subgroup ``K`` this Mackey functor has value
-```math
-M_{G/H}(G/K) = M((G/H) \\times (G/K)).
-```
-The implementation decomposes the product into transitive ``G``-orbits and
-then uses the existing restriction, transfer, and conjugation maps of `M` on
-each orbit summand.
-"""
-function shift(
+function _shift(
     mf::MackeyFunctor,
     H_index::SubgroupIndex;
     verify::Bool=true,
-)::MackeyFunctor
+)::ShiftedMackeyFunctor
+    # Return the ShiftedMackeyFunctor if it is cached
+    if haskey(mf.shift_cache,H_index)
+        return mf.shift_cache[H_index]
+    end
     ctx = mf.context
     !verify || checkbounds(ctx.subgroups, H_index)
 
@@ -110,15 +105,17 @@ function shift(
         )
     end
 
-    return MackeyFunctor(
+    return ShiftedMackeyFunctor(MackeyFunctor(
         ctx,
         values,
         cover_restrictions,
         cover_transfers,
         generator_conjugations;
         verify=verify,
-    )
+    ),decompositions)
 end
+
+
 
 function _shift_orbit_decomposition(
     mf::MackeyFunctor,
@@ -129,26 +126,7 @@ function _shift_orbit_decomposition(
     H = ctx.subgroups[H_index]
     K = ctx.subgroups[K_index]
 
-    # A point of (G/H) x (G/K) can be moved into the form (H, xK).
-    # Two such points (H, xK) and (H, yK) are in the same orbit exactly
-    # when x and y represent the same double coset in H \ G / K.
-    representatives = GroupElement[
-        entry[1]
-        for entry in GAP.Globals.DoubleCosetRepsAndSizes(ctx.group, H, K)
-    ]
-
-    # The stabilizer of (H, xK) is
-    #
-    #     H cap xKx^-1.
-    #
-    # GAP writes K^a for a^-1 K a, so xKx^-1 is K^(x^-1).
-    stabilizer_indices = SubgroupIndex[
-        subgroup_index(
-            ctx,
-            GAP.Globals.Intersection(H, K^(x^-1)),
-        )
-        for x in representatives
-    ]
+    stabilizer_indices = [x[2] for x in _shift_decomposition_double_coset(ctx,H_index,K_index)]
 
     summands = AbstractAlgebra.FPModule[
         value(mf, stabilizer_index)
@@ -157,8 +135,6 @@ function _shift_orbit_decomposition(
     shifted_value, injections, projections = _direct_sum(summands)
 
     return ShiftOrbitDecomposition(
-        representatives,
-        stabilizer_indices,
         shifted_value,
         Generic.ModuleHomomorphism[injections...],
         Generic.ModuleHomomorphism[projections...],
@@ -178,6 +154,15 @@ function _shift_product_maps(
     H = ctx.subgroups[H_index]
     target_subgroup = ctx.subgroups[target_index]
 
+    double_coset_source = _shift_decomposition_double_coset(ctx,H_index,source_index)
+
+    source_reps = [x[1] for x in double_coset_source]
+    source_stabilizer_indices = [x[2] for x in double_coset_source]
+
+    double_coset_target = _shift_decomposition_double_coset(ctx,H_index,target_index)
+
+    target_reps = [x[1] for x in double_coset_target]
+    target_stabilizer_indices = [x[2] for x in double_coset_target]
     source_decomposition = decompositions[source_index]
     target_decomposition = decompositions[target_index]
 
@@ -200,14 +185,14 @@ function _shift_product_maps(
         source_decomposition.value,
     )
 
-    for source_orbit_index in eachindex(source_decomposition.representatives)
+    for source_orbit_index in eachindex(source_reps)
 
         # x is a double coset representative for H\G/K_source
-        x = source_decomposition.representatives[source_orbit_index]
+        x = source_reps[source_orbit_index]
 
         # source_stabilizer_index is the index of H\cap x K_source x^-1
         source_stabilizer_index =
-            source_decomposition.stabilizer_indices[source_orbit_index]
+            source_stabilizer_indices[source_orbit_index]
 
         # The general product map handled here is induced by
         #
@@ -224,12 +209,12 @@ function _shift_product_maps(
         target_orbit_index, left_transporter = _find_shift_target_orbit(
             H,
             target_subgroup,
-            target_decomposition.representatives,
+            target_reps,
             image_representative,
         )
 
         target_stabilizer_index =
-            target_decomposition.stabilizer_indices[target_orbit_index]
+            target_stabilizer_indices[target_orbit_index]
         target_stabilizer = ctx.subgroups[target_stabilizer_index]
 
         # With y and a as above, the restricted product map on this orbit is
@@ -374,5 +359,46 @@ function _find_left_transporter(
     )
     return GAP.Globals.Representative(
         GAP.Globals.Intersection(H, transporter_coset),
+    )
+end
+
+"""
+    shift(M::MackeyFunctor, H_index::SubgroupIndex; verify::Bool=true)
+
+Return the ``G/H``-shift of `M`.
+
+At a subgroup ``K`` this Mackey functor has value
+```math
+M_{G/H}(G/K) = M((G/H) \\times (G/K)).
+```
+The implementation decomposes the product into transitive ``G``-orbits and
+then uses the existing restriction, transfer, and conjugation maps of `M` on
+each orbit summand.
+"""
+function shift(phi::MackeyFunctorHomomorphism,H_index::SubgroupIndex)::MackeyFunctorHomomorphism
+    ctx = phi.context
+    
+    # Domain/codomain as ShiftedMackeyFunctor types - will be pulled from cache if they were already built
+    new_domain = _shift(phi.domain,H_index)
+    new_codomain = _shift(phi.codomain,H_index)
+
+    values = Vector{Generic.ModuleHomomorphism}()
+
+    # Build the values of phi_H
+    for k in eachindex(ctx.subgroups)
+        # Start with the zero map
+        value = zero_homomorphism(new_domain.underlying_mackey_functor.values[k], new_codomain.underlying_mackey_functor.values[k])
+
+        # We write G = \cup_x HxK, where H\cap ^xK has index n:
+        for (i,(_,HcapxKxinvs_index)) in enumerate(_shift_decomposition_double_coset(ctx,H_index,k))
+            value+= new_domain.decompositions[k].projections[i] *phi.components[HcapxKxinvs_index]*new_codomain.decompositions[k].injections[i]
+        end
+        push!(values,value)
+    end
+
+    return MackeyFunctorHomomorphism(
+        new_domain.underlying_mackey_functor,
+        new_codomain.underlying_mackey_functor,
+        values
     )
 end

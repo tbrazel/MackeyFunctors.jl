@@ -19,6 +19,7 @@ The shift operation is as follows:
 ```@docs
 shift
 ```
+We can also shift a [Mackey functor homomorphism](@ref MackeyFunctorHomomorphism) by a subgroup index.
 
 ### Fixed point Mackey functors
 

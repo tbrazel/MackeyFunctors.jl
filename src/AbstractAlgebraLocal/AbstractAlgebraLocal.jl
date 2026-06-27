@@ -13,9 +13,7 @@ export as_homomorphism,
     zero_homomorphism,
     identity_homomorphism,
     identity_isomorphism,
-    is_identity_module_homomorphism,
-    is_isomorphism,
-    is_zero_module_homomorphism
+    is_identity_module_homomorphism
 
 include("additional_functionality/HomModule.jl")
 export Hom,

@@ -464,8 +464,11 @@ end
 # end
 
 @testset "Zero Mackey functors" begin
-    @test zero_mackey_functor(MackeyContext(GAP.Globals.CyclicGroup(2)), ZZ) isa MackeyFunctor
-    @test coefficient_ring(
-        zero_mackey_functor(MackeyContext(GAP.Globals.CyclicGroup(2)), GF(2)),
-    ) == GF(2)
+    for n in 1:2, R in (ZZ, GF(2))
+        mc = MackeyContext(GAP.Globals.CyclicGroup(n))
+        mf = zero_mackey_functor(mc, R)
+        @test mf isa MackeyFunctor
+        @test coefficient_ring(mf) == R
+        @test all(iszero ∘ rank, mf.values)
+    end
 end

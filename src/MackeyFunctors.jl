@@ -4,14 +4,7 @@ using AbstractAlgebra
 
 include("AbstractAlgebraLocal/AbstractAlgebraLocal.jl")
 using .AbstractAlgebraLocal
-import .AbstractAlgebraLocal: Hom,
-    HomModule,
-    as_hom_module_element,
-    as_homomorphism,
-    is_isomorphism,
-    postcomposition_map,
-    precomposition_map,
-    underlying_module
+using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism, is_invertible
 
 # Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra
 import AbstractAlgebra: coefficient_ring
@@ -35,7 +28,7 @@ export MackeyFunctor,
 
 # MackeyFunctorHomomorphism type
 include("types/Homomorphism.jl")
-export MackeyFunctorHomomorphism, id_homomorphism, is_isomorphism
+export MackeyFunctorHomomorphism, id_homomorphism
 
 # FPModule of Mackey functor homomorphisms
 include("types/MackeyFunctorHomModule.jl")
@@ -55,11 +48,14 @@ export GModule, permutation_module
 # Various constructor methods
 include("constructors/Constructors.jl")
 export constant_mackey_functor, burnside_mackey_functor,
-    free_mackey_functor, fixedpoint_mackey_functor,zero_mackey_functor
+    free_mackey_functor, fixedpoint_mackey_functor, zero_mackey_functor
 
 # Direct sum of Mackey functors and homomorphisms
 include("constructors/DirectSum.jl")
 export direct_sum, direct_sum_homomorphism
 
+# Cohomological Mackey functors
+include("Cohomological.jl")
+export is_cohomological
 
 end
