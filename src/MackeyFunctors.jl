@@ -69,9 +69,9 @@ export constant_mackey_functor, burnside_mackey_functor,
     free_mackey_functor, fixedpoint_mackey_functor, zero_mackey_functor,
     universal_element, universal_map
 
-# Direct sum of Mackey functors and homomorphisms
+# Direct sums and block homomorphisms of Mackey functors
 include("constructors/DirectSum.jl")
-export direct_sum, direct_sum_homomorphism
+export direct_sum, block_homomorphism
 
 # Homological algebra of Mackey functors
 include("HomologicalAlgebra/Kernel.jl")

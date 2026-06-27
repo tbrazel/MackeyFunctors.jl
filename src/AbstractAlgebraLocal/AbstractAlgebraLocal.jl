@@ -5,8 +5,7 @@ include("fixes/DirectSums.jl")
 export direct_sum, _direct_sum_module
 
 include("fixes/ModuleHomomorphisms.jl")
-export direct_sum_homomorphism,
-    submodules_matrix
+export submodules_matrix
 
 include("additional_functionality/Morphisms.jl")
 export as_homomorphism,

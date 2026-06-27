@@ -21,44 +21,6 @@ function _is_zero_mackey_functor(mf::MackeyFunctor; level_order=nothing)::Bool
     return _nonzero_generator_choice(mf, level_order) === nothing
 end
 
-function _direct_sum_map_to_common_codomain(
-    f::MackeyFunctorHomomorphism,
-    g::MackeyFunctorHomomorphism,
-)::MackeyFunctorHomomorphism
-    f.codomain === g.codomain ||
-        throw(ArgumentError("Mackey functor homomorphisms must have the same codomain."))
-
-    domain_sum, = direct_sum(f.domain, g.domain)
-    components = Generic.ModuleHomomorphism[]
-    for H_index in eachindex(f.context.subgroups)
-        source = domain_sum.values[H_index]
-        target = f.codomain.values[H_index]
-
-        # The direct-sum presentation uses the generators of the left summand
-        # followed by the generators of the right summand.  We can therefore
-        # build the map out of the direct sum by assigning the old generator
-        # images first and the new universal-map generator images second.
-        images = elem_type(target)[
-            f.components[H_index](x)
-            for x in gens(f.domain.values[H_index])
-        ]
-        append!(
-            images,
-            elem_type(target)[
-                g.components[H_index](x)
-                for x in gens(g.domain.values[H_index])
-            ],
-        )
-
-        push!(
-            components,
-            _module_homomorphism_from_images(source, target, images),
-        )
-    end
-
-    return MackeyFunctorHomomorphism(domain_sum, f.codomain, components)
-end
-
 """
     epimorphism_from_free(M::MackeyFunctor; level_order=nothing, verify::Bool=true)
 
@@ -102,7 +64,7 @@ function epimorphism_from_free(
 
         current_map =
             current_map === nothing ? new_universal_map :
-            _direct_sum_map_to_common_codomain(current_map, new_universal_map)
+            block_homomorphism([current_map; new_universal_map])
 
         current_cokernel, current_projection = cokernel(current_map)
     end

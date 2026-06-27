@@ -167,6 +167,87 @@ end
     ) isa MackeyFunctorHomomorphism
 end
 
+@testset "Matrices of Mackey functor homomorphisms" begin
+    context = MackeyContext(GAP.Globals.CyclicGroup(2))
+    constant_Z = constant_mackey_functor(context, ZZ)
+
+    function scalar_hom(a)
+        return MackeyFunctorHomomorphism(
+            constant_Z,
+            constant_Z,
+            Generic.ModuleHomomorphism[
+                ModuleHomomorphism(
+                    value(constant_Z, H_index),
+                    value(constant_Z, H_index),
+                    matrix(ZZ, 1, 1, [ZZ(a)]),
+                )
+                for H_index in eachindex(context.subgroups)
+            ],
+        )
+    end
+
+    id_map = scalar_hom(1)
+    double_map = scalar_hom(2)
+    zero_map = scalar_hom(0)
+
+    row_map = MackeyFunctorHomomorphism([id_map double_map])
+    @test row_map isa MackeyFunctorHomomorphism
+    @test all(eachindex(context.subgroups)) do H_index
+        source_gen = gens(value(row_map.domain, H_index))[1]
+        target_gens = gens(value(row_map.codomain, H_index))
+        row_map.components[H_index](source_gen) ==
+            target_gens[1] + ZZ(2) * target_gens[2]
+    end
+
+    column_map = MackeyFunctorHomomorphism([id_map, double_map])
+    @test column_map isa MackeyFunctorHomomorphism
+    @test all(eachindex(context.subgroups)) do H_index
+        source_gens = gens(value(column_map.domain, H_index))
+        target_gen = gens(value(column_map.codomain, H_index))[1]
+        column_map.components[H_index](source_gens[1]) == target_gen &&
+            column_map.components[H_index](source_gens[2]) == ZZ(2) * target_gen
+    end
+
+    row_from_vector = block_homomorphism(
+        [id_map, double_map];
+        orientation=:row,
+    )
+    @test all(eachindex(context.subgroups)) do H_index
+        source_gen = gens(value(row_from_vector.domain, H_index))[1]
+        target_gens = gens(value(row_from_vector.codomain, H_index))
+        row_from_vector.components[H_index](source_gen) ==
+            target_gens[1] + ZZ(2) * target_gens[2]
+    end
+
+    matrix_map = block_homomorphism([
+        id_map zero_map
+        double_map id_map
+    ])
+    @test matrix_map isa MackeyFunctorHomomorphism
+    @test all(eachindex(context.subgroups)) do H_index
+        source_gens = gens(value(matrix_map.domain, H_index))
+        target_gens = gens(value(matrix_map.codomain, H_index))
+        matrix_map.components[H_index](source_gens[1]) == target_gens[1] &&
+            matrix_map.components[H_index](source_gens[2]) ==
+                ZZ(2) * target_gens[1] + target_gens[2]
+    end
+
+    diagonal_map = MackeyFunctors.direct_sum(id_map, double_map)
+    @test diagonal_map isa MackeyFunctorHomomorphism
+    @test all(eachindex(context.subgroups)) do H_index
+        source_gens = gens(value(diagonal_map.domain, H_index))
+        target_gens = gens(value(diagonal_map.codomain, H_index))
+        diagonal_map.components[H_index](source_gens[1]) == target_gens[1] &&
+            diagonal_map.components[H_index](source_gens[2]) ==
+                ZZ(2) * target_gens[2]
+    end
+
+    @test_throws ArgumentError MackeyFunctorHomomorphism(
+        [id_map, double_map];
+        orientation=:diagonal,
+    )
+end
+
 @testset "Mackey functor Hom modules" begin
     context = MackeyContext(GAP.Globals.CyclicGroup(2))
     M = free_module(ZZ, 1)

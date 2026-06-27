@@ -25,21 +25,21 @@ for mor in (:ModuleHomomorphism, :ModuleIsomorphism)
     end
 end
 
-function direct_sum_homomorphism(
+function direct_sum(
     source,
     target,
     p::Generic.ModuleIsomorphism,
     q::Generic.ModuleIsomorphism,
 )
-    return direct_sum_homomorphism(source, target, as_homomorphism(p), as_homomorphism(q))
+    return direct_sum(source, target, as_homomorphism(p), as_homomorphism(q))
 end
 
 """
-    direct_sum_homomorphism(source, target, p::Generic.ModuleHomomorphism, q::Generic.ModuleHomomorphism)
+    direct_sum(source, target, p::Generic.ModuleHomomorphism, q::Generic.ModuleHomomorphism)
 
 Return the direct sum of `p` and `q`. `source` and `target` are the domain and codomain of the direct sum morphism.
 """
-function direct_sum_homomorphism(
+function direct_sum(
     source,
     target,
     p::Generic.ModuleHomomorphism,
