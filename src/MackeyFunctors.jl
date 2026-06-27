@@ -14,8 +14,8 @@ import .AbstractAlgebraLocal: Hom,
     underlying_module
 using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism, is_invertible
 
-# Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra
-import AbstractAlgebra: coefficient_ring
+# Importing these is needed so that our versions don't clash with the ones from AbstractAlgebra
+import AbstractAlgebra: coefficient_ring, kernel
 
 # Some methods for manipulating words in generators of a group
 include("group_theory/Words.jl")
@@ -72,6 +72,12 @@ export constant_mackey_functor, burnside_mackey_functor,
 # Direct sum of Mackey functors and homomorphisms
 include("constructors/DirectSum.jl")
 export direct_sum, direct_sum_homomorphism
+
+# Homological algebra of Mackey functors
+include("HomologicalAlgebra/Kernel.jl")
+include("HomologicalAlgebra/Cokernel.jl")
+include("HomologicalAlgebra/EpimorphismFromFree.jl")
+export kernel, cokernel, epimorphism_from_free
 
 # Cohomological Mackey functors
 include("Cohomological.jl")
