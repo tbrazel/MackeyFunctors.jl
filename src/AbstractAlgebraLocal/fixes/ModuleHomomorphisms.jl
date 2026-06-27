@@ -25,47 +25,32 @@ for mor in (:ModuleHomomorphism, :ModuleIsomorphism)
     end
 end
 
+"""
+    direct_sum(fv::AbstractVector{Generic.ModuleIsomorphism{T}}; domain, codomain) where T <: RingElement -> Generic.ModuleIsomorphism{T}
+
+Return the direct sum of the isomorphisms in `fv`.
+The `domain` and `codomain` of the resulting isomorphism are constructed unless they are specified.
+"""
 function direct_sum(
-    source,
-    target,
-    p::Generic.ModuleIsomorphism,
-    q::Generic.ModuleIsomorphism,
-)
-    return direct_sum(source, target, as_homomorphism(p), as_homomorphism(q))
+    fv::AbstractVector{Generic.ModuleIsomorphism{T}};
+    domain = direct_sum(map(domain, fv)),
+    codomain = direct_sum(map(codomain, fv)),
+) where T <: RingElement
+    block_matrix = block_diagonal_matrix(map(matrix, fv))
+    return ModuleIsomorphism(domain, codomain, block_matrix)
 end
 
 """
-    direct_sum(source, target, p::Generic.ModuleHomomorphism, q::Generic.ModuleHomomorphism)
+    direct_sum(fv::AbstractVector{Generic.ModuleHomomorphism{T}}; domain, codomain) where T <: RingElement -> Generic.ModuleHomomorphism{T}
 
-Return the direct sum of `p` and `q`. `source` and `target` are the domain and codomain of the direct sum morphism.
+Return the direct sum of the homomorphisms in `fv`.
+The `domain` and `codomain` of the resulting homomorphism are constructed unless they are specified.
 """
 function direct_sum(
-    source,
-    target,
-    p::Generic.ModuleHomomorphism,
-    q::Generic.ModuleHomomorphism,
-)
-    R = base_ring(source)
-    all(
-        mod -> base_ring(mod) == R,
-        (target, domain(p), codomain(p), domain(q), codomain(q)),
-    ) || throw(ArgumentError("All direct-sum homomorphism modules must have the same base ring."))
-
-    source_generators = ngens(domain(p)) + ngens(domain(q))
-    target_generators = ngens(codomain(p)) + ngens(codomain(q))
-    ngens(source) == source_generators ||
-        throw(ArgumentError("The source does not have the expected direct-sum presentation."))
-    ngens(target) == target_generators ||
-        throw(ArgumentError("The target does not have the expected direct-sum presentation."))
-
-    block_matrix = zero_matrix(R, ngens(source), ngens(target))
-    _copy_matrix_block!(block_matrix, matrix(p), 0, 0)
-    _copy_matrix_block!(
-        block_matrix,
-        matrix(q),
-        ngens(domain(p)),
-        ngens(codomain(p)),
-    )
-
-    return ModuleHomomorphism(source, target, block_matrix)
+    fv::AbstractVector{Generic.ModuleHomomorphism{T}};
+    domain = direct_sum(map(domain, fv)),
+    codomain = direct_sum(map(codomain, fv)),
+) where T <: RingElement
+    block_matrix = block_diagonal_matrix(map(matrix, fv))
+    return ModuleHomomorphism(domain, codomain, block_matrix)
 end

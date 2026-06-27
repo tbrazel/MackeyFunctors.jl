@@ -29,26 +29,20 @@ function direct_sum(
     for (cover_index, (i, j)) in enumerate(context.covers)
         p = M.cover_restrictions[cover_index]
         q = N.cover_restrictions[cover_index]
-        cover_restrictions[cover_index] = direct_sum(values[j], values[i], p, q)
+        cover_restrictions[cover_index] = direct_sum([p, q]; domain = values[j], codomain = values[i])
 
         p = M.cover_transfers[cover_index]
         q = N.cover_transfers[cover_index]
-        cover_transfers[cover_index] = direct_sum(values[i], values[j], p, q)
+        cover_transfers[cover_index] = direct_sum([p, q]; domain = values[i], codomain = values[j])
     end
 
     generator_conjugations = similar(M.generator_conjugations)
     for i in eachindex(M.context.subgroups), n in eachindex(M.context.generators)
         p = M.generator_conjugations[n, i]
         q = N.generator_conjugations[n, i]
-        source = values[i]
-        target = values[context.generator_left_conjugation_matrix[n, i]]
-        conjugation_hom = direct_sum(source, target, p, q)
-
-        generator_conjugations[n, i] = ModuleIsomorphism(
-            source,
-            target,
-            matrix(conjugation_hom),
-        )
+        domain = values[i]
+        codomain = values[context.generator_left_conjugation_matrix[n, i]]
+        generator_conjugations[n, i] = direct_sum([p, q]; domain, codomain)
     end
 
     sum_functor = MackeyFunctor(
