@@ -1,6 +1,6 @@
 name = "MackeyFunctors"
 uuid = "93235cf0-2c6f-4ec7-8a58-fed291fd2da0"
-version = "1.0.0-DEV"
+version = "0.0.1-DEV"
 authors = ["Thomas Brazelton"]
 
 [deps]

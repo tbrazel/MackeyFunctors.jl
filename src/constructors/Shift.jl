@@ -222,69 +222,187 @@ function _shift_product_maps(
             ].left_intersection_conjugated_right_index
         target_stabilizer = ctx.subgroups[target_stabilizer_index]
 
-        # With y and a as above, the restricted product map on this orbit is
-        #
-        #     G/S -> G/T,     qS |-> q a T,
-        #
-        # where S is the source stabilizer and T is the target stabilizer.  This
-        # factors as
-        #
-        #     G/S -> G/(aTa^-1) -> G/T.
-        #
-        # The first arrow is the projection attached to S <= aTa^-1.  The second
-        # arrow is the orbit isomorphism whose contravariant map is the
-        # conjugation c_a : M(T) -> M(aTa^-1).
-        conjugated_target_stabilizer =
-            target_stabilizer^(left_transporter^-1)
+        covariant_block, contravariant_block = _shift_orbit_map_blocks(
+            mf,
+            source_stabilizer_index,
+            target_stabilizer_index,
+            target_stabilizer,
+            left_transporter,
+            verify,
+        )
 
-        # index of aTa^-1
-        conjugated_target_stabilizer_index =
-            subgroup_index(ctx, conjugated_target_stabilizer)
+        covariant_map +=
+            source_decomposition.projections[source_orbit_index] *
+            covariant_block *
+            target_decomposition.injections[target_orbit_index]
+        contravariant_map +=
+            target_decomposition.projections[target_orbit_index] *
+            contravariant_block *
+            source_decomposition.injections[source_orbit_index]
+    end
 
-        if verify
-            is_subgroup(
-                ctx,
-                source_stabilizer_index,
-                conjugated_target_stabilizer_index,
-            ) || throw(ArgumentError("Product orbit map did not preserve stabilizers."))
-        end
+    return covariant_map, contravariant_map
+end
 
-        # Let U = aTa^-1.  The product orbit map restricted to this summand is
-        #
-        #     alpha : G/S -> G/T,     qS |-> q a T.
-        #
-        # We use the factorization
-        #
-        #     G/S --projection--> G/U --isomorphism--> G/T,
-        #     qS |-> qU              qU |-> q a T.
-        #
-        # The covariant map M(S) -> M(T) is therefore transfer along S <= U,
-        # followed by the covariant direction of the isomorphism G/U -> G/T.
-        # The contravariant direction of that isomorphism is c_a : M(T) -> M(U),
-        # so its covariant direction is c_{a^-1} : M(U) -> M(T).
-        covariant_block =
-            transfer(
-                mf,
-                source_stabilizer_index,
-                conjugated_target_stabilizer_index,
-            ) * conjugation(
-                mf,
-                left_transporter^-1,
-                conjugated_target_stabilizer_index,
-            )
+function _shift_orbit_map_blocks(
+    mf::MackeyFunctor,
+    source_stabilizer_index::SubgroupIndex,
+    target_stabilizer_index::SubgroupIndex,
+    target_stabilizer::Group,
+    orbit_transporter::GroupElement,
+    verify::Bool,
+)
+    ctx = mf.context
 
-        # The contravariant map M(T) -> M(S) goes through the same factorization
-        # in reverse: first c_a : M(T) -> M(U), then restriction along S <= U.
-        contravariant_block =
-            conjugation(
-                mf,
-                left_transporter,
-                target_stabilizer_index,
-            ) * restriction(
-                mf,
-                source_stabilizer_index,
-                conjugated_target_stabilizer_index,
-            )
+    # This helper is the small piece of Mackey-functor algebra shared by all
+    # product maps used in shifts.
+    #
+    # Suppose one transitive source orbit has stabilizer S and the target orbit
+    # chosen in our double-coset decomposition has stabilizer T.  A G-map between
+    # these two transitive orbits is determined by an element b of G:
+    #
+    #     alpha : G/S -> G/T,     qS |-> q b T.
+    #
+    # The formula is well-defined exactly when S <= bTb^-1.  Write
+    #
+    #     U = bTb^-1.
+    #
+    # Then alpha factors as
+    #
+    #     G/S --projection--> G/U --isomorphism--> G/T,
+    #     qS |-> qU              qU |-> q b T.
+    #
+    # A Mackey functor is covariant for projections and contravariant for the
+    # same projections, so this one orbit map gives two module maps:
+    #
+    #   * covariant:     M(S) -> M(U) -> M(T),
+    #                    transfer along S <= U, then conjugation by b^-1;
+    #
+    #   * contravariant: M(T) -> M(U) -> M(S),
+    #                    conjugation by b, then restriction along S <= U.
+    #
+    # GAP writes K^g for g^-1*K*g, so bTb^-1 is `T^(b^-1)`.
+    conjugated_target_stabilizer =
+        target_stabilizer^(orbit_transporter^-1)
+
+    conjugated_target_stabilizer_index =
+        subgroup_index(ctx, conjugated_target_stabilizer)
+
+    if verify
+        is_subgroup(
+            ctx,
+            source_stabilizer_index,
+            conjugated_target_stabilizer_index,
+        ) || throw(ArgumentError("Product orbit map did not preserve stabilizers."))
+    end
+
+    covariant_block =
+        transfer(
+            mf,
+            source_stabilizer_index,
+            conjugated_target_stabilizer_index,
+        ) * conjugation(
+            mf,
+            orbit_transporter^-1,
+            conjugated_target_stabilizer_index,
+        )
+
+    contravariant_block =
+        conjugation(
+            mf,
+            orbit_transporter,
+            target_stabilizer_index,
+        ) * restriction(
+            mf,
+            source_stabilizer_index,
+            conjugated_target_stabilizer_index,
+        )
+
+    return covariant_block, contravariant_block
+end
+
+function _shift_first_factor_product_maps(
+    mf::MackeyFunctor,
+    source_shift::ShiftedMackeyFunctor,
+    target_shift::ShiftedMackeyFunctor,
+    source_H_index::SubgroupIndex,
+    target_H_index::SubgroupIndex,
+    K_index::SubgroupIndex,
+    transporter::GroupElement,
+    verify::Bool,
+)
+    ctx = mf.context
+    target_H = ctx.subgroups[target_H_index]
+    K = ctx.subgroups[K_index]
+
+    double_coset_source =
+        _shift_decomposition_double_coset_infos(ctx, source_H_index, K_index)
+    double_coset_target =
+        _shift_decomposition_double_coset_infos(ctx, target_H_index, K_index)
+    source_decomposition = source_shift.decompositions[K_index]
+    target_decomposition = target_shift.decompositions[K_index]
+
+    source_value = source_shift.underlying_mackey_functor.values[K_index]
+    target_value = target_shift.underlying_mackey_functor.values[K_index]
+
+    covariant_map = zero_homomorphism(source_value, target_value)
+    contravariant_map = zero_homomorphism(target_value, source_value)
+
+    for source_orbit_index in eachindex(double_coset_source)
+        # The source summand indexed by x represents the transitive orbit of
+        #
+        #     (H_s, xK) in (G/H_s) x (G/K).
+        #
+        # Its stabilizer is S = H_s ∩ xKx^-1.
+        x = double_coset_source[source_orbit_index].representative
+        source_stabilizer_index =
+            double_coset_source[
+                source_orbit_index
+            ].left_intersection_conjugated_right_index
+
+        # We are handling first-coordinate orbit maps
+        #
+        #     G/H_s -> G/H_t,     qH_s |-> q r H_t.
+        #
+        # At level K, the source representative (H_s, xK) maps to
+        #
+        #     (rH_t, xK).
+        #
+        # Our target decomposition, however, uses representatives of the form
+        # (H_t, yK).  Acting by r^-1 moves the first coordinate back to H_t, so
+        # the target double coset is determined by r^-1*x in H_t\G/K.
+        image_representative = transporter^-1 * x
+        target_orbit_index, left_transporter = _find_shift_target_orbit(
+            target_H,
+            K,
+            double_coset_target,
+            image_representative,
+        )
+
+        target_stabilizer_index =
+            double_coset_target[
+                target_orbit_index
+            ].left_intersection_conjugated_right_index
+        target_stabilizer = ctx.subgroups[target_stabilizer_index]
+
+        # If r^-1*xK = a*yK with a in H_t, then
+        #
+        #     xK = r*a*yK.
+        #
+        # Thus the image point (rH_t, xK) is obtained from the chosen target
+        # representative (H_t, yK) by the single group element b = r*a.  The
+        # induced map on this pair of transitive orbits is therefore
+        #
+        #     G/S -> G/T,     qS |-> q b T.
+        orbit_transporter = transporter * left_transporter
+        covariant_block, contravariant_block = _shift_orbit_map_blocks(
+            mf,
+            source_stabilizer_index,
+            target_stabilizer_index,
+            target_stabilizer,
+            orbit_transporter,
+            verify,
+        )
 
         covariant_map +=
             source_decomposition.projections[source_orbit_index] *
@@ -368,6 +486,27 @@ function _find_left_transporter(
     )
 end
 
+function _check_shift_orbit_map(
+    ctx::MackeyContext,
+    source_H_index::SubgroupIndex,
+    target_H_index::SubgroupIndex,
+    transporter::GroupElement,
+)
+    checkbounds(ctx.subgroups, source_H_index)
+    checkbounds(ctx.subgroups, target_H_index)
+
+    # A formula qH_s |-> q r H_t gives a well-defined G-map G/H_s -> G/H_t
+    # exactly when H_s is contained in r H_t r^-1.
+    source_H = ctx.subgroups[source_H_index]
+    target_H = ctx.subgroups[target_H_index]
+    conjugated_target_H = target_H^(transporter^-1)
+
+    Bool(GAP.Globals.IsSubgroup(conjugated_target_H, source_H)) ||
+        throw(ArgumentError("The orbit formula qH_source |-> q*r*H_target is not well-defined."))
+
+    return nothing
+end
+
 """
     shift(M::MackeyFunctor, H_index::SubgroupIndex; verify::Bool=true)
 
@@ -413,5 +552,141 @@ function shift(phi::MackeyFunctorHomomorphism, H_index::SubgroupIndex)::MackeyFu
         new_domain.underlying_mackey_functor,
         new_codomain.underlying_mackey_functor,
         values
+    )
+end
+
+"""
+    shift_transfer(M::MackeyFunctor, H1_index, H2_index; verify::Bool=true)
+
+Return the canonical homomorphism ``M_{H_1} \\to M_{H_2}`` induced by the
+projection ``G/H_1 \\to G/H_2`` when ``H_1 \\le H_2``.
+"""
+function shift_transfer(
+    mf::MackeyFunctor,
+    H1_index::SubgroupIndex,
+    H2_index::SubgroupIndex;
+    verify::Bool=true,
+)::MackeyFunctorHomomorphism
+    ctx = mf.context
+    checkbounds(ctx.subgroups, H1_index)
+    checkbounds(ctx.subgroups, H2_index)
+    is_subgroup(ctx, H1_index, H2_index) ||
+        throw(ArgumentError("The first subgroup must be contained in the second subgroup."))
+
+    source_shift = _shift(mf, H1_index; verify=verify)
+    target_shift = _shift(mf, H2_index; verify=verify)
+    identity_element = GAP.Globals.One(ctx.group)
+
+    components = Generic.ModuleHomomorphism[]
+    for K_index in eachindex(ctx.subgroups)
+        covariant_map, = _shift_first_factor_product_maps(
+            mf,
+            source_shift,
+            target_shift,
+            H1_index,
+            H2_index,
+            K_index,
+            identity_element,
+            verify,
+        )
+        push!(components, covariant_map)
+    end
+
+    return MackeyFunctorHomomorphism(
+        source_shift.underlying_mackey_functor,
+        target_shift.underlying_mackey_functor,
+        components,
+    )
+end
+
+"""
+    shift_restriction(M::MackeyFunctor, H1_index, H2_index; verify::Bool=true)
+
+Return the canonical homomorphism ``M_{H_2} \\to M_{H_1}`` induced
+contravariantly by the projection ``G/H_1 \\to G/H_2`` when ``H_1 \\le H_2``.
+"""
+function shift_restriction(
+    mf::MackeyFunctor,
+    H1_index::SubgroupIndex,
+    H2_index::SubgroupIndex;
+    verify::Bool=true,
+)::MackeyFunctorHomomorphism
+    ctx = mf.context
+    checkbounds(ctx.subgroups, H1_index)
+    checkbounds(ctx.subgroups, H2_index)
+    is_subgroup(ctx, H1_index, H2_index) ||
+        throw(ArgumentError("The first subgroup must be contained in the second subgroup."))
+
+    source_shift = _shift(mf, H1_index; verify=verify)
+    target_shift = _shift(mf, H2_index; verify=verify)
+    identity_element = GAP.Globals.One(ctx.group)
+
+    components = Generic.ModuleHomomorphism[]
+    for K_index in eachindex(ctx.subgroups)
+        _, contravariant_map = _shift_first_factor_product_maps(
+            mf,
+            source_shift,
+            target_shift,
+            H1_index,
+            H2_index,
+            K_index,
+            identity_element,
+            verify,
+        )
+        push!(components, contravariant_map)
+    end
+
+    return MackeyFunctorHomomorphism(
+        target_shift.underlying_mackey_functor,
+        source_shift.underlying_mackey_functor,
+        components,
+    )
+end
+
+"""
+    shift_conjugation(M::MackeyFunctor, g::GroupElement, H_index; verify::Bool=true)
+
+Return the canonical homomorphism ``M_H \\to M_{gHg^{-1}}`` induced by the
+orbit isomorphism ``G/H \\to G/(gHg^{-1})`` given by
+``qH \\mapsto qg^{-1}(gHg^{-1})``.
+"""
+function shift_conjugation(
+    mf::MackeyFunctor,
+    g::GroupElement,
+    H_index::SubgroupIndex;
+    verify::Bool=true,
+)::MackeyFunctorHomomorphism
+    ctx = mf.context
+    checkbounds(ctx.subgroups, H_index)
+
+    target_H = ctx.subgroups[H_index]^(g^-1)
+    target_H_index = subgroup_index(ctx, target_H)
+    source_shift = _shift(mf, H_index; verify=verify)
+    target_shift = _shift(mf, target_H_index; verify=verify)
+    transporter = g^-1
+
+    if verify
+        _check_shift_orbit_map(ctx, H_index, target_H_index, transporter)
+    end
+
+    components = Generic.ModuleHomomorphism[]
+    for K_index in eachindex(ctx.subgroups)
+        covariant_map, = _shift_first_factor_product_maps(
+            mf,
+            source_shift,
+            target_shift,
+            H_index,
+            target_H_index,
+            K_index,
+            transporter,
+            verify,
+        )
+        push!(components, covariant_map)
+    end
+
+    return MackeyFunctorHomomorphism(
+        source_shift.underlying_mackey_functor,
+        target_shift.underlying_mackey_functor,
+        components,
     )
 end

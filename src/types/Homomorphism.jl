@@ -28,7 +28,7 @@ struct MackeyFunctorHomomorphism
         end
 
         # For each cover H<K, assert that the cover res/tr commute with the levels of our maps
-        for (n,(i,j)) in enumerate(ctx.covers)
+        for (n, (i, j)) in enumerate(ctx.covers)
             #=
                          components[i]
                 M_dom(H[i]) ----> M_codom(H[i])
@@ -67,10 +67,10 @@ struct MackeyFunctorHomomorphism
                          component_gHg^-1
             =#
 
-            gHginvs_index = ctx.generator_left_conjugation_matrix[generator_index,subgp_index]
+            gHginvs_index = ctx.generator_left_conjugation_matrix[generator_index, subgp_index]
 
-            (domain_mf.generator_conjugations[generator_index,subgp_index] * components[gHginvs_index] ==
-                components[subgp_index] * codomain_mf.generator_conjugations[generator_index,subgp_index]) ||
+            (domain_mf.generator_conjugations[generator_index, subgp_index] * components[gHginvs_index] ==
+             components[subgp_index] * codomain_mf.generator_conjugations[generator_index, subgp_index]) ||
                 throw(ArgumentError("Generator conjugations don't commute with component maps"))
         end
 
@@ -93,4 +93,4 @@ function id_homomorphism(mf::MackeyFunctor)::MackeyFunctorHomomorphism
     )
 end
 
-AbstractAlgebraLocal.is_invertible(f::MackeyFunctorHomomorphism) = all(is_isvertible, f.components)
+AbstractAlgebraLocal.is_invertible(f::MackeyFunctorHomomorphism) = all(is_invertible, f.components)
