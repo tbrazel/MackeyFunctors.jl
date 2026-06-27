@@ -71,3 +71,121 @@ function _copy_matrix_block!(target_matrix, source_matrix, row_offset::Int, colu
 
     return target_matrix
 end
+
+function _check_module_homomorphism_matrix(
+    maps::AbstractMatrix{<:Generic.ModuleHomomorphism},
+)
+    isempty(maps) &&
+        throw(ArgumentError("Cannot build a homomorphism from an empty matrix."))
+
+    row_indices = collect(axes(maps, 1))
+    column_indices = collect(axes(maps, 2))
+
+    for row in row_indices, column in column_indices
+        if domain(maps[row, column]) !== domain(maps[row, first(column_indices)])
+            throw(ArgumentError("Entries in each matrix row must have the same domain."))
+        end
+        if codomain(maps[row, column]) !== codomain(maps[first(row_indices), column])
+            throw(ArgumentError("Entries in each matrix column must have the same codomain."))
+        end
+    end
+
+    return nothing
+end
+
+"""
+    block_homomorphism(maps::AbstractMatrix{<:Generic.ModuleHomomorphism})
+
+Build the homomorphism represented by a matrix of module homomorphisms. This
+uses AbstractAlgebra's matrix convention: rows index domain summands and
+columns index codomain summands. Thus `maps[i, j]` must be a map from the
+`i`th domain summand to the `j`th codomain summand, and the result has type
+`direct_sum(row domains...) -> direct_sum(column codomains...)`.
+"""
+function block_homomorphism(
+    maps::AbstractMatrix{<:Generic.ModuleHomomorphism},
+)::Generic.ModuleHomomorphism
+    _check_module_homomorphism_matrix(maps)
+
+    row_indices = collect(axes(maps, 1))
+    column_indices = collect(axes(maps, 2))
+    domain_summands = AbstractAlgebra.FPModule[
+        domain(maps[row, first(column_indices)])
+        for row in row_indices
+    ]
+    codomain_summands = AbstractAlgebra.FPModule[
+        codomain(maps[first(row_indices), column])
+        for column in column_indices
+    ]
+
+    domain_sum, _, domain_projections = direct_sum(domain_summands)
+    codomain_sum, codomain_injections, = direct_sum(codomain_summands)
+
+    return block_homomorphism(
+        domain_sum,
+        codomain_sum,
+        domain_projections,
+        codomain_injections,
+        maps,
+    )
+end
+
+function block_homomorphism(
+    maps::AbstractVector{<:Generic.ModuleHomomorphism};
+    orientation::Symbol=:column,
+)::Generic.ModuleHomomorphism
+    if orientation === :column
+        return block_homomorphism(reshape(collect(maps), :, 1))
+    elseif orientation === :row
+        return block_homomorphism(reshape(collect(maps), 1, :))
+    else
+        throw(ArgumentError("orientation must be either :row or :column."))
+    end
+end
+
+"""
+    block_homomorphism(source, target, source_projections, target_injections, maps)
+
+Build a block homomorphism using an existing direct-sum presentation. This is
+the same row-domain/column-codomain convention as `block_homomorphism(maps)`,
+but the source and target direct sums, along with their projections and
+injections, are supplied by the caller.
+"""
+function block_homomorphism(
+    source::AbstractAlgebra.FPModule,
+    target::AbstractAlgebra.FPModule,
+    source_projections::AbstractVector{<:Generic.ModuleHomomorphism},
+    target_injections::AbstractVector{<:Generic.ModuleHomomorphism},
+    maps::AbstractMatrix{<:Generic.ModuleHomomorphism},
+)::Generic.ModuleHomomorphism
+    _check_module_homomorphism_matrix(maps)
+
+    row_indices = collect(axes(maps, 1))
+    column_indices = collect(axes(maps, 2))
+    length(source_projections) == length(row_indices) ||
+        throw(ArgumentError("There must be one source projection for each matrix row."))
+    length(target_injections) == length(column_indices) ||
+        throw(ArgumentError("There must be one target injection for each matrix column."))
+
+    result = zero_homomorphism(source, target)
+    for (row_number, row) in enumerate(row_indices)
+        source_projection = source_projections[row_number]
+        domain(source_projection) === source ||
+            throw(ArgumentError("A source projection has the wrong domain."))
+
+        for (column_number, column) in enumerate(column_indices)
+            target_injection = target_injections[column_number]
+            codomain(target_injection) === target ||
+                throw(ArgumentError("A target injection has the wrong codomain."))
+
+            domain(maps[row, column]) === codomain(source_projection) ||
+                throw(ArgumentError("A matrix entry has the wrong domain for its row."))
+            codomain(maps[row, column]) === domain(target_injection) ||
+                throw(ArgumentError("A matrix entry has the wrong codomain for its column."))
+
+            result += source_projection * maps[row, column] * target_injection
+        end
+    end
+
+    return result
+end

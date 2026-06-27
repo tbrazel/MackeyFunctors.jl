@@ -146,6 +146,36 @@ function _shift_orbit_decomposition(
     )
 end
 
+function _zero_shift_orbit_block_matrix(
+    source_decomposition::ShiftOrbitDecomposition,
+    target_decomposition::ShiftOrbitDecomposition,
+)::Matrix{Generic.ModuleHomomorphism}
+    return Generic.ModuleHomomorphism[
+        zero_homomorphism(
+            codomain(source_decomposition.projections[source_orbit_index]),
+            domain(target_decomposition.injections[target_orbit_index]),
+        )
+        for source_orbit_index in eachindex(source_decomposition.projections),
+            target_orbit_index in eachindex(target_decomposition.injections)
+    ]
+end
+
+function _shift_orbit_block_homomorphism(
+    source_value::AbstractAlgebra.FPModule,
+    target_value::AbstractAlgebra.FPModule,
+    source_decomposition::ShiftOrbitDecomposition,
+    target_decomposition::ShiftOrbitDecomposition,
+    blocks::AbstractMatrix{<:Generic.ModuleHomomorphism},
+)::Generic.ModuleHomomorphism
+    return block_homomorphism(
+        source_value,
+        target_value,
+        source_decomposition.projections,
+        target_decomposition.injections,
+        blocks,
+    )
+end
+
 function _shift_product_maps(
     mf::MackeyFunctor,
     H_index::SubgroupIndex,
@@ -167,24 +197,13 @@ function _shift_product_maps(
     source_decomposition = decompositions[source_index]
     target_decomposition = decompositions[target_index]
 
-    # Start with zero maps between the two direct sums, then add one summand
-    # map at a time using the injections and projections returned by
-    # direct_sum.
-    # If f_ij : source_summand_i -> target_summand_j is the map attached to one
-    # product-orbit component, then
-    #
-    #     source_projection_i * f_ij * target_injection_j
-    #
-    # is the corresponding map from the whole source direct sum to the whole
-    # target direct sum.
-    covariant_map = zero_homomorphism(
-        values[source_index],
-        values[target_index],
-    )
-    contravariant_map = zero_homomorphism(
-        values[target_index],
-        values[source_index],
-    )
+    # Each source orbit lands in one target orbit.  The matrix convention here
+    # matches AbstractAlgebra: rows are domain summands, columns are codomain
+    # summands.
+    covariant_blocks =
+        _zero_shift_orbit_block_matrix(source_decomposition, target_decomposition)
+    contravariant_blocks =
+        _zero_shift_orbit_block_matrix(target_decomposition, source_decomposition)
 
     for source_orbit_index in eachindex(double_coset_source)
 
@@ -231,17 +250,28 @@ function _shift_product_maps(
             verify,
         )
 
-        covariant_map +=
-            source_decomposition.projections[source_orbit_index] *
-            covariant_block *
-            target_decomposition.injections[target_orbit_index]
-        contravariant_map +=
-            target_decomposition.projections[target_orbit_index] *
-            contravariant_block *
-            source_decomposition.injections[source_orbit_index]
+        covariant_blocks[source_orbit_index, target_orbit_index] =
+            covariant_block
+        contravariant_blocks[target_orbit_index, source_orbit_index] =
+            contravariant_block
     end
 
-    return covariant_map, contravariant_map
+    return (
+        _shift_orbit_block_homomorphism(
+            values[source_index],
+            values[target_index],
+            source_decomposition,
+            target_decomposition,
+            covariant_blocks,
+        ),
+        _shift_orbit_block_homomorphism(
+            values[target_index],
+            values[source_index],
+            target_decomposition,
+            source_decomposition,
+            contravariant_blocks,
+        ),
+    )
 end
 
 function _shift_orbit_map_blocks(
@@ -345,8 +375,10 @@ function _shift_first_factor_product_maps(
     source_value = source_shift.underlying_mackey_functor.values[K_index]
     target_value = target_shift.underlying_mackey_functor.values[K_index]
 
-    covariant_map = zero_homomorphism(source_value, target_value)
-    contravariant_map = zero_homomorphism(target_value, source_value)
+    covariant_blocks =
+        _zero_shift_orbit_block_matrix(source_decomposition, target_decomposition)
+    contravariant_blocks =
+        _zero_shift_orbit_block_matrix(target_decomposition, source_decomposition)
 
     for source_orbit_index in eachindex(double_coset_source)
         # The source summand indexed by x represents the transitive orbit of
@@ -404,17 +436,28 @@ function _shift_first_factor_product_maps(
             verify,
         )
 
-        covariant_map +=
-            source_decomposition.projections[source_orbit_index] *
-            covariant_block *
-            target_decomposition.injections[target_orbit_index]
-        contravariant_map +=
-            target_decomposition.projections[target_orbit_index] *
-            contravariant_block *
-            source_decomposition.injections[source_orbit_index]
+        covariant_blocks[source_orbit_index, target_orbit_index] =
+            covariant_block
+        contravariant_blocks[target_orbit_index, source_orbit_index] =
+            contravariant_block
     end
 
-    return covariant_map, contravariant_map
+    return (
+        _shift_orbit_block_homomorphism(
+            source_value,
+            target_value,
+            source_decomposition,
+            target_decomposition,
+            covariant_blocks,
+        ),
+        _shift_orbit_block_homomorphism(
+            target_value,
+            source_value,
+            target_decomposition,
+            source_decomposition,
+            contravariant_blocks,
+        ),
+    )
 end
 
 # Input: H, K, some representatives y_1..y_n for double cosets of H\G/K, and some element x which we think about as representing a double coset HxK
@@ -531,8 +574,12 @@ function shift(phi::MackeyFunctorHomomorphism, H_index::SubgroupIndex)::MackeyFu
 
     # Build the values of phi_H
     for k in eachindex(ctx.subgroups)
-        # Start with the zero map
-        value = zero_homomorphism(new_domain.underlying_mackey_functor.values[k], new_codomain.underlying_mackey_functor.values[k])
+        domain_decomposition = new_domain.decompositions[k]
+        codomain_decomposition = new_codomain.decompositions[k]
+        blocks = _zero_shift_orbit_block_matrix(
+            domain_decomposition,
+            codomain_decomposition,
+        )
 
         # We write G = \cup_x HxK.  The component indexed by x is the
         # stabilizer H ∩ xKx^-1 stored in the shared double-coset info.
@@ -540,12 +587,18 @@ function shift(phi::MackeyFunctorHomomorphism, H_index::SubgroupIndex)::MackeyFu
             _shift_decomposition_double_coset_infos(ctx, H_index, k),
         )
             stabilizer_index = info.left_intersection_conjugated_right_index
-            value +=
-                new_domain.decompositions[k].projections[i] *
-                phi.components[stabilizer_index] *
-                new_codomain.decompositions[k].injections[i]
+            blocks[i, i] = phi.components[stabilizer_index]
         end
-        push!(values, value)
+        push!(
+            values,
+            _shift_orbit_block_homomorphism(
+                new_domain.underlying_mackey_functor.values[k],
+                new_codomain.underlying_mackey_functor.values[k],
+                domain_decomposition,
+                codomain_decomposition,
+                blocks,
+            ),
+        )
     end
 
     return MackeyFunctorHomomorphism(

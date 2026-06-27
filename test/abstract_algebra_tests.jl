@@ -1,4 +1,4 @@
-using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as_hom_module_element, as_homomorphism, postcomposition_map, precomposition_map, TensorProduct, tensor_product, tensor_product_element, submodules_matrix
+using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as_hom_module_element, as_homomorphism, postcomposition_map, precomposition_map, TensorProduct, tensor_product, tensor_product_element, block_homomorphism, submodules_matrix
 
 @testset "module morphisms" begin
     M = FreeModule(ZZ, 1)
@@ -29,6 +29,44 @@ using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as
     @test ModuleHomomorphism(M, L2, [g2(m1)]) != ModuleHomomorphism(M, L2, [g2(m2)])
     @test ModuleHomomorphism(L2, L2, [g2(m1)]) == ModuleHomomorphism(L2, L2, [g2(m3)])
     @test ModuleHomomorphism(L2, L2, [g2(m1)]) != ModuleHomomorphism(L2, L2, [g2(m2)])
+end
+
+@testset "Block module homomorphisms" begin
+    F1 = free_module(ZZ, 1)
+    id_F1 = ModuleHomomorphism(F1, F1, identity_matrix(ZZ, 1))
+    double_F1 = ModuleHomomorphism(F1, F1, matrix(ZZ, 1, 1, [ZZ(2)]))
+    zero_F1 = ModuleHomomorphism(F1, F1, zero_matrix(ZZ, 1, 1))
+
+    row_map = block_homomorphism([id_F1 double_F1])
+    @test ngens(domain(row_map)) == 1
+    @test ngens(codomain(row_map)) == 2
+    @test row_map(gen(domain(row_map), 1)) ==
+          gen(codomain(row_map), 1) + 2*gen(codomain(row_map), 2)
+
+    column_map = block_homomorphism([id_F1; double_F1])
+    @test ngens(domain(column_map)) == 2
+    @test ngens(codomain(column_map)) == 1
+    @test column_map(gen(domain(column_map), 1)) == gen(codomain(column_map), 1)
+    @test column_map(gen(domain(column_map), 2)) == 2*gen(codomain(column_map), 1)
+
+    source, _, source_projections =
+        direct_sum(AbstractAlgebra.FPModule[F1, F1])
+    target, target_injections, =
+        direct_sum(AbstractAlgebra.FPModule[F1, F1])
+    matrix_map = block_homomorphism(
+        source,
+        target,
+        source_projections,
+        target_injections,
+        [
+            id_F1 zero_F1
+            double_F1 id_F1
+        ],
+    )
+    @test domain(matrix_map) === source
+    @test codomain(matrix_map) === target
+    @test matrix_map(gen(source, 1)) == gen(target, 1)
+    @test matrix_map(gen(source, 2)) == 2*gen(target, 1) + gen(target, 2)
 end
 
 @testset "Hom modules" begin

@@ -9,6 +9,7 @@ export submodules_matrix
 
 include("additional_functionality/Morphisms.jl")
 export as_homomorphism,
+    block_homomorphism,
     zero_homomorphism,
     identity_homomorphism,
     identity_isomorphism,
