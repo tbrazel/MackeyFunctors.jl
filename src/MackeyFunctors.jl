@@ -55,6 +55,10 @@ include("Show.jl")
 include("constructors/Shift.jl")
 export shift, shift_transfer, shift_restriction, shift_conjugation
 
+# Internal Hom Mackey functor
+include("types/MackeyFunctorHomMackeyFunctor.jl")
+export InternalHom, MackeyFunctorHomMackeyFunctor
+
 # Basic theory of G-modules
 include("types/GModules.jl")
 export GModule, permutation_module

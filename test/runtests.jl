@@ -10,5 +10,5 @@ include("abstract_algebra_tests.jl")
 include("mackey_context_tests.jl")
 include("mackey_functor_tests.jl")
 include("homomorphism_tests.jl")
+include("internal_hom_tests.jl")
 include("cohomological_test.jl")
-
