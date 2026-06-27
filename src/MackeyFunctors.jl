@@ -4,6 +4,11 @@ using AbstractAlgebra
 
 include("AbstractAlgebraLocal/AbstractAlgebraLocal.jl")
 using .AbstractAlgebraLocal
+import .AbstractAlgebraLocal: Hom,
+    HomModule,
+    as_hom_module_element,
+    as_homomorphism,
+    underlying_module
 using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism, is_invertible
 
 # Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra

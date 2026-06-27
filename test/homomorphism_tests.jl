@@ -168,10 +168,8 @@ end
     round_trip_identity = as_homomorphism(endomorphism_module, identity_element)
     @test round_trip_identity isa MackeyFunctorHomomorphism
     @test all(eachindex(context.subgroups)) do subgroup_index
-        MackeyFunctors.map_eq(
-            round_trip_identity.components[subgroup_index],
-            identity_mackey_hom.components[subgroup_index],
-        )
+        round_trip_identity.components[subgroup_index] ==
+            identity_mackey_hom.components[subgroup_index]
     end
 
     F1 = free_module(ZZ, 1)
