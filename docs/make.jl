@@ -8,6 +8,7 @@ makedocs(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://tbrazel.github.io/MackeyFunctors.jl/stable/",
     ),
+    workdir = "..", # Run examples from repo root
     pages=[
         "Home" => "index.md",
         "Installation" => "installation.md",

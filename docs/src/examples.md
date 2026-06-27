@@ -2,17 +2,17 @@
 
 This example constructs constant $\mathbb{Z}$-Mackey functors and Burnside Mackey functors for a few common groups:
 
-```julia
-using Pkg;Pkg.activate(".") # if you haven't already
+```@setup tutorial
 using GAP, AbstractAlgebra, MackeyFunctors
+```
 
+```@repl tutorial
 # Computes the constant and Burnside C2 Mackey Functor
-M = FreeModule(ZZ, 1)
-C2 = GAP.Globals.CyclicGroup(2)
+M = FreeModule(ZZ, 1);
+C2 = GAP.Globals.CyclicGroup(2);
 C2_context = MackeyContext(C2)
 C2_Mackey_constant = constant_mackey_functor(C2_context, M)
 C2_Burnside = burnside_mackey_functor(C2_context)
-
 # Computes the constant and Burnside C4 Mackey Functor
 C4 = GAP.Globals.CyclicGroup(4)
 C4_context = MackeyContext(C4)
