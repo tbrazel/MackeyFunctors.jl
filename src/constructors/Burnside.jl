@@ -1,0 +1,73 @@
+function burnside_transfer(R, M1, M2, cc1, cc2, H2)
+    m = zero_matrix(R, rank(M1), rank(M2))
+    for (i, II) in enumerate(cc1)
+        I = GAP.Globals.Representative(II)
+        j = findfirst(==(GAP.Globals.ConjugacyClassSubgroups(H2, I)), cc2)::Int
+        m[i, j] = 1
+    end
+    ModuleHomomorphism(M1, M2, m)
+end
+
+function burnside_restriction(R, M1, M2, cc1, cc2, H1, H2)
+    m = zero_matrix(R, rank(M2), rank(M1))
+    for (j, JJ) in enumerate(cc2)
+        J = GAP.Globals.Representative(JJ)
+        for (h, n) in GAP.Globals.DoubleCosetRepsAndSizes(H2, H1, J)
+            L = GAP.Globals.Intersection(H1, J ^ inv(h))
+            i = findfirst(==(GAP.Globals.ConjugacyClassSubgroups(H1, L)), cc1)::Int
+            m[j, i] += n * GAP.Globals.Size(L) ÷ (GAP.Globals.Size(H1) * GAP.Globals.Size(J))
+        end
+    end
+    ModuleHomomorphism(M2, M1, m)
+end
+
+function burnside_conjugation(R, mc, conj_classes, gi, Hi, M)
+    g = mc.generators[gi]
+    m = zero_matrix(R, rank(M), rank(M))
+    for (j, JJ) in enumerate(conj_classes[Hi])
+        L = GAP.Globals.Representative(JJ) ^ inv(g)
+        gHi = mc.generator_left_conjugation_matrix[gi, Hi]
+        i = findfirst(==(GAP.Globals.ConjugacyClassSubgroups(mc.subgroups[gHi], L)), conj_classes[gHi])::Int
+        m[j, i] = 1
+    end
+    ModuleIsomorphism(M, M, m)
+end
+
+function _burnside_conjugacy_classes(mc::MackeyContext)
+    return [collect(GAP.Globals.ConjugacyClassesSubgroups(H)) for H in mc.subgroups]
+end
+
+function _burnside_mackey_functor(mc::MackeyContext, R::Ring, conj_classes)
+    values = [free_module(R, length(cc)) for cc in conj_classes]
+
+    cover_transfers = Generic.ModuleHomomorphism[
+        burnside_transfer(R, values[i], values[j], conj_classes[i], conj_classes[j], mc.subgroups[j])
+        for (i, j) in mc.covers
+    ]
+    cover_restrictions = Generic.ModuleHomomorphism[
+        burnside_restriction(R, values[i], values[j], conj_classes[i], conj_classes[j], mc.subgroups[i], mc.subgroups[j])
+        for (i, j) in mc.covers
+    ]
+    generator_conjugations = Generic.ModuleIsomorphism[
+        burnside_conjugation(R, mc, conj_classes, gi, Hi, values[Hi])
+        for gi in eachindex(mc.generators), Hi in eachindex(mc.subgroups)
+    ]
+
+    MackeyFunctor(mc, values, cover_restrictions, cover_transfers, generator_conjugations)  # TODO: turn off argument checking
+end
+
+"""
+    burnside_mackey_functor(mc::MackeyContext, R::Ring = ZZ) -> MackeyFunctor
+
+Return the Burnside Mackey functor for the group specified by `mc` and the coefficient ring `R`.
+"""
+function burnside_mackey_functor(mc::MackeyContext, R::Ring=ZZ)
+    return _burnside_mackey_functor(mc, R, _burnside_conjugacy_classes(mc))
+end
+
+"""
+    burnside_mackey_functor(G, R::Ring = ZZ) -> MackeyFunctor
+
+Return the Burnside Mackey functor for the group `G` and the coefficient ring `R`.
+"""
+burnside_mackey_functor(G::GapObj, R::Ring=ZZ) = burnside_mackey_functor(MackeyContext(G), R)

@@ -66,7 +66,8 @@ export GModule, permutation_module
 # Various constructor methods
 include("constructors/Constructors.jl")
 export constant_mackey_functor, burnside_mackey_functor,
-    free_mackey_functor, fixedpoint_mackey_functor, zero_mackey_functor
+    free_mackey_functor, fixedpoint_mackey_functor, zero_mackey_functor,
+    universal_element, universal_map
 
 # Direct sum of Mackey functors and homomorphisms
 include("constructors/DirectSum.jl")
