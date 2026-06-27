@@ -32,8 +32,12 @@ function zero_homomorphism(M::AbstractAlgebra.FPModule, N::AbstractAlgebra.FPMod
     ModuleHomomorphism(M, N, zero_matrix(base_ring(M), ngens(M), ngens(N)))
 end
 
-function is_zero_module_homomorphism(phi::Generic.ModuleHomomorphism)
-    return all(iszero ∘ phi, gens(domain(phi)))
+function Base.iszero(f::Generic.ModuleHomomorphism)
+    if codomain(f) isa Generic.FreeModule
+        iszero(matrix(f))
+    else
+        all(iszero ∘ f, gens(domain(f)))
+    end
 end
 
 function is_identity_module_homomorphism(phi::AbstractAlgebra.Map(AbstractAlgebra.FPModuleHomomorphism))

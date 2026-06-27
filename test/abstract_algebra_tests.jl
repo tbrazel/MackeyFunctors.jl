@@ -121,7 +121,7 @@ end
     torsion_tensor_map = tensor_product(id_Z2, double_into_Z4)
     @test ngens(domain(torsion_tensor_map)) == 1
     @test ngens(codomain(torsion_tensor_map)) == 1
-    @test MackeyFunctors.is_zero_module_homomorphism(torsion_tensor_map)
+    @test iszero(torsion_tensor_map)
 
     # Can't tensor modules over different base rings
     F_QQ_1 = free_module(QQ, 1)
