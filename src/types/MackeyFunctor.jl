@@ -282,17 +282,22 @@ function _verify_mackey_double_cosets(mf::MackeyFunctor)
         for (n2, (k, l)) in enumerate(context.covers)
             h == l || continue
 
-            dc_reps = context.double_coset_formulae[(j, h, k)]
+            dc_infos = double_coset_infos(context, j, h, k)
             dc_lhs = mf.cover_transfers[n2] * mf.cover_restrictions[n1]
             dc_rhs = zero_homomorphism(domain(dc_lhs), codomain(dc_lhs))
 
-            for (w, JxcapK_index) in dc_reps
+            for info in dc_infos
+                JxcapK_index = info.left_conjugate_intersection_index
                 JcapxK_index =
-                    conjugate_subgroup_by_word(context, JxcapK_index, w)
+                    info.left_intersection_conjugated_right_index
 
                 dc_restriction = restriction(mf, JxcapK_index, k)
                 dc_transfer = transfer(mf, JcapxK_index, j)
-                dc_conjugation = conjugation(mf, w, JxcapK_index)
+                dc_conjugation = conjugation(
+                    mf,
+                    info.representative,
+                    JxcapK_index,
+                )
 
                 dc_rhs += dc_restriction * dc_conjugation * dc_transfer
             end

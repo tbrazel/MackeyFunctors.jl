@@ -6,7 +6,7 @@
     @test length(ctx.subgroups) == 1
     @test isempty(ctx.covers)
     @test ctx.paths == Dict((1, 1) => Int[])
-    @test isempty(ctx.double_coset_formulae)
+    @test isempty(ctx.double_coset_info_cache)
     @test all(ctx.generator_relations) do word
         isempty(word)
     end
@@ -59,24 +59,27 @@ end
         push!(expected_double_coset_keys, (j, h, k))
     end
 
-    @test Set(keys(ctx.double_coset_formulae)) == expected_double_coset_keys
+    @test Set(keys(ctx.double_coset_info_cache)) == expected_double_coset_keys
 
-    for ((j, h, k), representatives) in ctx.double_coset_formulae
+    for ((j, h, k), representatives) in ctx.double_coset_info_cache
         @test (j, h) in cover_pairs
         @test (k, h) in cover_pairs
-        @test all(representatives) do (word, intersection_index)
-            x = evaluate_word(word)
-            expected_intersection =
+        @test all(representatives) do info
+            x = info.representative
+            expected_left_conjugate_intersection =
                 GAP.Globals.Intersection(ctx.subgroups[j]^x, ctx.subgroups[k])
+            expected_left_intersection_conjugated_right =
+                GAP.Globals.Intersection(ctx.subgroups[j], ctx.subgroups[k]^(x^-1))
 
-            1 <= intersection_index <= length(ctx.subgroups) &&
-                ctx.subgroups[intersection_index] == expected_intersection &&
-                Bool(GAP.Globals.IN(x, ctx.subgroups[h])) &&
-                all(word) do (generator_index, exponent)
-                    1 <= generator_index <= length(ctx.generators) && exponent isa Int
-                end
+            1 <= info.left_conjugate_intersection_index <= length(ctx.subgroups) &&
+                1 <= info.left_intersection_conjugated_right_index <= length(ctx.subgroups) &&
+                ctx.subgroups[info.left_conjugate_intersection_index] ==
+                expected_left_conjugate_intersection &&
+                ctx.subgroups[info.left_intersection_conjugated_right_index] ==
+                expected_left_intersection_conjugated_right &&
+                Bool(GAP.Globals.IN(x, ctx.subgroups[h]))
         end
-        @test all(first.(representatives)) do word
+        @test all(MackeyFunctors.double_coset_representative_words(ctx, j, h, k)) do word
             all(word) do (generator_index, exponent)
                 1 <= generator_index <= length(ctx.generators) && exponent isa Int
             end
@@ -86,12 +89,20 @@ end
     trivial = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, ctx.subgroups)
     whole = findfirst(H -> Int(GAP.Globals.Size(H)) == Int(GAP.Globals.Size(G)), ctx.subgroups)
 
-    @test !haskey(ctx.double_coset_formulae, (trivial, whole, trivial))
-    @test_throws ArgumentError MackeyFunctors.double_coset_representative_data(ctx, trivial, whole, trivial)
-    @test_throws ArgumentError MackeyFunctors.double_coset_representative_words(ctx, trivial, whole, trivial)
+    @test !haskey(ctx.double_coset_info_cache, (trivial, whole, trivial))
+    general_representative_data =
+        MackeyFunctors.double_coset_representative_data(ctx, trivial, whole, trivial)
+    @test haskey(ctx.double_coset_info_cache, (trivial, whole, trivial))
+    @test length(general_representative_data) == length(
+        GAP.Globals.DoubleCosetRepsAndSizes(
+            ctx.subgroups[whole],
+            ctx.subgroups[trivial],
+            ctx.subgroups[trivial],
+        ),
+    )
 
     j, h = first(ctx.covers)
-    @test haskey(ctx.double_coset_formulae, (j, h, j))
+    @test haskey(ctx.double_coset_info_cache, (j, h, j))
 
     representative_data = MackeyFunctors.double_coset_representative_data(ctx, j, h, j)
     @test MackeyFunctors.double_coset_representative_data(
@@ -102,7 +113,6 @@ end
     ) == representative_data
 
     words = MackeyFunctors.double_coset_representative_words(ctx, j, h, j)
-    @test words == first.(representative_data)
 
     gap_representatives = [
         entry[1]
@@ -113,9 +123,14 @@ end
         )
     ]
     @test length(words) == length(gap_representatives)
-    @test all(zip(representative_data, gap_representatives)) do ((word, intersection_index), representative)
-        evaluate_word(word) == representative &&
-            ctx.subgroups[intersection_index] ==
-            GAP.Globals.Intersection(ctx.subgroups[j]^representative, ctx.subgroups[j])
+    @test all(zip(words, gap_representatives)) do (word, representative)
+        evaluate_word(word) == representative
+    end
+    @test all(zip(representative_data, gap_representatives)) do (info, representative)
+        info.representative == representative &&
+            ctx.subgroups[info.left_conjugate_intersection_index] ==
+            GAP.Globals.Intersection(ctx.subgroups[j]^representative, ctx.subgroups[j]) &&
+            ctx.subgroups[info.left_intersection_conjugated_right_index] ==
+            GAP.Globals.Intersection(ctx.subgroups[j], ctx.subgroups[j]^(representative^-1))
     end
 end

@@ -123,10 +123,11 @@ function _shift_orbit_decomposition(
     K_index::SubgroupIndex,
 )::ShiftOrbitDecomposition
     ctx = mf.context
-    H = ctx.subgroups[H_index]
-    K = ctx.subgroups[K_index]
 
-    stabilizer_indices = [x[2] for x in _shift_decomposition_double_coset(ctx,H_index,K_index)]
+    stabilizer_indices = [
+        info.left_intersection_conjugated_right_index
+        for info in _shift_decomposition_double_coset_infos(ctx, H_index, K_index)
+    ]
 
     summands = AbstractAlgebra.FPModule[
         value(mf, stabilizer_index)
@@ -154,15 +155,10 @@ function _shift_product_maps(
     H = ctx.subgroups[H_index]
     target_subgroup = ctx.subgroups[target_index]
 
-    double_coset_source = _shift_decomposition_double_coset(ctx,H_index,source_index)
-
-    source_reps = [x[1] for x in double_coset_source]
-    source_stabilizer_indices = [x[2] for x in double_coset_source]
-
-    double_coset_target = _shift_decomposition_double_coset(ctx,H_index,target_index)
-
-    target_reps = [x[1] for x in double_coset_target]
-    target_stabilizer_indices = [x[2] for x in double_coset_target]
+    double_coset_source =
+        _shift_decomposition_double_coset_infos(ctx, H_index, source_index)
+    double_coset_target =
+        _shift_decomposition_double_coset_infos(ctx, H_index, target_index)
     source_decomposition = decompositions[source_index]
     target_decomposition = decompositions[target_index]
 
@@ -185,14 +181,16 @@ function _shift_product_maps(
         source_decomposition.value,
     )
 
-    for source_orbit_index in eachindex(source_reps)
+    for source_orbit_index in eachindex(double_coset_source)
 
         # x is a double coset representative for H\G/K_source
-        x = source_reps[source_orbit_index]
+        x = double_coset_source[source_orbit_index].representative
 
         # source_stabilizer_index is the index of H\cap x K_source x^-1
         source_stabilizer_index =
-            source_stabilizer_indices[source_orbit_index]
+            double_coset_source[
+                source_orbit_index
+            ].left_intersection_conjugated_right_index
 
         # The general product map handled here is induced by
         #
@@ -209,12 +207,14 @@ function _shift_product_maps(
         target_orbit_index, left_transporter = _find_shift_target_orbit(
             H,
             target_subgroup,
-            target_reps,
+            double_coset_target,
             image_representative,
         )
 
         target_stabilizer_index =
-            target_stabilizer_indices[target_orbit_index]
+            double_coset_target[
+                target_orbit_index
+            ].left_intersection_conjugated_right_index
         target_stabilizer = ctx.subgroups[target_stabilizer_index]
 
         # With y and a as above, the restricted product map on this orbit is
@@ -299,10 +299,11 @@ end
 function _find_shift_target_orbit(
     H::Group,
     target_subgroup::Group,
-    target_representatives::Vector{GroupElement},
+    target_infos::Vector{DoubleCosetInfo},
     image_representative::GroupElement,
 )::Tuple{Int,GroupElement}
-    for (target_orbit_index, y) in enumerate(target_representatives)
+    for (target_orbit_index, info) in enumerate(target_infos)
+        y = info.representative
         Bool(
             GAP.Globals.IN(
                 image_representative,
@@ -389,9 +390,16 @@ function shift(phi::MackeyFunctorHomomorphism,H_index::SubgroupIndex)::MackeyFun
         # Start with the zero map
         value = zero_homomorphism(new_domain.underlying_mackey_functor.values[k], new_codomain.underlying_mackey_functor.values[k])
 
-        # We write G = \cup_x HxK, where H\cap ^xK has index n:
-        for (i,(_,HcapxKxinvs_index)) in enumerate(_shift_decomposition_double_coset(ctx,H_index,k))
-            value+= new_domain.decompositions[k].projections[i] *phi.components[HcapxKxinvs_index]*new_codomain.decompositions[k].injections[i]
+        # We write G = \cup_x HxK.  The component indexed by x is the
+        # stabilizer H ∩ xKx^-1 stored in the shared double-coset info.
+        for (i, info) in enumerate(
+            _shift_decomposition_double_coset_infos(ctx, H_index, k),
+        )
+            stabilizer_index = info.left_intersection_conjugated_right_index
+            value +=
+                new_domain.decompositions[k].projections[i] *
+                phi.components[stabilizer_index] *
+                new_codomain.decompositions[k].injections[i]
         end
         push!(values,value)
     end

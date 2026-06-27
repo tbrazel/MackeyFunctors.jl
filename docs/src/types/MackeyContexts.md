@@ -14,7 +14,7 @@ The MackeyContext data type stores the following information about the group:
 - a list of relation words among those generators
 - a matrix `generator_left_conjugation_matrix`, whose rows are indexed by generators of the group and whose columns are indexed by subgroups, and where the $[g,H]$th entry is the index in the list of subgroups of the subgroup $gHg^{-1}$
 - a similar matrix `generator_right_conjugation_matrix` telling us how to find $g^{-1}Hg$ for a generator $g$
-- a dictionary `double_coset_formulae`: the keys are triples of subgroups $(J,H,K)$, with $J\lesssim H$ and $K\lesssim H$, and the values are a vector of `DoubleCosetFormulaTerm` types: these are tuples of generator words and subgroup indices, intended to help us locate $J^x \cap K$.
+- a dictionary `double_coset_info_cache`: the keys are triples of subgroups $(J,H,K)$, interpreted as double cosets $J \backslash H / K$, and the values are vectors of `DoubleCosetInfo` values.  Each entry stores a group-element representative $x$ together with the subgroup indices for both $J^x\cap K$ and $J\cap xKx^{-1}$, since these two conjugate intersections are used in different constructions.
 
 **Proposition**: Let $M$ give the data of $M(H)$ for every subgroup $H\le G$, a conjugation map $c_g \colon M(H) \to M(gHg^{-1})$ for every generator $g\in G$, and restriction and transfer maps for every cover $H\lesssim K$. Then if the double coset formula holds along covers, it holds in general.
 

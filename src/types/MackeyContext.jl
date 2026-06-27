@@ -1,5 +1,28 @@
 const SubgroupIndex::DataType = Int
-const DoubleCosetFormulaTerm = Tuple{GeneratorWord,SubgroupIndex}
+
+"""
+    DoubleCosetInfo
+
+Data attached to one representative `x` of a double coset `L \\ A / R`.
+
+The same representative is used in two different Mackey-functor computations:
+the double-coset formula uses `L^x ∩ R`, while shifts use the stabilizer
+`L ∩ xRx^-1` of the point `(L, xR)` in `(G/L) x (G/R)`. GAP writes `K^g` for
+`g^-1*K*g`, so the second subgroup is `L ∩ R^(x^-1)`.
+"""
+struct DoubleCosetInfo
+    # A representative x in the ambient subgroup A for a double coset L*x*R.
+    representative::GroupElement
+
+    # Index of L^x ∩ R = x^-1*L*x ∩ R. This is the intersection that appears
+    # on the restriction side of the Mackey double-coset formula.
+    left_conjugate_intersection_index::SubgroupIndex
+
+    # Index of L ∩ x*R*x^-1. For shifts this is the stabilizer of the product
+    # orbit representative (L, xR); it is also the conjugate by x of the
+    # subgroup stored in left_conjugate_intersection_index.
+    left_intersection_conjugated_right_index::SubgroupIndex
+end
 
 """
     MackeyContext(G)
@@ -12,7 +35,7 @@ Importantly, the `MackeyContext` type also stores all the data needed to verify 
 ```math
 H = \\coprod_x JxK
 ```
-and we store this in a dictionary as a vector of entries ``(J^x\\cap K, x)``.
+and we store this as a vector of `DoubleCosetInfo` values.
 """
 struct MackeyContext
     group::Group
@@ -24,15 +47,9 @@ struct MackeyContext
     generator_relations::Vector{GeneratorWord}
     generator_left_conjugation_matrix::Matrix{SubgroupIndex}
     generator_right_conjugation_matrix::Matrix{SubgroupIndex}
-    double_coset_formulae::Dict{
+    double_coset_info_cache::Dict{
         Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
-        Vector{DoubleCosetFormulaTerm},
-    }
-    # Double cosets for (H,K)s in the group
-    # (H,K) gives [(g_1,n_1),..] where G = \amalg_i Hg_i K, and n_i is the subgroup index of H\cap ^{g_i}K
-    shift_decomposition_double_coset_cache::Dict{
-        Tuple{SubgroupIndex,SubgroupIndex},
-        Vector{Tuple{GroupElement,SubgroupIndex}}
+        Vector{DoubleCosetInfo},
     }
 
 
@@ -138,10 +155,10 @@ struct MackeyContext
         end
 
         ########## double coset stuff below here
-        double_coset_formulae =
+        double_coset_info_cache =
             Dict{
                 Tuple{SubgroupIndex,SubgroupIndex,SubgroupIndex},
-                Vector{DoubleCosetFormulaTerm},
+                Vector{DoubleCosetInfo},
             }()
 
         for (h, H) in enumerate(subgroups)
@@ -150,20 +167,8 @@ struct MackeyContext
             isempty(covered_subgroups) && continue
 
             for j in covered_subgroups, k in covered_subgroups
-                J = subgroups[j]
-                K = subgroups[k]
-
-                double_coset_formulae[(j, h, k)] = [
-                    begin
-                        x = entry[1]
-                        intersection = GAP.Globals.Intersection(J^x, K)
-                        (
-                            generator_word_from_isomorphism(fp_isomorphism, x),
-                            subgroup_index(subgroups, intersection),
-                        )
-                    end
-                    for entry in GAP.Globals.DoubleCosetRepsAndSizes(H, J, K)
-                ]
+                double_coset_info_cache[(j, h, k)] =
+                    _compute_double_coset_infos(subgroups, j, h, k)
             end
         end
 
@@ -177,11 +182,7 @@ struct MackeyContext
             relation_words,
             left_conj_matx,
             right_conj_matx,
-            double_coset_formulae,
-            Dict{
-                Tuple{SubgroupIndex,SubgroupIndex},
-                Vector{Tuple{GroupElement,SubgroupIndex}}
-            }()
+            double_coset_info_cache,
         )
     end
 end
@@ -194,8 +195,7 @@ function Base.:(==)(a::MackeyContext, b::MackeyContext)
         a.generators == b.generators &&
         a.generator_relations == b.generator_relations &&
         a.generator_left_conjugation_matrix == b.generator_left_conjugation_matrix &&
-        a.generator_right_conjugation_matrix == b.generator_right_conjugation_matrix &&
-        a.double_coset_formulae == b.double_coset_formulae
+        a.generator_right_conjugation_matrix == b.generator_right_conjugation_matrix
 end
 
 function generator_word(ctx::MackeyContext, element::GroupElement)::GeneratorWord
@@ -207,17 +207,16 @@ function generator_relations(ctx::MackeyContext)::Vector{GeneratorWord}
 end
 
 """
-    double_coset_representative_data(ctx, j, h, k)
-    double_coset_representative_data(ctx, J, H, K)
+    double_coset_infos(ctx, j, h, k)
+    double_coset_infos(ctx, J, H, K)
 
-Return representatives for `J \\ H / K`, where `J < H` and `K < H` are cover
-relations in `ctx`.
+Return cached data for `J \\ H / K`.
 
-Each representative is returned as `(word, intersection_index)`, where
-`intersection_index` points to `J^x` intersected with `K` in `ctx.subgroups`
-for the represented group element `x`.
+Each entry is a `DoubleCosetInfo`. The key `(j, h, k)` means the left,
+ambient, and right subgroups are `ctx.subgroups[j]`, `ctx.subgroups[h]`, and
+`ctx.subgroups[k]`, respectively.
 """
-function double_coset_representative_data(
+function double_coset_infos(
     ctx::MackeyContext,
     j::SubgroupIndex,
     h::SubgroupIndex,
@@ -227,28 +226,36 @@ function double_coset_representative_data(
     checkbounds(ctx.subgroups, h)
     checkbounds(ctx.subgroups, k)
 
-    key = (j, h, k)
-    haskey(ctx.double_coset_formulae, key) ||
-        throw(ArgumentError(
-            "double-coset representatives are stored only when (j, h) and (k, h) are cover relations",
-        ))
+    is_subgroup(ctx, j, h) ||
+        throw(ArgumentError("The left subgroup must be contained in the ambient subgroup."))
+    is_subgroup(ctx, k, h) ||
+        throw(ArgumentError("The right subgroup must be contained in the ambient subgroup."))
 
-    return ctx.double_coset_formulae[key]
+    key = (j, h, k)
+    if !haskey(ctx.double_coset_info_cache, key)
+        ctx.double_coset_info_cache[key] =
+            _compute_double_coset_infos(ctx.subgroups, j, h, k)
+    end
+
+    return ctx.double_coset_info_cache[key]
 end
 
-function double_coset_representative_data(
+function double_coset_infos(
     ctx::MackeyContext,
     J::Group,
     H::Group,
     K::Group,
 )
-    return double_coset_representative_data(
+    return double_coset_infos(
         ctx,
         subgroup_index(ctx, J),
         subgroup_index(ctx, H),
         subgroup_index(ctx, K),
     )
 end
+
+double_coset_representative_data(ctx::MackeyContext, args...) =
+    double_coset_infos(ctx, args...)
 
 """
     double_coset_representative_words(ctx, j, h, k)
@@ -257,7 +264,10 @@ end
 Return only the generator words from `double_coset_representative_data`.
 """
 function double_coset_representative_words(ctx::MackeyContext, args...)
-    return first.(double_coset_representative_data(ctx, args...))
+    return [
+        generator_word(ctx, info.representative)
+        for info in double_coset_infos(ctx, args...)
+    ]
 end
 
 """
@@ -320,38 +330,52 @@ function conjugate_subgroup_by_word(context::MackeyContext, i::SubgroupIndex, w:
     return result
 end
 
-# Build a list of double coset reps for H\G/K
-function _shift_decomposition_double_coset(ctx::MackeyContext,H_index::SubgroupIndex,K_index::SubgroupIndex)
-    if haskey(ctx.shift_decomposition_double_coset_cache,(H_index,K_index))
-        return ctx.shift_decomposition_double_coset_cache[(H_index,K_index)]
-    end
-    
-    H = ctx.subgroups[H_index]
-    K = ctx.subgroups[K_index]
+function _compute_double_coset_infos(
+    subgroups::Vector{Group},
+    left_index::SubgroupIndex,
+    ambient_index::SubgroupIndex,
+    right_index::SubgroupIndex,
+)::Vector{DoubleCosetInfo}
+    left = subgroups[left_index]
+    ambient = subgroups[ambient_index]
+    right = subgroups[right_index]
 
-    # A point of (G/H) x (G/K) can be moved into the form (H, xK).
-    # Two such points (H, xK) and (H, yK) are in the same orbit exactly
-    # when x and y represent the same double coset in H \ G / K.
-    representatives = GroupElement[
-        entry[1]
-        for entry in GAP.Globals.DoubleCosetRepsAndSizes(ctx.group, H,K)
-    ]
+    infos = DoubleCosetInfo[]
+    for entry in GAP.Globals.DoubleCosetRepsAndSizes(ambient, left, right)
+        x = entry[1]
 
-    # The stabilizer of (H, xK) is
-    #
-    #     H cap xKx^-1.
-    #
-    # GAP writes K^a for a^-1 K a, so xKx^-1 is K^(x^-1).
-    stabilizer_indices = SubgroupIndex[
-        subgroup_index(
-            ctx,
-            GAP.Globals.Intersection(H, K^(x^-1)),
+        # Mackey formulas use L^x ∩ R. This subgroup lies inside R.
+        left_conjugate_intersection =
+            GAP.Globals.Intersection(left^x, right)
+
+        # Shift decompositions use the stabilizer of (L, xR), namely
+        # L ∩ xRx^-1. GAP writes xRx^-1 as R^(x^-1).
+        left_intersection_conjugated_right =
+            GAP.Globals.Intersection(left, right^(x^-1))
+
+        push!(
+            infos,
+            DoubleCosetInfo(
+                x,
+                subgroup_index(subgroups, left_conjugate_intersection),
+                subgroup_index(subgroups, left_intersection_conjugated_right),
+            ),
         )
-        for x in representatives
-    ]
-    
-    ctx.shift_decomposition_double_coset_cache[(H_index,K_index)] = [(representatives[i],stabilizer_indices[i]) for i in eachindex(representatives)]
+    end
 
-    return ctx.shift_decomposition_double_coset_cache[(H_index,K_index)]
-    
+    return infos
+end
+
+function whole_group_index(ctx::MackeyContext)::SubgroupIndex
+    return subgroup_index(ctx, ctx.group)
+end
+
+# Build the double-coset data for H\G/K used to decompose
+# (G/H) x (G/K) into transitive G-orbits.
+function _shift_decomposition_double_coset_infos(
+    ctx::MackeyContext,
+    H_index::SubgroupIndex,
+    K_index::SubgroupIndex,
+)
+    return double_coset_infos(ctx, H_index, whole_group_index(ctx), K_index)
 end
