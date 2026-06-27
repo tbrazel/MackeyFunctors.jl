@@ -18,6 +18,9 @@ The shift operation is as follows:
 
 ```@docs
 shift
+shift_transfer
+shift_restriction
+shift_conjugation
 ```
 We can also shift a [Mackey functor homomorphism](@ref MackeyFunctorHomomorphism) by a subgroup index.
 
@@ -48,4 +51,5 @@ burnside_mackey_functor
 For each $H\le G$, we define the *free Mackey functor at level $H$* to be the shift of the [Burnside Mackey functor](@ref burnside_mackey_functor) by $G/H$.
 ```@docs
 free_mackey_functor
+epimorphism_from_free
 ```

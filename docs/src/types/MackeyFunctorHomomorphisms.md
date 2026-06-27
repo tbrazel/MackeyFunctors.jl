@@ -2,8 +2,16 @@
 ```@docs
 MackeyFunctorHomomorphism
 MackeyFunctorHomModule
+MackeyFunctorHomMackeyFunctor
 Hom
 as_homomorphism
 as_hom_module_element
 underlying_module
+block_homomorphism
+cokernel
+kernel
+universal_map
+postcomposition_map
+precomposition_map
+universal_element
 ```
