@@ -33,11 +33,11 @@ The `domain` and `codomain` of the resulting isomorphism are constructed unless 
 """
 function direct_sum(
     fv::AbstractVector{Generic.ModuleIsomorphism{T}};
-    domain = direct_sum(map(domain, fv)),
-    codomain = direct_sum(map(codomain, fv)),
+    domain = first(direct_sum(map(domain, fv))),
+    codomain = first(direct_sum(map(codomain, fv))),
 ) where T <: RingElement
     block_matrix = block_diagonal_matrix(map(matrix, fv))
-    return ModuleIsomorphism(domain, codomain, block_matrix)
+    return ModuleIsomorphism(domain, codomain, block_matrix)  # we should be able to specify the inverse
 end
 
 """
@@ -48,9 +48,11 @@ The `domain` and `codomain` of the resulting homomorphism are constructed unless
 """
 function direct_sum(
     fv::AbstractVector{Generic.ModuleHomomorphism{T}};
-    domain = direct_sum(map(domain, fv)),
-    codomain = direct_sum(map(codomain, fv)),
+    domain = first(direct_sum(map(domain, fv))),
+    codomain = first(direct_sum(map(codomain, fv))),
 ) where T <: RingElement
     block_matrix = block_diagonal_matrix(map(matrix, fv))
     return ModuleHomomorphism(domain, codomain, block_matrix)
 end
+
+direct_sum(f::Union{Generic.ModuleHomomorphism{T}, Generic.ModuleIsomorphism{T}}...; kw...) where T <: RingElement = direct_sum(collect(f); kw...)
