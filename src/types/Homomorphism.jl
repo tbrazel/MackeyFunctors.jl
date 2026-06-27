@@ -93,6 +93,4 @@ function id_homomorphism(mf::MackeyFunctor)::MackeyFunctorHomomorphism
     )
 end
 
-function is_isomorphism(f::MackeyFunctorHomomorphism)::Bool
-    return all(is_isomorphism, f.components)
-end
+AbstractAlgebraLocal.is_invertible(f::MackeyFunctorHomomorphism) = all(is_isvertible, f.components)

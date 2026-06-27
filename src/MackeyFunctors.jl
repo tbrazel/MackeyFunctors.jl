@@ -4,7 +4,7 @@ using AbstractAlgebra
 
 include("AbstractAlgebraLocal/AbstractAlgebraLocal.jl")
 using .AbstractAlgebraLocal
-using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism
+using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism, is_invertible
 
 # Importing this is needed so that our version doesn't clash with the one from AbstractAlgebra
 import AbstractAlgebra: coefficient_ring
@@ -28,7 +28,7 @@ export MackeyFunctor,
 
 # MackeyFunctorHomomorphism type
 include("types/Homomorphism.jl")
-export MackeyFunctorHomomorphism, id_homomorphism, is_isomorphism
+export MackeyFunctorHomomorphism, id_homomorphism
 
 # Nice printing for various new types
 include("Show.jl")
