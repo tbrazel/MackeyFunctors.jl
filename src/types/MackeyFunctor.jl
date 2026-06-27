@@ -195,11 +195,11 @@ function _verify_conjugation_cover_compatibility(mf::MackeyFunctor)
                 first(context.paths[(gHginvs_index, gKginvs_index)])
 
             mf.cover_restrictions[cover_index] * mf.generator_conjugations[n, i] ==
-                mf.generator_conjugations[n, j] * mf.cover_restrictions[index_of_conjugated_cover] ||
+            mf.generator_conjugations[n, j] * mf.cover_restrictions[index_of_conjugated_cover] ||
                 throw(ArgumentError("Cover restrictions don't commute with generator conjugation."))
 
             mf.cover_transfers[cover_index] * mf.generator_conjugations[n, j] ==
-                mf.generator_conjugations[n, i] * mf.cover_transfers[index_of_conjugated_cover] ||
+            mf.generator_conjugations[n, i] * mf.cover_transfers[index_of_conjugated_cover] ||
                 throw(ArgumentError("Cover transfers don't commute with generator conjugation."))
         end
     end
@@ -420,10 +420,10 @@ function shift(mf::MackeyFunctor,
     H_index::SubgroupIndex;
     verify::Bool=true,
 )::MackeyFunctor
-    if haskey(mf.shift_cache,H_index)
+    if haskey(mf.shift_cache, H_index)
         return mf.shift_cache[H_index].underlying_mackey_functor
     end
-    # TODO: shifting by G/G should return mf again, but as a *shifted Mackey functor*
-    mf.shift_cache[H_index] = _shift(mf,H_index;verify)
+    # TODO: shifting by G/G should return mf again, but as a *shifted Mackey functor* -- just a speed improvement
+    mf.shift_cache[H_index] = _shift(mf, H_index; verify)
     return mf.shift_cache[H_index].underlying_mackey_functor
 end

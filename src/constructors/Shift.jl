@@ -1,5 +1,7 @@
 struct ShiftOrbitDecomposition
-    value::AbstractAlgebra.FPModule
+    # The shifted Mackey functor stores the actual value module.  The
+    # decomposition only needs the structure maps identifying its orbit
+    # summands inside that value.
     injections::Vector{Generic.ModuleHomomorphism}
     projections::Vector{Generic.ModuleHomomorphism}
 end
@@ -16,21 +18,20 @@ function _shift(
     verify::Bool=true,
 )::ShiftedMackeyFunctor
     # Return the ShiftedMackeyFunctor if it is cached
-    if haskey(mf.shift_cache,H_index)
+    if haskey(mf.shift_cache, H_index)
         return mf.shift_cache[H_index]
     end
     ctx = mf.context
     !verify || checkbounds(ctx.subgroups, H_index)
 
-    decompositions = [
-        _shift_orbit_decomposition(mf, H_index, K_index)
-        for K_index in eachindex(ctx.subgroups)
-    ]
-
-    values = AbstractAlgebra.FPModule[
-        decomposition.value
-        for decomposition in decompositions
-    ]
+    values = AbstractAlgebra.FPModule[]
+    decompositions = ShiftOrbitDecomposition[]
+    for K_index in eachindex(ctx.subgroups)
+        shifted_value, decomposition =
+            _shift_orbit_decomposition(mf, H_index, K_index)
+        push!(values, shifted_value)
+        push!(decompositions, decomposition)
+    end
 
     identity_element = GAP.Globals.One(ctx.group)
     cover_restrictions = Generic.ModuleHomomorphism[]
@@ -47,6 +48,7 @@ function _shift(
         covariant_map, contravariant_map = _shift_product_maps(
             mf,
             H_index,
+            values,
             decompositions,
             K_index,
             L_index,
@@ -91,6 +93,7 @@ function _shift(
         _, contravariant_map = _shift_product_maps(
             mf,
             H_index,
+            values,
             decompositions,
             gKginv_index,
             K_index,
@@ -105,14 +108,16 @@ function _shift(
         )
     end
 
-    return ShiftedMackeyFunctor(MackeyFunctor(
-        ctx,
-        values,
-        cover_restrictions,
-        cover_transfers,
-        generator_conjugations;
-        verify=verify,
-    ),decompositions)
+    mf.shift_cache[H_index] = ShiftedMackeyFunctor(MackeyFunctor(
+            ctx,
+            values,
+            cover_restrictions,
+            cover_transfers,
+            generator_conjugations;
+            verify=verify,
+        ), decompositions)
+
+    return mf.shift_cache[H_index]
 end
 
 
@@ -121,7 +126,7 @@ function _shift_orbit_decomposition(
     mf::MackeyFunctor,
     H_index::SubgroupIndex,
     K_index::SubgroupIndex,
-)::ShiftOrbitDecomposition
+)
     ctx = mf.context
 
     stabilizer_indices = [
@@ -135,8 +140,7 @@ function _shift_orbit_decomposition(
     ]
     shifted_value, injections, projections = direct_sum(summands)
 
-    return ShiftOrbitDecomposition(
-        shifted_value,
+    return shifted_value, ShiftOrbitDecomposition(
         Generic.ModuleHomomorphism[injections...],
         Generic.ModuleHomomorphism[projections...],
     )
@@ -145,6 +149,7 @@ end
 function _shift_product_maps(
     mf::MackeyFunctor,
     H_index::SubgroupIndex,
+    values::Vector{AbstractAlgebra.FPModule},
     decompositions::Vector{ShiftOrbitDecomposition},
     source_index::SubgroupIndex,
     target_index::SubgroupIndex,
@@ -173,12 +178,12 @@ function _shift_product_maps(
     # is the corresponding map from the whole source direct sum to the whole
     # target direct sum.
     covariant_map = zero_homomorphism(
-        source_decomposition.value,
-        target_decomposition.value,
+        values[source_index],
+        values[target_index],
     )
     contravariant_map = zero_homomorphism(
-        target_decomposition.value,
-        source_decomposition.value,
+        values[target_index],
+        values[source_index],
     )
 
     for source_orbit_index in eachindex(double_coset_source)
@@ -376,12 +381,12 @@ The implementation decomposes the product into transitive ``G``-orbits and
 then uses the existing restriction, transfer, and conjugation maps of `M` on
 each orbit summand.
 """
-function shift(phi::MackeyFunctorHomomorphism,H_index::SubgroupIndex)::MackeyFunctorHomomorphism
+function shift(phi::MackeyFunctorHomomorphism, H_index::SubgroupIndex)::MackeyFunctorHomomorphism
     ctx = phi.context
-    
+
     # Domain/codomain as ShiftedMackeyFunctor types - will be pulled from cache if they were already built
-    new_domain = _shift(phi.domain,H_index)
-    new_codomain = _shift(phi.codomain,H_index)
+    new_domain = _shift(phi.domain, H_index)
+    new_codomain = _shift(phi.codomain, H_index)
 
     values = Vector{Generic.ModuleHomomorphism}()
 
@@ -401,7 +406,7 @@ function shift(phi::MackeyFunctorHomomorphism,H_index::SubgroupIndex)::MackeyFun
                 phi.components[stabilizer_index] *
                 new_codomain.decompositions[k].injections[i]
         end
-        push!(values,value)
+        push!(values, value)
     end
 
     return MackeyFunctorHomomorphism(
