@@ -38,7 +38,7 @@ export MackeyFunctorHomomorphism, id_homomorphism
 
 # FPModule of Mackey functor homomorphisms
 include("types/MackeyFunctorHomModule.jl")
-export Hom, MackeyFunctorHomModule
+export Hom, MackeyFunctorHomModule, as_homomorphism, as_hom_module_element, underlying_module
 
 # Nice printing for various new types
 include("Show.jl")

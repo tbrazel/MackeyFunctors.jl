@@ -287,7 +287,11 @@ function MackeyFunctorHomModule(
         inclusion,
     )
 end
+"""
+    Hom(M1::MackeyFunctor,M2::MackeyFunctor) -> AbstractAlgebra.FPModule
 
+Returns the external hom module between two Mackey functors.
+"""
 function Hom(domain_mf::MackeyFunctor, codomain_mf::MackeyFunctor)
     return MackeyFunctorHomModule(domain_mf, codomain_mf)
 end
