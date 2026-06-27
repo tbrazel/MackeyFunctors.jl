@@ -22,6 +22,13 @@ using MackeyFunctors.AbstractAlgebraLocal: HomModule, underlying_module, as_hom_
     @test ModuleHomomorphism(L2, L3, [g3(m3)]) == AbstractAlgebra.ModuleHomomorphism(L2, L3, [g3(m3)])
     @test ModuleHomomorphism(M, L3, [g3(m1)]) == AbstractAlgebra.ModuleHomomorphism(M, L3, [g3(m1)])
     @test ModuleHomomorphism(L3, L3, [g3(m2)]) == AbstractAlgebra.ModuleHomomorphism(L3, L3, [g3(m2)])
+
+    @test ModuleHomomorphism(M, M, [m2]) == ModuleHomomorphism(M, M, [m2])
+    @test ModuleHomomorphism(M, M, [m2]) != ModuleHomomorphism(M, M, [m3])
+    @test ModuleHomomorphism(M, L2, [g2(m1)]) == ModuleHomomorphism(M, L2, [g2(m3)])
+    @test ModuleHomomorphism(M, L2, [g2(m1)]) != ModuleHomomorphism(M, L2, [g2(m2)])
+    @test ModuleHomomorphism(L2, L2, [g2(m1)]) == ModuleHomomorphism(L2, L2, [g2(m3)])
+    @test ModuleHomomorphism(L2, L2, [g2(m1)]) != ModuleHomomorphism(L2, L2, [g2(m2)])
 end
 
 @testset "Hom modules" begin
