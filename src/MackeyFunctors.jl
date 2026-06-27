@@ -45,7 +45,7 @@ include("Show.jl")
 
 # Provides the "shift" operation which helps us construct new Mackey functors out of old ones
 include("constructors/Shift.jl")
-export shift
+export shift, shift_transfer, shift_restriction, shift_conjugation
 
 # Basic theory of G-modules
 include("types/GModules.jl")
