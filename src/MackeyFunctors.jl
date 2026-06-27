@@ -8,6 +8,7 @@ import .AbstractAlgebraLocal: Hom,
     HomModule,
     as_hom_module_element,
     as_homomorphism,
+    direct_sum,
     underlying_module
 using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism, is_invertible
 

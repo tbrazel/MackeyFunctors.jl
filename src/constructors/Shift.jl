@@ -132,7 +132,7 @@ function _shift_orbit_decomposition(
         value(mf, stabilizer_index)
         for stabilizer_index in stabilizer_indices
     ]
-    shifted_value, injections, projections = _direct_sum(summands)
+    shifted_value, injections, projections = direct_sum(summands)
 
     return ShiftOrbitDecomposition(
         shifted_value,
@@ -168,7 +168,7 @@ function _shift_product_maps(
 
     # Start with zero maps between the two direct sums, then add one summand
     # map at a time using the injections and projections returned by
-    # _direct_sum.
+    # direct_sum.
     # If f_ij : source_summand_i -> target_summand_j is the map attached to one
     # product-orbit component, then
     #

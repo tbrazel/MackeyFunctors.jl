@@ -173,7 +173,7 @@ function _compatibility_module_and_injections(
         for H in compatibility_hom_modules
     ]
     compatibility_module, compatibility_injections, _ =
-        _direct_sum(compatibility_modules)
+        direct_sum(compatibility_modules)
 
     return compatibility_module, compatibility_injections
 end
@@ -244,7 +244,7 @@ function MackeyFunctorHomModule(
         for H in component_hom_modules
     ]
     ambient_module, ambient_injections, ambient_projections =
-        _direct_sum(component_modules)
+        direct_sum(component_modules)
 
     (
         compatibility_hom_modules,

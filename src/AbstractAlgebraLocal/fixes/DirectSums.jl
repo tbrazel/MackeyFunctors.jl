@@ -3,8 +3,9 @@
 # AbstractAlgebra 0.50.1 has correct element arithmetic for some direct sums of
 # finitely presented modules, but the stored relation rows can be wrong when
 # quotient summands are repeated.  Until that is fixed upstream, all package
-# code that needs relation data from a direct sum should go through these
-# helpers instead of AbstractAlgebra.direct_sum.
+# code that needs relation data from a direct sum should go through this patch.
+
+import AbstractAlgebra: direct_sum
 
 function _zero_direct_sum_relation_row(R::Ring, n::Int)
     return [zero(R) for _ in 1:n]
@@ -92,12 +93,12 @@ function _direct_sum_module(
     return direct_sum_module
 end
 
-function _direct_sum(summands::AbstractVector{<:AbstractAlgebra.FPModule})
+function direct_sum(summands::AbstractVector{<:AbstractAlgebra.FPModule})
     typed_summands = _typed_direct_sum_summands(summands)
-    return _direct_sum(typed_summands)
+    return direct_sum(typed_summands)
 end
 
-function _direct_sum(
+function direct_sum(
     summands::Vector{<:AbstractAlgebra.FPModule{T}},
 ) where T <: RingElement
     direct_sum_module, projection_from_free, free_sum, offsets =

@@ -2,7 +2,7 @@ module AbstractAlgebraLocal
 using AbstractAlgebra
 
 include("fixes/DirectSums.jl")
-export _direct_sum, _direct_sum_module
+export direct_sum, _direct_sum_module
 
 include("fixes/ModuleHomomorphisms.jl")
 export direct_sum_homomorphism,
