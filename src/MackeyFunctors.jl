@@ -9,6 +9,8 @@ import .AbstractAlgebraLocal: Hom,
     as_hom_module_element,
     as_homomorphism,
     direct_sum,
+    postcomposition_map,
+    precomposition_map,
     underlying_module
 using .AbstractAlgebraLocal: ModuleHomomorphism, ModuleIsomorphism, is_invertible
 
@@ -38,7 +40,13 @@ export MackeyFunctorHomomorphism, id_homomorphism
 
 # FPModule of Mackey functor homomorphisms
 include("types/MackeyFunctorHomModule.jl")
-export Hom, MackeyFunctorHomModule, as_homomorphism, as_hom_module_element, underlying_module
+export Hom,
+    MackeyFunctorHomModule,
+    as_homomorphism,
+    as_hom_module_element,
+    postcomposition_map,
+    precomposition_map,
+    underlying_module
 
 # Nice printing for various new types
 include("Show.jl")

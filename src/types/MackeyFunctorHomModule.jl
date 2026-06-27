@@ -8,7 +8,8 @@ finitely presented module over the common coefficient ring.
 The underlying module is available as [`underlying_module`](@ref).  Elements
 of that module can be converted to [`MackeyFunctorHomomorphism`](@ref)s with
 [`as_homomorphism`](@ref), and Mackey functor homomorphisms can be converted
-back with [`as_hom_module_element`](@ref).
+back with [`as_hom_module_element`](@ref).  The usual functoriality of Hom is
+implemented by [`precomposition_map`](@ref) and [`postcomposition_map`](@ref).
 """
 struct MackeyFunctorHomModule{T<:RingElement}
     # The actual finitely presented module representing Hom(M, N).
@@ -31,6 +32,39 @@ struct MackeyFunctorHomModule{T<:RingElement}
 
     # The canonical inclusion H -> ambient_module returned by kernel.
     inclusion::Generic.ModuleHomomorphism{T}
+end
+
+function _module_homomorphism_from_generator_images(
+    domain::AbstractAlgebra.FPModule{T},
+    codomain::AbstractAlgebra.FPModule{T},
+    images::Vector{<:AbstractAlgebra.FPModuleElem{T}},
+) where T<:RingElement
+    if ngens(domain) == 0
+        return ModuleHomomorphism(
+            domain,
+            codomain,
+            zero_matrix(base_ring(domain), 0, ngens(codomain)),
+        )
+    end
+
+    return ModuleHomomorphism(domain, codomain, images)
+end
+
+function _compose_mackey_functor_homomorphisms(
+    first::MackeyFunctorHomomorphism,
+    second::MackeyFunctorHomomorphism,
+)::MackeyFunctorHomomorphism
+    first.codomain === second.domain ||
+        throw(ArgumentError("Mackey functor homomorphisms cannot be composed."))
+
+    return MackeyFunctorHomomorphism(
+        first.domain,
+        second.codomain,
+        Generic.ModuleHomomorphism[
+            first.components[i] * second.components[i]
+            for i in eachindex(first.context.subgroups)
+        ],
+    )
 end
 
 function _push_compatibility_equation!(
@@ -313,6 +347,98 @@ AbstractAlgebra.number_of_generators(H::MackeyFunctorHomModule) = ngens(underlyi
 AbstractAlgebra.gens(H::MackeyFunctorHomModule) = gens(underlying_module(H))
 AbstractAlgebra.gen(H::MackeyFunctorHomModule, i::Int) = gen(underlying_module(H), i)
 AbstractAlgebra.relations(H::MackeyFunctorHomModule) = relations(underlying_module(H))
+
+function _check_mackey_functor_hom_module_map_rings(
+    source::MackeyFunctorHomModule{T},
+    target::MackeyFunctorHomModule{T},
+) where T<:RingElement
+    base_ring(source) == base_ring(target) ||
+        throw(ArgumentError("Mackey functor Hom modules must be defined over the same base ring."))
+    return nothing
+end
+
+"""
+    precomposition_map(source::MackeyFunctorHomModule, target::MackeyFunctorHomModule, p::MackeyFunctorHomomorphism)
+
+Return the map `source -> target` induced by precomposition with `p`.
+
+If `p : A -> B`, then `source` must represent `Hom(B, N)` and `target` must
+represent `Hom(A, N)`.  The induced map sends `f : B -> N` to `p * f`, using
+the package convention that `p * f` means first apply `p`, then apply `f`.
+"""
+function precomposition_map(
+    source::MackeyFunctorHomModule{T},
+    target::MackeyFunctorHomModule{T},
+    p::MackeyFunctorHomomorphism,
+) where T<:RingElement
+    _check_mackey_functor_hom_module_map_rings(source, target)
+    p.domain === target.domain_mf ||
+        throw(ArgumentError("The precomposition map has the wrong domain."))
+    p.codomain === source.domain_mf ||
+        throw(ArgumentError("The precomposition map has the wrong codomain."))
+    source.codomain_mf === target.codomain_mf ||
+        throw(ArgumentError("Precomposition target Hom module has the wrong codomain."))
+
+    source_module = underlying_module(source)
+    target_module = underlying_module(target)
+    images = elem_type(target_module)[
+        as_hom_module_element(
+            target,
+            _compose_mackey_functor_homomorphisms(
+                p,
+                as_homomorphism(source, x),
+            ),
+        )
+        for x in gens(source_module)
+    ]
+
+    return _module_homomorphism_from_generator_images(
+        source_module,
+        target_module,
+        images,
+    )
+end
+
+"""
+    postcomposition_map(source::MackeyFunctorHomModule, target::MackeyFunctorHomModule, q::MackeyFunctorHomomorphism)
+
+Return the map `source -> target` induced by postcomposition with `q`.
+
+If `q : N -> P`, then `source` must represent `Hom(A, N)` and `target` must
+represent `Hom(A, P)`.  The induced map sends `f : A -> N` to `f * q`.
+"""
+function postcomposition_map(
+    source::MackeyFunctorHomModule{T},
+    target::MackeyFunctorHomModule{T},
+    q::MackeyFunctorHomomorphism,
+) where T<:RingElement
+    _check_mackey_functor_hom_module_map_rings(source, target)
+    q.domain === source.codomain_mf ||
+        throw(ArgumentError("The postcomposition map has the wrong domain."))
+    q.codomain === target.codomain_mf ||
+        throw(ArgumentError("The postcomposition map has the wrong codomain."))
+    source.domain_mf === target.domain_mf ||
+        throw(ArgumentError("Postcomposition target Hom module has the wrong domain."))
+
+    source_module = underlying_module(source)
+    target_module = underlying_module(target)
+    images = elem_type(target_module)[
+        as_hom_module_element(
+            target,
+            _compose_mackey_functor_homomorphisms(
+                as_homomorphism(source, x),
+                q,
+            ),
+        )
+        for x in gens(source_module)
+    ]
+
+    return _module_homomorphism_from_generator_images(
+        source_module,
+        target_module,
+        images,
+    )
+end
 
 """
     as_homomorphism(H::MackeyFunctorHomModule, x::FPModuleElem)

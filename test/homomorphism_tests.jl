@@ -1,7 +1,22 @@
 using MackeyFunctors.AbstractAlgebraLocal: Hom,
     as_hom_module_element,
     as_homomorphism,
-    underlying_module
+    underlying_module,
+    zero_homomorphism
+
+function _zero_mackey_functor_homomorphism(
+    domain_mf::MackeyFunctor,
+    codomain_mf::MackeyFunctor,
+)
+    return MackeyFunctorHomomorphism(
+        domain_mf,
+        codomain_mf,
+        Generic.ModuleHomomorphism[
+            zero_homomorphism(domain_mf.values[i], codomain_mf.values[i])
+            for i in eachindex(domain_mf.context.subgroups)
+        ],
+    )
+end
 
 @testset "Module map composition order" begin
     M = free_module(ZZ, 2)
@@ -171,6 +186,63 @@ end
         round_trip_identity.components[subgroup_index] ==
             identity_mackey_hom.components[subgroup_index]
     end
+
+    precompose_identity = precomposition_map(
+        endomorphism_module,
+        endomorphism_module,
+        identity_mackey_hom,
+    )
+    postcompose_identity = postcomposition_map(
+        endomorphism_module,
+        endomorphism_module,
+        identity_mackey_hom,
+    )
+    @test all(gens(underlying_module(endomorphism_module))) do x
+        precompose_identity(x) == x
+    end
+    @test all(gens(underlying_module(endomorphism_module))) do x
+        postcompose_identity(x) == x
+    end
+
+    zero_functor = zero_mackey_functor(context, ZZ)
+    zero_to_constant = _zero_mackey_functor_homomorphism(
+        zero_functor,
+        constant_Z,
+    )
+    constant_to_zero = _zero_mackey_functor_homomorphism(
+        constant_Z,
+        zero_functor,
+    )
+    hom_zero_constant = Hom(zero_functor, constant_Z)
+    hom_constant_zero = Hom(constant_Z, zero_functor)
+
+    precompose_zero = precomposition_map(
+        endomorphism_module,
+        hom_zero_constant,
+        zero_to_constant,
+    )
+    postcompose_zero = postcomposition_map(
+        endomorphism_module,
+        hom_constant_zero,
+        constant_to_zero,
+    )
+    @test all(gens(underlying_module(endomorphism_module))) do x
+        iszero(precompose_zero(x))
+    end
+    @test all(gens(underlying_module(endomorphism_module))) do x
+        iszero(postcompose_zero(x))
+    end
+
+    @test_throws ArgumentError precomposition_map(
+        endomorphism_module,
+        endomorphism_module,
+        MackeyFunctors.id_homomorphism(zero_functor),
+    )
+    @test_throws ArgumentError postcomposition_map(
+        endomorphism_module,
+        endomorphism_module,
+        MackeyFunctors.id_homomorphism(zero_functor),
+    )
 
     F1 = free_module(ZZ, 1)
     twoF1, = sub(F1, [F1([ZZ(2)])])
