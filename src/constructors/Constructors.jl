@@ -167,12 +167,11 @@ This is the constant Mackey functor valued at the zero abelian group (or zero ``
 """
 function zero_mackey_functor(context::MackeyContext, R::Ring=ZZ)
     zeromod = free_module(R, 0)
-    zeromap = ModuleIsomorphism(zeromod, zeromod, zero_matrix(R, 0, 0))
+    zeromap = identity_isomorphism(zeromod)
 
     values = fill(zeromod, length(context.subgroups))
-    cover_restrictions = [as_homomorphism(zeromap) for _ in context.covers]
-    cover_transfers = [as_homomorphism(zeromap) for _ in context.covers]
-    generator_conjugations = [zeromap for _ in context.generators, _ in context.subgroups]
+    cover_restrictions = cover_transfers = fill(as_homomorphism(zeromap), length(context.covers))
+    generator_conjugations = fill(zeromap, length(context.generators), length(context.subgroups))
 
     MackeyFunctor(context, values, cover_restrictions, cover_transfers, generator_conjugations)
 end
