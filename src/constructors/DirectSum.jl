@@ -1,7 +1,10 @@
 """
-    direct_sum(M::MackeyFunctor, N::MackeyFunctor) -> MackeyFunctor
+    direct_sum(M::MackeyFunctor, N::MackeyFunctor) -> (MackeyFunctor, Vector, Vector)
 
 Direct sum of two Mackey functors defined over the same Mackey context.
+Returns `(M_plus_N, injections, projections)`, where `injections[1]` is the
+canonical map `M -> M_plus_N`, `injections[2]` is `N -> M_plus_N`, and the
+projections go in the opposite directions.
 """
 function direct_sum(
     M::MackeyFunctor,
@@ -12,13 +15,14 @@ function direct_sum(
 
     context = M.context
 
-    values = [
-        _direct_sum_module(AbstractAlgebra.FPModule[
+    direct_sum_data = [
+        direct_sum(AbstractAlgebra.FPModule[
             M.values[subgp_idx],
             N.values[subgp_idx],
         ])
         for subgp_idx in eachindex(M.values)
     ]
+    values = AbstractAlgebra.FPModule[first(data) for data in direct_sum_data]
 
     cover_restrictions = similar(M.cover_restrictions)
     cover_transfers = similar(M.cover_transfers)
@@ -47,12 +51,39 @@ function direct_sum(
         )
     end
 
-    return MackeyFunctor(
+    sum_functor = MackeyFunctor(
         context,
         values,
         cover_restrictions,
         cover_transfers,
         generator_conjugations,
         #verify=false,
+    )
+
+    left_injection = MackeyFunctorHomomorphism(
+        M,
+        sum_functor,
+        Generic.ModuleHomomorphism[data[2][1] for data in direct_sum_data],
+    )
+    right_injection = MackeyFunctorHomomorphism(
+        N,
+        sum_functor,
+        Generic.ModuleHomomorphism[data[2][2] for data in direct_sum_data],
+    )
+    left_projection = MackeyFunctorHomomorphism(
+        sum_functor,
+        M,
+        Generic.ModuleHomomorphism[data[3][1] for data in direct_sum_data],
+    )
+    right_projection = MackeyFunctorHomomorphism(
+        sum_functor,
+        N,
+        Generic.ModuleHomomorphism[data[3][2] for data in direct_sum_data],
+    )
+
+    return (
+        sum_functor,
+        MackeyFunctorHomomorphism[left_injection, right_injection],
+        MackeyFunctorHomomorphism[left_projection, right_projection],
     )
 end

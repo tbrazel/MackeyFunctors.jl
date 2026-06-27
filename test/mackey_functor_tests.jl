@@ -383,15 +383,33 @@ end
         zero_functor = constant_mackey_functor(context, free_module(ZZ, m))
         nonzero_functor = constant_mackey_functor(context, free_module(ZZ, n))
 
-        zero_plus_nonzero = MackeyFunctors.direct_sum(zero_functor, nonzero_functor)
+        zero_plus_nonzero, zpn_injections, zpn_projections =
+            MackeyFunctors.direct_sum(zero_functor, nonzero_functor)
         @test all(eachindex(context.subgroups)) do subgroup_index
             ngens(zero_plus_nonzero.values[subgroup_index]) == m + n
         end
+        @test zpn_injections[1].domain === zero_functor
+        @test zpn_injections[1].codomain === zero_plus_nonzero
+        @test zpn_injections[2].domain === nonzero_functor
+        @test zpn_injections[2].codomain === zero_plus_nonzero
+        @test zpn_projections[1].domain === zero_plus_nonzero
+        @test zpn_projections[1].codomain === zero_functor
+        @test zpn_projections[2].domain === zero_plus_nonzero
+        @test zpn_projections[2].codomain === nonzero_functor
 
-        nonzero_plus_zero = MackeyFunctors.direct_sum(nonzero_functor, zero_functor)
+        nonzero_plus_zero, npz_injections, npz_projections =
+            MackeyFunctors.direct_sum(nonzero_functor, zero_functor)
         @test all(eachindex(context.subgroups)) do subgroup_index
             ngens(nonzero_plus_zero.values[subgroup_index]) == m + n
         end
+        @test npz_injections[1].domain === nonzero_functor
+        @test npz_injections[1].codomain === nonzero_plus_zero
+        @test npz_injections[2].domain === zero_functor
+        @test npz_injections[2].codomain === nonzero_plus_zero
+        @test npz_projections[1].domain === nonzero_plus_zero
+        @test npz_projections[1].codomain === nonzero_functor
+        @test npz_projections[2].domain === nonzero_plus_zero
+        @test npz_projections[2].codomain === zero_functor
 
         for (sum_functor, left_functor, right_functor) in (
             (zero_plus_nonzero, zero_functor, nonzero_functor),
@@ -437,11 +455,14 @@ end
     Z2, = quo(F1, twoF1)
 
     z2_functor = constant_mackey_functor(context, Z2)
-    z2_plus_z2 = MackeyFunctors.direct_sum(z2_functor, z2_functor)
+    z2_plus_z2, z2_injections, z2_projections =
+        MackeyFunctors.direct_sum(z2_functor, z2_functor)
     @test all(eachindex(context.subgroups)) do subgroup_index
         AbstractAlgebra.invariant_factors(z2_plus_z2.values[subgroup_index]) ==
             BigInt[2, 2]
     end
+    @test length(z2_injections) == 2
+    @test length(z2_projections) == 2
 end
 
 # @testset "Visualizer data" begin
