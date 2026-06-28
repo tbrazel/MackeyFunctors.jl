@@ -1,86 +1,57 @@
 """
-    direct_sum(M::MackeyFunctor, N::MackeyFunctor) -> (MackeyFunctor, Vector, Vector)
+    direct_sum(mfv::AbstractVector{MackeyFunctor}) -> (MackeyFunctor, Vector, Vector)
 
-Direct sum of two Mackey functors defined over the same Mackey context.
-Returns `(M_plus_N, injections, projections)`, where `injections[1]` is the
-canonical map `M -> M_plus_N`, `injections[2]` is `N -> M_plus_N`, and the
-projections go in the opposite directions.
+Direct sum of the given Mackey functors defined over the same Mackey context.
+Returns `(mf_sum, injections, projections)`, where `injections[i]` is the
+canonical injection of the `i`-th factor and `projections[i]` the `i`-th projection.
 """
-function direct_sum(
-    M::MackeyFunctor,
-    N::MackeyFunctor
-)
+function direct_sum(mfv::AbstractVector{MackeyFunctor})
+    isempty(mfv) && throw(ArgumentError("Direct sum of no Mackey functors is not supported."))
+    context = mfv[1].context
+    all(mf -> mf.context === context, mfv) || throw(ArgumentError("Mackey functors are not defined over the same context."))
 
-    M.context === N.context || throw(ArgumentError("Mackey functors are not defined over the same context."))
+    direct_sum_data = [direct_sum(map(mf -> mf.values[i], mfv)) for i in eachindex(context.subgroups)]
+    values = map(first, direct_sum_data)
 
-    context = M.context
-
-    direct_sum_data = [
-        direct_sum(AbstractAlgebra.FPModule[
-            M.values[subgp_idx],
-            N.values[subgp_idx],
-        ])
-        for subgp_idx in eachindex(M.values)
-    ]
-    values = AbstractAlgebra.FPModule[first(data) for data in direct_sum_data]
-
-    cover_restrictions = similar(M.cover_restrictions)
-    cover_transfers = similar(M.cover_transfers)
+    cover_restrictions = similar(mfv[1].cover_restrictions)
+    cover_transfers = similar(mfv[1].cover_transfers)
     for (cover_index, (i, j)) in enumerate(context.covers)
-        p = M.cover_restrictions[cover_index]
-        q = N.cover_restrictions[cover_index]
-        cover_restrictions[cover_index] = direct_sum([p, q]; domain = values[j], codomain = values[i])
+        summand_restrictions = map(mf -> mf.cover_restrictions[cover_index], mfv)
+        cover_restrictions[cover_index] = direct_sum(summand_restrictions; domain = values[j], codomain = values[i])
 
-        p = M.cover_transfers[cover_index]
-        q = N.cover_transfers[cover_index]
-        cover_transfers[cover_index] = direct_sum([p, q]; domain = values[i], codomain = values[j])
+        summand_transfers = map(mf -> mf.cover_transfers[cover_index], mfv)
+        cover_transfers[cover_index] = direct_sum(summand_transfers; domain = values[i], codomain = values[j])
     end
 
-    generator_conjugations = similar(M.generator_conjugations)
-    for i in eachindex(M.context.subgroups), n in eachindex(M.context.generators)
-        p = M.generator_conjugations[n, i]
-        q = N.generator_conjugations[n, i]
-        domain = values[i]
-        codomain = values[context.generator_left_conjugation_matrix[n, i]]
-        generator_conjugations[n, i] = direct_sum([p, q]; domain, codomain)
-    end
+    generator_conjugations = Generic.ModuleIsomorphism[
+        direct_sum(
+            map(mf -> mf.generator_conjugations[n, i], mfv);
+            domain = values[i],
+            codomain = values[context.generator_left_conjugation_matrix[n, i]],
+        ) for n in eachindex(context.generators), i in eachindex(context.subgroups)
+    ]
 
-    sum_functor = MackeyFunctor(
+    mf_sum = MackeyFunctor(
         context,
         values,
         cover_restrictions,
         cover_transfers,
-        generator_conjugations,
-        #verify=false,
+        generator_conjugations
     )
 
-    left_injection = MackeyFunctorHomomorphism(
-        M,
-        sum_functor,
-        Generic.ModuleHomomorphism[data[2][1] for data in direct_sum_data],
-    )
-    right_injection = MackeyFunctorHomomorphism(
-        N,
-        sum_functor,
-        Generic.ModuleHomomorphism[data[2][2] for data in direct_sum_data],
-    )
-    left_projection = MackeyFunctorHomomorphism(
-        sum_functor,
-        M,
-        Generic.ModuleHomomorphism[data[3][1] for data in direct_sum_data],
-    )
-    right_projection = MackeyFunctorHomomorphism(
-        sum_functor,
-        N,
-        Generic.ModuleHomomorphism[data[3][2] for data in direct_sum_data],
-    )
+    injections = [
+        MackeyFunctorHomomorphism(mf, mf_sum, Generic.ModuleHomomorphism[data[2][i] for data in direct_sum_data])
+            for (i, mf) in enumerate(mfv)
+    ]
+    projections = [
+        MackeyFunctorHomomorphism(mf_sum, mf, Generic.ModuleHomomorphism[data[3][i] for data in direct_sum_data])
+            for (i, mf) in enumerate(mfv)
+    ]
 
-    return (
-        sum_functor,
-        MackeyFunctorHomomorphism[left_injection, right_injection],
-        MackeyFunctorHomomorphism[left_projection, right_projection],
-    )
+    return mf_sum, injections, projections
 end
+
+direct_sum(mf::MackeyFunctor...) = direct_sum(collect(mf))
 
 function _compose_mackey_functor_homomorphism_pair(
     first::MackeyFunctorHomomorphism,
