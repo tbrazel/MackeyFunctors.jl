@@ -26,6 +26,4 @@ export Hom,
 include("additional_functionality/TensorProduct.jl")
 export TensorProduct, tensor_product, tensor_product_element
 
-include("additional_functionality/Random.jl")
-
 end
