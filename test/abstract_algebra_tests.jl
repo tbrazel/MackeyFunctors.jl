@@ -1,6 +1,5 @@
 using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as_hom_module_element, as_homomorphism, postcomposition_map, precomposition_map, tensor_product, block_homomorphism, submodules_matrix
 
-#=
 @testset "module morphisms" begin
     M = FreeModule(ZZ, 1)
     m1, m2, m3 = M([ZZ(1)]), M([ZZ(2)]), M([ZZ(3)])
@@ -121,7 +120,6 @@ end
     @test precompose_by_double(gen(domain(precompose_by_double), 1)) ==
           2*gen(codomain(precompose_by_double), 1)
 end
-=#
 
 @testset "Tensor products of FPModules" begin
     F1 = free_module(ZZ, 1)
