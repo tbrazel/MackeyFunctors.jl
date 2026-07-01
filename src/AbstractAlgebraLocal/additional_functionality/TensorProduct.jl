@@ -3,7 +3,7 @@ struct TensorProduct{R <: RingElement, M <: AbstractAlgebra.FPModule{R}, F} <: A
     f::F
 end
 
-for f in (:base_ring, :number_of_generators, :relations)
+for f in (:base_ring, :coefficient_ring, :number_of_generators, :relations)
     @eval AbstractAlgebra.$f(M::TensorProduct) = $f(M.mod)
 end
 
