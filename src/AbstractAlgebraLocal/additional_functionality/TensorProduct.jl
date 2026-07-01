@@ -1,6 +1,8 @@
+# tensor products of FP modules
+
 struct TensorProduct{R <: RingElement, M <: AbstractAlgebra.FPModule{R}, F} <: AbstractAlgebra.FPModule{R}
-    mod::M
-    f::F
+    mod::M  # underlying module (so far, free module or quotient module)
+    f::F    # multilinear structure map with codomain `mod`
 end
 
 for f in (:base_ring, :coefficient_ring, :number_of_generators, :relations)
@@ -21,7 +23,7 @@ end
 
 struct TensorProductElem{R <: RingElement, T <: TensorProduct{R}} <: AbstractAlgebra.FPModuleElem{R}
     parent::T
-    v::Generic.MatSpaceElem{R}  # used by Generic._matrix
+    v::Generic.MatSpaceElem{R}  # Generic._matrix uses this field to get coordinates
 end
 
 AbstractAlgebra.parent(v::TensorProductElem) = v.parent
@@ -50,6 +52,7 @@ function tensor_product(ms::AbstractAlgebra.FPModule{R}...) where R <: RingEleme
     ranks = map(ngens, ms)
     M = FreeModule(coefficient_ring(ms[1]), prod(ranks))
 
+    # structure map for tensor product of free modules
     f = function(vs::AbstractAlgebra.FPModuleElem{R}...)
         length(vs) == length(ms) || throw(ArgumentError("wrong number of arguments"))
         all(((v, m),) -> parent(v) === m, zip(vs, ms)) || throw(ArgumentError("arguments must be elements of the tensor factors"))
@@ -58,10 +61,12 @@ function tensor_product(ms::AbstractAlgebra.FPModule{R}...) where R <: RingEleme
     end
 
     if all(m -> m isa Generic.FreeModule, ms)
+        # free tensor product
         TM =  TensorProduct(M, f)
         return TM, structure_map(TM)
     end
 
+    # non-free tensor product
     civ = reshape(CartesianIndices(ranks), :)
     tensor_relations = [M([@inbounds relation[ci[k]] for ci in civ]) for (k, m) in enumerate(ms) for relation in relations(m)]
     N, _ = sub(M, tensor_relations)
@@ -85,10 +90,11 @@ function tensor_product(fs::Union{Generic.ModuleHomomorphism{R}, Generic.ModuleI
         domain = first(tensor_product(map(domain, fs)...)),
         codomain = first(tensor_product(map(codomain, fs)...)),
     ) where R <: RingElement
-    a = [Generic._matrix(codomain.f(map((f, v) -> f(v), fs, vs)...)) for vs in Iterators.product(map(gens ∘ AbstractAlgebraLocal.domain, fs)...)]
+    factor_gens = map(gens ∘ AbstractAlgebraLocal.domain, fs)
+    a = [Generic._matrix(codomain.f(map((f, v) -> f(v), fs, vs)...)) for vs in Iterators.product(factor_gens...)]
     b = matrix([v[i] for v in reshape(a, :), i in 1:ngens(codomain)])
     if all(f -> f isa Generic.ModuleIsomorphism, fs)
-        ModuleIsomorphism(domain, codomain, b)  # better construct inverse, too
+        ModuleIsomorphism(domain, codomain, b)  # if the constructor allowed, we could also provide the inverse map
     else
         ModuleHomomorphism(domain, codomain, b)
     end
