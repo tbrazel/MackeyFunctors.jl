@@ -5,9 +5,15 @@ struct TensorProduct{R <: RingElement, M <: AbstractAlgebra.FPModule{R}, F} <: A
     f::F    # multilinear structure map with codomain `mod`
 end
 
-for f in (:base_ring, :coefficient_ring, :number_of_generators, :relations)
+underlying_module(M::TensorProduct) = M.mod
+
+AbstractAlgebra.base_ring_type(::Type{<:TensorProduct{R}}) where R <: RingElement = parent_type(R)
+AbstractAlgebra.coefficient_ring_type(T::Type{<:TensorProduct}) = base_ring_type(T)
+
+for f in (:base_ring, :number_of_generators, :relations)
     @eval AbstractAlgebra.$f(M::TensorProduct) = $f(M.mod)
 end
+AbstractAlgebra.coefficient_ring(M::TensorProduct) = base_ring(M)
 
 AbstractAlgebra.gen(M::TensorProduct, i::Integer) = M(gen(M.mod, i))
 AbstractAlgebra.gens(M::TensorProduct) = map(M, gens(M.mod))
@@ -26,6 +32,8 @@ struct TensorProductElem{R <: RingElement, T <: TensorProduct{R}} <: AbstractAlg
     v::Generic.MatSpaceElem{R}  # Generic._matrix uses this field to get coordinates
 end
 
+AbstractAlgebra.parent_type(::Type{TensorProductElem{R, T}}) where {R <: RingElement, T <: TensorProduct{R}} = T
+AbstractAlgebra.elem_type(::Type{T}) where {R <: RingElement, T <: TensorProduct{R}} = TensorProductElem{R, T}
 AbstractAlgebra.parent(v::TensorProductElem) = v.parent
 
 (t::TensorProduct)(v::AbstractVector) = t(t.mod(v))
@@ -41,16 +49,18 @@ end
 
 Return a pair `(M, f)` where `M` is the tensor product of the modules `MS`
 and `f` the canonical multilinear structure map from `MS` to `M`.
-All argument modules must be defined over the same coefficient ring.
-If all arguments are of type `Generic.FreeModule`, then so is `M`.
+All argument modules must be defined over the same base ring.
+If all arguments are of type `Generic.FreeModule`, then `underlying_module(M)` is too.
 
 See also [`structure_map`](@ref).
 """
+tensor_product() = throw(ArgumentError("empty tensor products are not supported"))
+
 function tensor_product(ms::AbstractAlgebra.FPModule{R}...) where R <: RingElement
     isempty(ms) && throw(ArgumentError("empty tensor products are not supported"))
-    allequal(coefficient_ring, ms) || throw(ArgumentError("all modules must have the same coefficient ring"))
+    allequal(base_ring, ms) || throw(ArgumentError("all modules must have the same base ring"))
     ranks = map(ngens, ms)
-    M = FreeModule(coefficient_ring(ms[1]), prod(ranks))
+    M = FreeModule(base_ring(ms[1]), prod(ranks))
 
     # structure map for tensor product of free modules
     f = function(vs::AbstractAlgebra.FPModuleElem{R}...)
@@ -73,6 +83,12 @@ function tensor_product(ms::AbstractAlgebra.FPModule{R}...) where R <: RingEleme
     Q, q = quo(M, N)
     TQ = TensorProduct(Q, q ∘ f)
     return TQ, structure_map(TQ)
+end
+
+function tensor_product(ms::AbstractAlgebra.FPModule...)
+    isempty(ms) && throw(ArgumentError("empty tensor products are not supported"))
+    allequal(base_ring, ms) || throw(ArgumentError("all modules must have the same base ring"))
+    throw(ArgumentError("all modules must have compatible coefficient element types"))
 end
 
 """

@@ -134,9 +134,27 @@ end
     # Z^2 * Z
     free_tensor, f = tensor_product(F2, F1)
     @test free_tensor isa AbstractAlgebra.FPModule
+    @test underlying_module(free_tensor) isa AbstractAlgebra.Generic.FreeModule
+    @test elem_type(free_tensor) === typeof(gen(free_tensor, 1))
     @test ngens(free_tensor) == 2
     @test isempty(relations(free_tensor))
     @test f(F2([ZZ(3), ZZ(5)]), gen(F1, 1)) == free_tensor([ZZ(3), ZZ(5)])
+
+    free_tensor_submodule, = sub(free_tensor, [gen(free_tensor, 1)])
+    @test ngens(free_tensor_submodule) == 1
+    doubled_tensor, = direct_sum(AbstractAlgebra.FPModule[free_tensor, free_tensor])
+    @test ngens(doubled_tensor) == 4
+
+    # Tensor products accept submodules as finitely presented modules
+    F2_first_summand, = sub(F2, [gen(F2, 1)])
+    submodule_tensor, f = tensor_product(F2_first_summand, F1)
+    @test ngens(submodule_tensor) == 1
+    @test f(gen(F2_first_summand, 1), gen(F1, 1)) == gen(submodule_tensor, 1)
+
+    # Tensor products can be iterated
+    nested_tensor, f = tensor_product(free_tensor, F1)
+    @test ngens(nested_tensor) == 2
+    @test f(gen(free_tensor, 2), gen(F1, 1)) == gen(nested_tensor, 2)
 
     #Z/2 * Z/4
     z2_tensor_z4, f = tensor_product(Z2, Z4)
@@ -173,5 +191,5 @@ end
 
     # Can't tensor modules over different base rings
     F_QQ_1 = free_module(QQ, 1)
-    @test_throws MethodError tensor_product(F1, F_QQ_1)
+    @test_throws ArgumentError tensor_product(F1, F_QQ_1)
 end
