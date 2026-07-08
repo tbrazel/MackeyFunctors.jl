@@ -11,14 +11,11 @@ the composition of transfer followed by restriction equals multiplication
 by the index [H : K] on M(K).  
 """
 function is_cohomological(mf::MackeyFunctor)
-    subgroups = mf.context.subgroups
+    for (i, (K_idx, _)) in enumerate(mf.context.covers)
+        inclusion_index = subgroup_inclusion_index(mf.context, mf.context.covers[i])
 
-    for (K_idx, H_idx) in mf.context.covers
-        K = subgroups[K_idx]
-        H = subgroups[H_idx]
-
-        lhs = mf.cover_restrictions[(H_idx, K_idx)] * mf.cover_transfers[(K_idx, H_idx)]  # ✅ use mf
-        rhs = index(H, K) * identity_map(mf.modules[K_idx])
+        lhs = mf.cover_restrictions[i] * mf.cover_transfers[i]
+        rhs = inclusion_index * identity_map(mf.values[K_idx])
 
         if lhs != rhs
             return false
