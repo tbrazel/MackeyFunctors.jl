@@ -6,6 +6,7 @@ authors = ["Thomas Brazelton"]
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
 GAP = "c863536a-3901-11e9-33e7-d5cd0df7b904"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RandomExtensions = "fb686558-2515-59ef-acaa-46db3789a887"
 
 [compat]
