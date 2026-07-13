@@ -94,3 +94,12 @@ function id_homomorphism(mf::MackeyFunctor)::MackeyFunctorHomomorphism
 end
 
 AbstractAlgebraLocal.is_invertible(f::MackeyFunctorHomomorphism) = all(is_invertible, f.components)
+
+function AbstractAlgebra.compose(f::MackeyFunctorHomomorphism, g::MackeyFunctorHomomorphism)::MackeyFunctorHomomorphism
+    f.codomain == g.domain || throw(ArgumentError("The codomain of the first homomorphism must equal the domain of the second homomorphism."))
+    return MackeyFunctorHomomorphism(
+        f.domain,
+        g.codomain,
+        [f.components[i] * g.components[i] for i in eachindex(f.components)]
+    )
+end
