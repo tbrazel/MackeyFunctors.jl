@@ -15,58 +15,27 @@ This project was first developed by a handful of people including a subset of th
 
 ## Benchmarks
 
-```@eval
-import Markdown
-import BenchmarkTools
-using GAP, AbstractAlgebra, MackeyFunctors
+Benchmarks are run locally (never in CI) via `julia --project=benchmark benchmark/benchmarks.jl`,
+which regenerates the table below in place. See [`benchmark/benchmarks.jl`](https://github.com/tbrazel/MackeyFunctors.jl/blob/main/benchmark/benchmarks.jl).
 
-C2 = GAP.Globals.CyclicGroup(2)
-S3 = GAP.Globals.SymmetricGroup(3)
-S4 = GAP.Globals.SymmetricGroup(4)
+```@raw html
+<!-- BENCHMARK_TABLE_START -->
+```
+The Mackey functor constructor rows use a precomputed `MackeyContext`; context construction is benchmarked separately.
 
-C2_context = MackeyContext(C2)
-S3_context = MackeyContext(S3)
-S4_context = MackeyContext(S4)
+*Last updated 2026-09-03, Julia 1.12.6, arm64-apple-darwin24.0.0.*
 
-benchmarks = [
-    ("C2", "context", "`MackeyContext(C2)`",
-        BenchmarkTools.@benchmarkable MackeyContext($C2) samples=5 seconds=0.5 evals=1),
-    ("C2", "constant", "`constant_mackey_functor(C2_context, ZZ)`",
-        BenchmarkTools.@benchmarkable constant_mackey_functor($C2_context, $ZZ) samples=5 seconds=0.5 evals=1),
-    ("C2", "Burnside", "`burnside_mackey_functor(C2_context)`",
-        BenchmarkTools.@benchmarkable burnside_mackey_functor($C2_context) samples=5 seconds=0.5 evals=1),
-    ("S3", "context", "`MackeyContext(S3)`",
-        BenchmarkTools.@benchmarkable MackeyContext($S3) samples=5 seconds=0.5 evals=1),
-    ("S3", "constant", "`constant_mackey_functor(S3_context, ZZ)`",
-        BenchmarkTools.@benchmarkable constant_mackey_functor($S3_context, $ZZ) samples=5 seconds=0.5 evals=1),
-    ("S3", "Burnside", "`burnside_mackey_functor(S3_context)`",
-        BenchmarkTools.@benchmarkable burnside_mackey_functor($S3_context) samples=5 seconds=0.5 evals=1),
-    ("S4", "context", "`MackeyContext(S4)`",
-        BenchmarkTools.@benchmarkable MackeyContext($S4) samples=5 seconds=0.5 evals=1),
-    ("S4", "constant", "`constant_mackey_functor(S4_context, ZZ)`",
-        BenchmarkTools.@benchmarkable constant_mackey_functor($S4_context, $ZZ) samples=5 seconds=0.5 evals=1),
-    ("S4", "Burnside", "`burnside_mackey_functor(S4_context)`",
-        BenchmarkTools.@benchmarkable burnside_mackey_functor($S4_context) samples=5 seconds=0.5 evals=1),
-]
-
-rows = [
-    "The Mackey functor constructor rows use a precomputed `MackeyContext`; context construction is benchmarked separately.",
-    "",
-    "| Group | Operation | Method | Minimum time | Median time | Memory | Allocations |",
-    "|:--|:--|:--|--:|--:|--:|--:|",
-]
-
-for (group, operation, label, b) in benchmarks
-    trial = BenchmarkTools.run(b)
-    min_trial = minimum(trial)
-    med_trial = BenchmarkTools.median(trial)
-
-    push!(rows,
-        "| $group | $operation | $label | $(BenchmarkTools.prettytime(min_trial.time)) | " *
-        "$(BenchmarkTools.prettytime(med_trial.time)) | " *
-        "$(BenchmarkTools.prettymemory(min_trial.memory)) | $(min_trial.allocs) |"
-    )
-end
-
-Markdown.parse(join(rows, "\n"))
+| Group | Operation | Method | Minimum time | Median time | Memory | Allocations |
+|:--|:--|:--|--:|--:|--:|--:|
+| C2 | context | `MackeyContext(C2)` | 408.625 μs | 427.583 μs | 385.73 KiB | 4684 |
+| C2 | constant | `constant_mackey_functor(C2_context, ZZ)` | 44.292 μs | 45.416 μs | 62.85 KiB | 1865 |
+| C2 | Burnside | `burnside_mackey_functor(C2_context)` | 131.417 μs | 138.833 μs | 130.55 KiB | 3584 |
+| S3 | context | `MackeyContext(S3)` | 3.557 ms | 3.862 ms | 2.93 MiB | 51277 |
+| S3 | constant | `constant_mackey_functor(S3_context, ZZ)` | 500.125 μs | 518.792 μs | 541.38 KiB | 16741 |
+| S3 | Burnside | `burnside_mackey_functor(S3_context)` | 4.117 ms | 4.304 ms | 3.72 MiB | 97159 |
+| S4 | context | `MackeyContext(S4)` | 56.208 ms | 57.006 ms | 36.47 MiB | 738076 |
+| S4 | constant | `constant_mackey_functor(S4_context, ZZ)` | 4.860 ms | 4.896 ms | 4.70 MiB | 148505 |
+| S4 | Burnside | `burnside_mackey_functor(S4_context)` | 124.976 ms | 131.259 ms | 119.98 MiB | 3925338 |
+```@raw html
+<!-- BENCHMARK_TABLE_END -->
 ```

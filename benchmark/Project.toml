@@ -1,5 +1,5 @@
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 GAP = "c863536a-3901-11e9-33e7-d5cd0df7b904"
 MackeyFunctors = "93235cf0-2c6f-4ec7-8a58-fed291fd2da0"
