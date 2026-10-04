@@ -53,3 +53,8 @@ For each $H\le G$, we define the *free Mackey functor at level $H$* to be the sh
 free_mackey_functor
 epimorphism_from_free
 ```
+
+### Representation ring Mackey functor
+```@docs
+representation_ring_mackey_functor
+```
