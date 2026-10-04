@@ -172,6 +172,40 @@ end
     @test restriction(RG, e_index, G_index)(regular) == 24 * gens(value(RG, e_index))[1]
 end
 
+@testset "Linearization" begin
+    for G in [GAP.Globals.SymmetricGroup(3), GAP.Globals.SmallGroup(8, 3), GAP.Globals.SmallGroup(8, 4)],
+        R in [ZZ, GF(2)]
+        @test linearization(G, R) isa MackeyFunctorHomomorphism
+    end
+
+    G = GAP.Globals.SymmetricGroup(4)
+    context = MackeyContext(G)
+    f = linearization(context)
+    G_index = MackeyFunctors.whole_group_index(context)
+    e_index = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, context.subgroups)
+
+    # The G-set G/e linearizes to the regular representation, which restricts
+    # to 24 copies of the trivial character
+    conj_classes = MackeyFunctors._burnside_conjugacy_classes(context)
+    free_orbit = findfirst(LL -> Int(GAP.Globals.Size(GAP.Globals.Representative(LL))) == 1, conj_classes[G_index])
+    regular = f.components[G_index](gens(f.domain.values[G_index])[free_orbit])
+    @test restriction(f.codomain, e_index, G_index)(regular) == 24 * gens(value(f.codomain, e_index))[1]
+
+    # The G-set G/G linearizes to the trivial representation
+    point = findfirst(LL -> GAP.Globals.Representative(LL) == G, conj_classes[G_index])
+    trivial = f.components[G_index](gens(f.domain.values[G_index])[point])
+    @test sum(Int(trivial[k]) for k in 1:rank(value(f.codomain, G_index))) == 1
+
+    # Passing in existing Burnside and representation ring Mackey functors
+    AG = burnside_mackey_functor(context)
+    RG = representation_ring_mackey_functor(context)
+    g = linearization(AG, RG)
+    @test g.domain === AG && g.codomain === RG
+    @test all(g.components[i].matrix == f.components[i].matrix for i in eachindex(context.subgroups))
+    @test_throws ArgumentError linearization(RG, AG)
+    @test_throws ArgumentError linearization(AG, representation_ring_mackey_functor(context, GF(2)))
+end
+
 @testset "Free Mackey functors for C4" begin
     C4 = GAP.Globals.CyclicGroup(4)
     context = MackeyContext(C4)

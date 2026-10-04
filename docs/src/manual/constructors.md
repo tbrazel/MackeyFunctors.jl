@@ -58,3 +58,9 @@ epimorphism_from_free
 ```@docs
 representation_ring_mackey_functor
 ```
+
+### Linearization
+The *linearization* map is the Mackey functor homomorphism from the [Burnside Mackey functor](@ref burnside_mackey_functor) to the [representation ring Mackey functor](@ref representation_ring_mackey_functor) which sends a finite $H$-set $X$ to its permutation representation $\mathbb{C}[X]$.
+```@docs
+linearization
+```
