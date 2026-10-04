@@ -149,6 +149,29 @@ end
     end
 end
 
+@testset "Representation ring Mackey functors" begin
+    for G in [GAP.Globals.SymmetricGroup(3), GAP.Globals.SmallGroup(8, 3), GAP.Globals.SmallGroup(8, 4)],
+        R in [ZZ, GF(2)]
+        @test representation_ring_mackey_functor(G, R) isa MackeyFunctor
+    end
+
+    G = GAP.Globals.SymmetricGroup(4)
+    context = MackeyContext(G)
+    RG = representation_ring_mackey_functor(context)
+
+    # The rank of R(H) is the number of conjugacy classes of H
+    for (i, H) in enumerate(context.subgroups)
+        @test rank(value(RG, i)) == Int(GAP.Globals.NrConjugacyClasses(H))
+    end
+
+    # Inducing the trivial character of the trivial group gives the regular
+    # representation, which restricts back to |G| copies of the trivial character.
+    e_index = findfirst(H -> Int(GAP.Globals.Size(H)) == 1, context.subgroups)
+    G_index = MackeyFunctors.whole_group_index(context)
+    regular = transfer(RG, e_index, G_index)(gens(value(RG, e_index))[1])
+    @test restriction(RG, e_index, G_index)(regular) == 24 * gens(value(RG, e_index))[1]
+end
+
 @testset "Free Mackey functors for C4" begin
     C4 = GAP.Globals.CyclicGroup(4)
     context = MackeyContext(C4)
