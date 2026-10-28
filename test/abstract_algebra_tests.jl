@@ -1,4 +1,4 @@
-using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as_hom_module_element, as_homomorphism, postcomposition_map, precomposition_map, TensorProduct, tensor_product, tensor_product_element, block_homomorphism, submodules_matrix
+using MackeyFunctors.AbstractAlgebraLocal: Hom, HomModule, underlying_module, as_hom_module_element, as_homomorphism, postcomposition_map, precomposition_map, tensor_product, block_homomorphism, submodules_matrix
 
 @testset "module morphisms" begin
     M = FreeModule(ZZ, 1)
@@ -132,44 +132,54 @@ end
     Z4, = quo(F1, fourF1)
 
     # Z^2 * Z
-    free_tensor = TensorProduct(F2, F1)
-    @test underlying_module(free_tensor) isa AbstractAlgebra.FPModule
+    free_tensor, f = tensor_product(F2, F1)
+    @test free_tensor isa AbstractAlgebra.FPModule
+    @test underlying_module(free_tensor) isa AbstractAlgebra.Generic.FreeModule
+    @test elem_type(free_tensor) === typeof(gen(free_tensor, 1))
     @test ngens(free_tensor) == 2
     @test isempty(relations(free_tensor))
-    @test tensor_product_element(free_tensor, F2([ZZ(3), ZZ(5)]), gen(F1, 1)) ==
-          underlying_module(free_tensor)([ZZ(3), ZZ(5)])
+    @test f(F2([ZZ(3), ZZ(5)]), gen(F1, 1)) == free_tensor([ZZ(3), ZZ(5)])
+
+    free_tensor_submodule, = sub(free_tensor, [gen(free_tensor, 1)])
+    @test ngens(free_tensor_submodule) == 1
+    doubled_tensor, = direct_sum(AbstractAlgebra.FPModule[free_tensor, free_tensor])
+    @test ngens(doubled_tensor) == 4
+
+    # Tensor products accept submodules as finitely presented modules
+    F2_first_summand, = sub(F2, [gen(F2, 1)])
+    submodule_tensor, f = tensor_product(F2_first_summand, F1)
+    @test ngens(submodule_tensor) == 1
+    @test f(gen(F2_first_summand, 1), gen(F1, 1)) == gen(submodule_tensor, 1)
+
+    # Tensor products can be iterated
+    nested_tensor, f = tensor_product(free_tensor, F1)
+    @test ngens(nested_tensor) == 2
+    @test f(gen(free_tensor, 2), gen(F1, 1)) == gen(nested_tensor, 2)
 
     #Z/2 * Z/4
-    z2_tensor_z4 = tensor_product(Z2, Z4)
-    @test underlying_module(z2_tensor_z4) isa AbstractAlgebra.FPModule
+    z2_tensor_z4, f = tensor_product(Z2, Z4)
+    @test z2_tensor_z4 isa AbstractAlgebra.FPModule
     @test ngens(z2_tensor_z4) == 1
-    @test AbstractAlgebra.invariant_factors(underlying_module(z2_tensor_z4)) == BigInt[2]
-    pure_tensor = tensor_product_element(z2_tensor_z4, gen(Z2, 1), gen(Z4, 1))
-    @test 2*pure_tensor == zero(underlying_module(z2_tensor_z4))
-    @test pure_tensor == gen(underlying_module(z2_tensor_z4), 1)
+    @test AbstractAlgebra.invariant_factors(z2_tensor_z4) == [2]
+    pure_tensor = f(gen(Z2, 1), gen(Z4, 1))
+    @test iszero(2*pure_tensor)
+    @test pure_tensor == gen(z2_tensor_z4, 1)
 
     # Z/2 * Z/3
-    z2_tensor_z3 = TensorProduct(Z2, Z3)
+    z2_tensor_z3, f = tensor_product(Z2, Z3)
     @test ngens(z2_tensor_z3) == 0
-    @test tensor_product_element(z2_tensor_z3, gen(Z2, 1), gen(Z3, 1)) ==
-          zero(underlying_module(z2_tensor_z3))
+    @test iszero(f(gen(Z2, 1), gen(Z3, 1)))
 
     # Z^2 * Z/4
-    bilinear_tensor = TensorProduct(F2, Z4)
-    @test tensor_product_element(bilinear_tensor, F2([ZZ(2), ZZ(3)]), gen(Z4, 1)) ==
-          2*tensor_product_element(bilinear_tensor, gen(F2, 1), gen(Z4, 1)) +
-          3*tensor_product_element(bilinear_tensor, gen(F2, 2), gen(Z4, 1))
+    bilinear_tensor, f = tensor_product(F2, Z4)
+    @test f(F2([ZZ(2), ZZ(3)]), gen(Z4, 1)) == 2*f(gen(F2, 1), gen(Z4, 1)) + 3*f(gen(F2, 2), gen(Z4, 1))
 
     # Tensor two maps together
     left_map = ModuleHomomorphism(F2, F2, matrix(ZZ, [1 2; 3 4]))
     right_map = ModuleHomomorphism(F1, F1, matrix(ZZ, 1, 1, [ZZ(5)]))
     tensor_map = tensor_product(left_map, right_map)
-    source_tensor = TensorProduct(F2, F1)
-    target_tensor = TensorProduct(F2, F1)
-    @test domain(tensor_map) == underlying_module(source_tensor)
-    @test codomain(tensor_map) == underlying_module(target_tensor)
-    @test tensor_map(gen(domain(tensor_map), 1)) == underlying_module(target_tensor)([ZZ(5), ZZ(10)])
-    @test tensor_map(gen(domain(tensor_map), 2)) == underlying_module(target_tensor)([ZZ(15), ZZ(20)])
+    @test tensor_map(gen(domain(tensor_map), 1)) == codomain(tensor_map)([ZZ(5), ZZ(10)])
+    @test tensor_map(gen(domain(tensor_map), 2)) == codomain(tensor_map)([ZZ(15), ZZ(20)])
 
     # id_{Z/2} * (Z/2 -> Z/4) gives zero
     id_Z2 = ModuleHomomorphism(Z2, Z2, matrix(ZZ, 1, 1, [ZZ(1)]))
@@ -181,5 +191,5 @@ end
 
     # Can't tensor modules over different base rings
     F_QQ_1 = free_module(QQ, 1)
-    @test_throws ArgumentError TensorProduct(F1, F_QQ_1)
+    @test_throws ArgumentError tensor_product(F1, F_QQ_1)
 end

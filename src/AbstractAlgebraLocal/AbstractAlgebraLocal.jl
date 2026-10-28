@@ -24,6 +24,6 @@ export Hom,
     underlying_module
 
 include("additional_functionality/TensorProduct.jl")
-export TensorProduct, tensor_product, tensor_product_element
+export TensorProduct, TensorProductElem, tensor_product, structure_map
 
 end
