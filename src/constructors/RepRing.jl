@@ -53,8 +53,12 @@ Return the complex representation ring Mackey functor for the group specified by
 The value at a subgroup ``H`` is ``R_{\\mathbb{C}}(H) \\otimes_{\\mathbb{Z}} R``, the free ``R``-module on the irreducible complex characters of ``H``. Restrictions are restrictions of characters, transfers are induced characters, and conjugation by ``g`` sends a character ``\\chi`` of ``H`` to the character ``y \\mapsto \\chi(g^{-1}yg)`` of ``gHg^{-1}``.
 """
 function representation_ring_mackey_functor(mc::MackeyContext, R::Ring=ZZ)
-    irreducibles = _rep_ring_irreducibles(mc)
-    values = [free_module(R, length(irr)) for irr in irreducibles]
+    return _representation_ring_mackey_functor(mc, R, _rep_ring_irreducibles(mc))
+end
+
+# Version of rep_ring which takes the irreducibles as input, so we don't have to recompute character tables for check(..)
+function _representation_ring_mackey_functor(mc::MackeyContext, R::Ring, irreducibles)
+    values =[free_module(R, length(irr)) for irr in irreducibles]
 
     cover_transfers = Generic.ModuleHomomorphism[
         rep_ring_transfer(R, values[i], values[j], irreducibles[i], irreducibles[j], mc.subgroups[j])
