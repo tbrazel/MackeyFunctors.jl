@@ -204,6 +204,15 @@ end
     @test all(g.components[i].matrix == f.components[i].matrix for i in eachindex(context.subgroups))
     @test_throws ArgumentError linearization(RG, AG)
     @test_throws ArgumentError linearization(AG, representation_ring_mackey_functor(context, GF(2)))
+
+    # For C2 the Burnside and representation ring Mackey functors have equal ranks at
+    # every level, so swapped arguments must be caught by more than a rank check (#48)
+    C2_context = MackeyContext(GAP.Globals.CyclicGroup(2))
+    AC2 = burnside_mackey_functor(C2_context)
+    RC2 = representation_ring_mackey_functor(C2_context)
+    @test linearization(AC2, RC2) isa MackeyFunctorHomomorphism
+    @test_throws "must be a Burnside Mackey functor" linearization(RC2, AC2)
+    @test_throws "must be a representation ring Mackey functor" linearization(AC2, AC2)
 end
 
 @testset "Free Mackey functors for C4" begin

@@ -17,7 +17,20 @@ Return the linearization homomorphism from the [`burnside_mackey_functor`](@ref)
 At level ``H``, this sends a finite ``H``-set ``X`` to its permutation representation ``\\mathbb{C}[X]``. On the basis of ``A(H)``, the transitive ``H``-set ``H/L`` is sent to the permutation character ``\\mathrm{Ind}_L^H(1)``.
 """
 function linearization(mc::MackeyContext, R::Ring=ZZ)
-    return linearization(burnside_mackey_functor(mc, R), representation_ring_mackey_functor(mc, R))
+    conj_classes = _burnside_conjugacy_classes(mc)
+    irreducibles = _rep_ring_irreducibles(mc)
+    burnside = _burnside_mackey_functor(mc, R, conj_classes)
+    rep_ring = _representation_ring_mackey_functor(mc, R, irreducibles)
+    return _linearization(burnside, rep_ring, conj_classes, irreducibles)
+end
+
+# Checks whether mf1 and mf2 (which have the same context) have literally the same matrices for res/tr/conj
+# TODO: replace this internal function later with an exported equality function
+function _has_same_structure(mf1::MackeyFunctor, mf2::MackeyFunctor)
+    return all(rank(a) == rank(b) for (a, b) in zip(mf1.values, mf2.values)) &&
+           all(matrix(f) == matrix(g) for (f, g) in zip(mf1.cover_restrictions, mf2.cover_restrictions)) &&
+           all(matrix(f) == matrix(g) for (f, g) in zip(mf1.cover_transfers, mf2.cover_transfers)) &&
+           all(matrix(f) == matrix(g) for (f, g) in zip(mf1.generator_conjugations, mf2.generator_conjugations))
 end
 
 """
@@ -33,13 +46,21 @@ function linearization(burnside::MackeyFunctor, rep_ring::MackeyFunctor)
 
     conj_classes = _burnside_conjugacy_classes(mc)
     irreducibles = _rep_ring_irreducibles(mc)
-    for i in eachindex(mc.subgroups)
-        rank(burnside.values[i]) == length(conj_classes[i]) ||
-            throw(ArgumentError("The first argument must be a Burnside Mackey functor."))
-        rank(rep_ring.values[i]) == length(irreducibles[i]) ||
-            throw(ArgumentError("The second argument must be a representation ring Mackey functor."))
-    end
+    # Check if the input *is* the Burnside mf
+    _has_same_structure(burnside, _burnside_mackey_functor(mc, R, conj_classes)) ||
+        throw(ArgumentError("The first argument must be a Burnside Mackey functor."))
+    # Check if the codomain *is* the rep ring mf
+    _has_same_structure(rep_ring, _representation_ring_mackey_functor(mc, R, irreducibles)) ||
+        throw(ArgumentError("The second argument must be a representation ring Mackey functor."))
 
+    return _linearization(burnside, rep_ring, conj_classes, irreducibles)
+end
+
+# Builds the linearization map without checking that the inputs are the Burnside and
+# representation ring Mackey functors.
+function _linearization(burnside::MackeyFunctor, rep_ring::MackeyFunctor, conj_classes, irreducibles)
+    mc = burnside.context
+    R = coefficient_ring(burnside)
     components = Generic.ModuleHomomorphism[
         linearization_component(R, burnside.values[i], rep_ring.values[i], conj_classes[i], irreducibles[i], H)
         for (i, H) in enumerate(mc.subgroups)
