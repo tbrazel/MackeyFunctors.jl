@@ -59,8 +59,8 @@ submodules_matrix((M1, f1), (M2, f2)) = submodules_matrix(identity_map(codomain(
 
 function submodules_matrix(f, (M1, f1), (M2, f2))
     @assert codomain(f1) === domain(f) && codomain(f) === codomain(f2)
-    imgs = [preimage(f2, f(f1(v))) for v in generators(M1)]
-    matrix([imgs[i][j] for i in eachindex(generators(M1)), j in eachindex(generators(M2))])
+    imgs = [preimage(f2, f(f1(v))) for v in gens(M1)]
+    matrix([imgs[i][j] for i in eachindex(gens(M1)), j in eachindex(gens(M2))])
 end
 
 function _copy_matrix_block!(target_matrix, source_matrix, row_offset::Int, column_offset::Int)
