@@ -111,3 +111,20 @@ end
         MackeyFunctors.is_identity_module_homomorphism(zero_epi.components[H_index])
     end
 end
+
+@testset "Free resolutions of constant Z over C2" begin 
+    # construct resolution of constant Z over C2
+    C2_ctx = MackeyContext(GAP.Globals.CyclicGroup(2))
+    Z = constant_mackey_functor(C2_ctx, free_module(ZZ,1))
+    d = free_resolution(Z, 2)
+
+    # ensure that all composites are zero
+    for i in 2:length(d) 
+        f = compose(d[i],d[i-1])
+        for c in f.components
+            @test iszero(c.matrix)
+        end 
+    end
+
+    # TODO: check that homology is zero
+end
