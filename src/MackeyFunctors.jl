@@ -79,7 +79,8 @@ export direct_sum, block_homomorphism
 include("HomologicalAlgebra/Kernel.jl")
 include("HomologicalAlgebra/Cokernel.jl")
 include("HomologicalAlgebra/EpimorphismFromFree.jl")
-export kernel, cokernel, epimorphism_from_free
+include("HomologicalAlgebra/FreeResolution.jl")
+export kernel, cokernel, epimorphism_from_free, free_resolution
 
 # Cohomological Mackey functors
 include("Cohomological.jl")
